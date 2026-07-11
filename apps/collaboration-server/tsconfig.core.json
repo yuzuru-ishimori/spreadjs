@@ -1,0 +1,16 @@
+{
+  // client-session コア（session.ts / deps.ts / inprocess-transport.ts）の環境非依存を回帰的に担保する検査専用設定。
+  // types:[] ＋ lib:["ES2022"] で Node/DOM のアンビエント型を一切与えずコンパイルできることを確認する
+  // （Phase 3 までの依存ゼロ原則の維持＝Phase 1 で sheet-collaboration へ昇格しやすく保つ・主セッション指示）。
+  // ws/hono/Node を使う ws-transport.ts・server.ts・*.test.ts は除外（それらは tsconfig.json〔types:node〕で検査）。
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "types": []
+  },
+  "include": [
+    "src/client-session/session.ts",
+    "src/client-session/deps.ts",
+    "src/client-session/inprocess-transport.ts"
+  ]
+}

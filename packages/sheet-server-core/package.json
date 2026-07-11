@@ -1,0 +1,19 @@
+{
+  "name": "@nanairo-sheet/sheet-server-core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "全順序シーケンサー・権威 Room・Presence・スナップショット（ランタイム依存ゼロ・トランスポート非依存）",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@nanairo-sheet/sheet-core": "*",
+    "@nanairo-sheet/sheet-types": "*"
+  }
+}

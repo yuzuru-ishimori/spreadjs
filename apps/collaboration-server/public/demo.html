@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DD-003 PoC-C 共同編集デモ（2タブ）</title>
+<!--
+  DD-003 Phase 4: 2ブラウザー最小デバッグデモ（完全依存ゼロ＝CDN/外部フォント/外部ライブラリ無し。素の WebSocket/DOM のみ）。
+  目的: 2タブ間の「SetCell 同期」と「Presence（他タブの activeCell/選択範囲/編集中セル）」を目視確認する。
+  方針: これは楽観適用を持たない最小の echo 反映クライアント（client-session.ts はバンドルしない）。
+        セル編集は「submitOperation 送信 → サーバーの operations エコー受信 → 反映」の素直な流れ（送信＝即時反映しない）。
+        収束の自動判定はヘッドレス smoke/収束試験（vitest）が担い、本デモは体感確認・デバッグ用。
+        デバッグ出力は console を使わず画面のステータス欄・ログ欄へ出す。
+  使い方: ?name=Alice のように名前を URL で渡す（未指定なら入力を促す）。別名の2タブを開いて相互編集を観察する。
+-->
+<style>
+  :root { color-scheme: light; }
+  body { font-family: system-ui, sans-serif; margin: 0; padding: 16px; background: #f6f7f9; color: #1f2430; }
+  h1 { font-size: 16px; margin: 0 0 8px; }
+  .bar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 12px; font-size: 13px; }
+  .pill { padding: 2px 8px; border-radius: 10px; background: #e7ebf0; }
+  .pill.me { color: #fff; }
+  .pill.on { background: #1f8a44; color: #fff; }
+  .pill.off { background: #b23b3b; color: #fff; }
+  table { border-collapse: collapse; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+  th, td { border: 1px solid #d3d8e0; min-width: 90px; height: 30px; padding: 2px 6px; font-size: 13px; text-align: left; }
+  th { background: #eef1f5; font-weight: 600; text-align: center; }
+  td.rowhead { background: #eef1f5; font-weight: 600; text-align: center; color: #55606f; }
+  td.cell { position: relative; cursor: pointer; }
+  td.cell.selected { outline: 2px solid #2b6fe0; outline-offset: -2px; }
+  .badge { position: absolute; top: -9px; left: -1px; font-size: 9px; line-height: 12px; padding: 0 3px;
+           border-radius: 3px; color: #fff; white-space: nowrap; pointer-events: none; z-index: 2; }
+  .editor { margin: 12px 0; display: flex; gap: 8px; align-items: center; font-size: 13px; }
+  .editor input { font-size: 13px; padding: 3px 6px; }
+  .editor button { font-size: 13px; padding: 3px 10px; cursor: pointer; }
+  #log { margin-top: 12px; font-family: ui-monospace, monospace; font-size: 11px; background: #10151f; color: #cdd6e4;
+         padding: 8px; border-radius: 6px; height: 150px; overflow: auto; white-space: pre-wrap; }
+  .hint { color: #6b7686; font-size: 12px; }
+</style>
+</head>
+<body>
+<h1>DD-003 PoC-C 共同編集デモ（SetCell 同期 ＋ Presence）</h1>
+<div class="bar">
+  <span class="pill me" id="mePill">You: —</span>
+  <span class="pill" id="connPill">connecting…</span>
+  <span class="pill" id="revPill">revision: 0</span>
+  <span class="pill" id="usersPill">others: 0</span>
+</div>
+<div class="hint">セルをクリックで選択（activeCell を共有）。Shift+クリックで範囲選択。値を入力して Set（または Enter）で送信。編集中は他タブに editingCell が表示されます。</div>
+
+<div id="grid"></div>
+
+<div class="editor">
+  <span id="editTarget">セル未選択</span>
+  <input id="editInput" type="text" placeholder="セルを選択して値を入力" autocomplete="off" />
+  <button id="setBtn" type="button">Set</button>
+</div>
+
+<div id="log"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---- 表示ユーティリティ ----
+  var els = {
+    me: document.getElementById('mePill'),
+    conn: document.getElementById('connPill'),
+    rev: document.getElementById('revPill'),
+    users: document.getElementById('usersPill'),
+    grid: document.getElementById('grid'),
+    editTarget: document.getElementById('editTarget'),
+    editInput: document.getElementById('editInput'),
+    setBtn: document.getElementById('setBtn'),
+    log: document.getElementById('log')
+  };
+  function appendLog(text) {
+    var now = new Date();
+    var ts = now.toLocaleTimeString() + '.' + String(now.getMilliseconds()).padStart(3, '0');
+    els.log.textContent += '[' + ts + '] ' + text + '\n';
+    els.log.scrollTop = els.log.scrollHeight;
+  }
+
+  // colorKey('color-N') → 固定パレットの CSS 色（サーバーと同じ index 割当を色に写す）。
+  var PALETTE = ['#e0563b', '#2b8a3e', '#7048e8', '#c2255c', '#1098ad', '#e8a020', '#3b5bdb', '#5c7cfa'];
+  function colorForKey(colorKey) {
+    var m = /^color-(\d+)$/.exec(colorKey || '');
+    var idx = m ? Number(m[1]) : 0;
+    return PALETTE[idx % PALETTE.length];
+  }
+
+  function makeClientId() {
+    if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+      return window.crypto.randomUUID();
+    }
+    return 'c-' + Date.now().toString(36) + '-' + Math.floor(Math.random() * 1e9).toString(36);
+  }
+
+  // ---- 識別情報（URL パラメーター or プロンプト）----
+  var params = new URLSearchParams(window.location.search);
+  var displayName = params.get('name');
+  if (!displayName) {
+    displayName = window.prompt('表示名を入力してください（例: Alice）', 'User') || 'User';
+  }
+  var userId = params.get('user') || displayName;
+  var clientId = makeClientId();
+
+  // ---- ローカルモデル（echo 反映のみ・楽観適用なし）----
+  var model = { documentId: 'demo-doc', columnOrder: [], rows: [], cells: {}, revision: 0 };
+  var others = {};              // connectionId -> UserPresence（自分以外）
+  var buffer = {};              // revision -> ServerOperationEnvelope（欠落順序調整）
+  var selfConnectionId = null;
+  var selfColorKey = null;
+  var selectedCell = null;      // { rowId, columnId }
+  var anchorCell = null;        // Shift 範囲選択のアンカー
+  var presenceSeq = 0;
+  var clientSeq = 0;
+  var heartbeatMillis = 5000;
+  var ws = null;
+  var heartbeatTimer = null;
+  var reconnectTimer = null;
+
+  // ---- CellScalar 変換 ----
+  function scalarToText(scalar) {
+    if (!scalar) { return ''; }
+    if (scalar.kind === 'string') { return scalar.value; }
+    if (scalar.kind === 'number') { return String(scalar.value); }
+    return '';
+  }
+  function textToScalar(text) {
+    if (text === '') { return { kind: 'blank' }; }
+    if (/^-?\d+(\.\d+)?$/.test(text)) { return { kind: 'number', value: Number(text) }; }
+    return { kind: 'string', value: text };
+  }
+
+  // ---- 初期スナップショットからモデル構築 ----
+  function buildModelFromSnapshot(doc) {
+    model.columnOrder = doc.columnOrder.slice();
+    var tombstoneById = {};
+    doc.rowMeta.forEach(function (m) { tombstoneById[m.id] = m.tombstone; });
+    model.rows = doc.rowOrder.map(function (id) { return { rowId: id, tombstone: !!tombstoneById[id] }; });
+    model.cells = {};
+    doc.cells.forEach(function (rc) {
+      model.cells[rc.rowId] = {};
+      rc.columns.forEach(function (col) { model.cells[rc.rowId][col.columnId] = scalarToText(col.value); });
+    });
+    model.revision = doc.revision;
+  }
+
+  function cellValue(rowId, columnId) {
+    return (model.cells[rowId] && model.cells[rowId][columnId] !== undefined) ? model.cells[rowId][columnId] : '';
+  }
+  function setCellValue(rowId, columnId, text) {
+    if (!model.cells[rowId]) { model.cells[rowId] = {}; }
+    model.cells[rowId][columnId] = text;
+  }
+
+  // ---- サーバー Operation の適用（committed 反映）----
+  function applyServerOperation(env) {
+    var op = env.operation;
+    if (op.type === 'setCells') {
+      op.changes.forEach(function (ch) { setCellValue(ch.rowId, ch.columnId, scalarToText(ch.value)); });
+    } else if (op.type === 'insertRows') {
+      var at = op.afterRowId === null ? -1 : model.rows.findIndex(function (r) { return r.rowId === op.afterRowId; });
+      var insertAt = at + 1;
+      op.rows.forEach(function (rowSpec) {
+        model.rows.splice(insertAt, 0, { rowId: rowSpec.rowId, tombstone: false });
+        insertAt += 1;
+      });
+    } else if (op.type === 'deleteRows') {
+      op.rowIds.forEach(function (rowId) {
+        var r = model.rows.find(function (x) { return x.rowId === rowId; });
+        if (r) { r.tombstone = true; }
+      });
+    }
+  }
+
+  function drainBuffer() {
+    var applied = false;
+    while (buffer[model.revision + 1]) {
+      var env = buffer[model.revision + 1];
+      delete buffer[model.revision + 1];
+      applyServerOperation(env);
+      model.revision = env.revision;
+      applied = true;
+    }
+    // まだ先の revision がバッファに残る＝欠落 → catch-up を要求（素直な gap 回復）。
+    var hasGap = Object.keys(buffer).length > 0;
+    if (hasGap) { send({ type: 'requestCatchup', afterRevision: model.revision }); }
+    if (applied) { render(); updateStatus(); }
+  }
+
+  // ---- 送信 ----
+  function send(message) {
+    if (ws && ws.readyState === WebSocket.OPEN) { ws.send(JSON.stringify(message)); }
+  }
+  function sendJoin() {
+    send({ type: 'join', protocolVersion: 1, documentId: model.documentId, lastAppliedRevision: model.revision, clientId: clientId });
+  }
+  function sendPresence(editing) {
+    presenceSeq += 1;
+    var ranges = [];
+    if (anchorCell && selectedCell && (anchorCell.rowId !== selectedCell.rowId || anchorCell.columnId !== selectedCell.columnId)) {
+      ranges.push({ startRowId: anchorCell.rowId, startColumnId: anchorCell.columnId, endRowId: selectedCell.rowId, endColumnId: selectedCell.columnId });
+    }
+    var payload = { userId: userId, displayName: displayName, selectionRanges: ranges };
+    if (selectedCell) { payload.activeCell = { rowId: selectedCell.rowId, columnId: selectedCell.columnId }; }
+    if (editing && selectedCell) { payload.editingCell = { rowId: selectedCell.rowId, columnId: selectedCell.columnId }; }
+    send({ type: 'presence', sequence: presenceSeq, payload: payload });
+  }
+  function submitSet(cell, text) {
+    clientSeq += 1;
+    var opId = makeClientId();
+    var envelope = {
+      protocolVersion: 1,
+      documentId: model.documentId,
+      operationId: opId,
+      transactionId: 'tx-' + opId,
+      actorId: userId,
+      clientId: clientId,
+      clientSequence: clientSeq,
+      baseRevision: model.revision,
+      operation: { type: 'setCells', conflictPolicy: 'reject-overlap', changes: [{ rowId: cell.rowId, columnId: cell.columnId, value: textToScalar(text) }] }
+    };
+    send({ type: 'submitOperation', envelope: envelope });
+    appendLog('submit SetCells ' + cell.rowId + '/' + cell.columnId + ' = "' + text + '" (waiting for echo)');
+  }
+
+  // ---- 受信処理 ----
+  function handleMessage(msg) {
+    switch (msg.type) {
+      case 'welcome':
+        selfConnectionId = msg.sessionId;
+        selfColorKey = msg.colorKey;
+        els.me.textContent = 'You: ' + displayName + ' (' + msg.colorKey + ')';
+        els.me.style.background = colorForKey(msg.colorKey);
+        appendLog('welcome: connectionId=' + msg.sessionId + ' colorKey=' + msg.colorKey + ' currentRevision=' + msg.currentRevision);
+        if (msg.currentRevision > model.revision) { send({ type: 'requestCatchup', afterRevision: model.revision }); }
+        updateStatus();
+        break;
+      case 'operations':
+        msg.operations.forEach(function (env) {
+          if (env.revision > model.revision) { buffer[env.revision] = env; }
+        });
+        drainBuffer();
+        break;
+      case 'operationAck':
+        appendLog('ack: op ' + msg.operationId + ' at revision ' + msg.revision);
+        break;
+      case 'operationRejected':
+        appendLog('REJECTED: op ' + msg.operationId + ' code=' + msg.code + ' (自分の編集は反映されません)');
+        break;
+      case 'presenceSnapshot':
+        others = {};
+        msg.users.forEach(function (u) { if (u.connectionId !== selfConnectionId) { others[u.connectionId] = u; } });
+        render(); updateStatus();
+        break;
+      case 'presenceDelta':
+        if (msg.presence.connectionId !== selfConnectionId) { others[msg.presence.connectionId] = msg.presence; render(); updateStatus(); }
+        break;
+      case 'presenceRemoved':
+        if (others[msg.sessionId]) { delete others[msg.sessionId]; render(); updateStatus(); appendLog('presenceRemoved: ' + msg.sessionId); }
+        break;
+      case 'heartbeatAck':
+        break;
+      default:
+        break;
+    }
+  }
+
+  // ---- WebSocket 接続 ----
+  function connect() {
+    var proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    var url = proto + '//' + window.location.host + '/ws';
+    ws = new WebSocket(url);
+    ws.onopen = function () {
+      setConn(true);
+      appendLog('WebSocket open → join');
+      sendJoin();
+      if (selectedCell) { sendPresence(false); }
+      if (heartbeatTimer) { clearInterval(heartbeatTimer); }
+      heartbeatTimer = setInterval(function () { send({ type: 'heartbeat', sentAt: Date.now() }); }, heartbeatMillis);
+    };
+    ws.onmessage = function (ev) {
+      var parsed;
+      try { parsed = JSON.parse(ev.data); } catch (e) { appendLog('drop non-JSON frame'); return; }
+      handleMessage(parsed);
+    };
+    ws.onclose = function () {
+      setConn(false);
+      if (heartbeatTimer) { clearInterval(heartbeatTimer); heartbeatTimer = null; }
+      appendLog('WebSocket closed → reconnect in 1s');
+      if (reconnectTimer) { clearTimeout(reconnectTimer); }
+      reconnectTimer = setTimeout(connect, 1000);
+    };
+    ws.onerror = function () { appendLog('WebSocket error'); };
+  }
+
+  // ---- 描画 ----
+  function setConn(online) {
+    els.conn.textContent = online ? 'connected' : 'disconnected';
+    els.conn.className = 'pill ' + (online ? 'on' : 'off');
+  }
+  function updateStatus() {
+    els.rev.textContent = 'revision: ' + model.revision;
+    els.users.textContent = 'others: ' + Object.keys(others).length;
+  }
+
+  function render() {
+    var visible = model.rows.filter(function (r) { return !r.tombstone; });
+    var html = '<table><thead><tr><th></th>';
+    model.columnOrder.forEach(function (c) { html += '<th>' + escapeHtml(c) + '</th>'; });
+    html += '</tr></thead><tbody>';
+    visible.forEach(function (r) {
+      html += '<tr><td class="rowhead">' + escapeHtml(r.rowId) + '</td>';
+      model.columnOrder.forEach(function (c) {
+        var sel = (selectedCell && selectedCell.rowId === r.rowId && selectedCell.columnId === c) ? ' selected' : '';
+        html += '<td class="cell' + sel + '" data-row="' + escapeHtml(r.rowId) + '" data-col="' + escapeHtml(c) + '">' + escapeHtml(cellValue(r.rowId, c)) + '</td>';
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    els.grid.innerHTML = html;
+    overlayPresence(visible);
+    bindCells();
+  }
+
+  // 他タブの Presence（activeCell/editingCell/selectionRanges）を colorKey 色の枠＋displayName で重畳する。
+  function overlayPresence(visible) {
+    var rowIndex = {}; visible.forEach(function (r, i) { rowIndex[r.rowId] = i; });
+    var colIndex = {}; model.columnOrder.forEach(function (c, i) { colIndex[c] = i; });
+    Object.keys(others).forEach(function (connId) {
+      var p = others[connId];
+      var color = colorForKey(p.colorKey);
+      // 選択範囲（矩形）を薄く塗る
+      (p.selectionRanges || []).forEach(function (range) {
+        forEachCellInRange(range, rowIndex, colIndex, function (rowId, columnId) {
+          var td = cellEl(rowId, columnId);
+          if (td) { td.style.background = tint(color); }
+        });
+      });
+      // editingCell 優先（破線）→ 無ければ activeCell（実線）
+      var target = p.editingCell || p.activeCell;
+      if (target) {
+        var td = cellEl(target.rowId, target.columnId);
+        if (td) {
+          td.style.outline = (p.editingCell ? '2px dashed ' : '2px solid ') + color;
+          td.style.outlineOffset = '-2px';
+          var badge = document.createElement('span');
+          badge.className = 'badge';
+          badge.style.background = color;
+          badge.textContent = (p.editingCell ? '✎ ' : '') + p.displayName;
+          badge.style.top = (-9 - badgeStack(td) * 13) + 'px';
+          td.appendChild(badge);
+        }
+      }
+    });
+  }
+  function badgeStack(td) { return td.querySelectorAll('.badge').length; }
+  function tint(hex) {
+    var m = /^#([0-9a-f]{6})$/i.exec(hex); if (!m) { return '#eef'; }
+    var n = parseInt(m[1], 16); var r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+    return 'rgba(' + r + ',' + g + ',' + b + ',0.14)';
+  }
+  function forEachCellInRange(range, rowIndex, colIndex, fn) {
+    var r1 = rowIndex[range.startRowId], r2 = rowIndex[range.endRowId];
+    var c1 = colIndex[range.startColumnId], c2 = colIndex[range.endColumnId];
+    if (r1 === undefined || r2 === undefined || c1 === undefined || c2 === undefined) { return; }
+    var rlo = Math.min(r1, r2), rhi = Math.max(r1, r2), clo = Math.min(c1, c2), chi = Math.max(c1, c2);
+    var rows = model.rows.filter(function (r) { return !r.tombstone; });
+    for (var ri = rlo; ri <= rhi; ri += 1) {
+      for (var ci = clo; ci <= chi; ci += 1) { fn(rows[ri].rowId, model.columnOrder[ci]); }
+    }
+  }
+  function cellEl(rowId, columnId) {
+    return els.grid.querySelector('td.cell[data-row="' + cssEscape(rowId) + '"][data-col="' + cssEscape(columnId) + '"]');
+  }
+
+  function bindCells() {
+    var cells = els.grid.querySelectorAll('td.cell');
+    cells.forEach(function (td) {
+      td.addEventListener('click', function (ev) {
+        var rowId = td.getAttribute('data-row');
+        var columnId = td.getAttribute('data-col');
+        if (ev.shiftKey && selectedCell) {
+          anchorCell = anchorCell || { rowId: selectedCell.rowId, columnId: selectedCell.columnId };
+        } else {
+          anchorCell = { rowId: rowId, columnId: columnId };
+        }
+        selectedCell = { rowId: rowId, columnId: columnId };
+        els.editTarget.textContent = rowId + ' / ' + columnId;
+        els.editInput.value = cellValue(rowId, columnId);
+        render();
+        sendPresence(false);
+        els.editInput.focus();
+      });
+    });
+  }
+
+  // ---- エディタ操作 ----
+  els.editInput.addEventListener('focus', function () { if (selectedCell) { sendPresence(true); } });
+  els.editInput.addEventListener('blur', function () { if (selectedCell) { sendPresence(false); } });
+  els.editInput.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { commit(); } });
+  els.setBtn.addEventListener('click', commit);
+  function commit() {
+    if (!selectedCell) { appendLog('セルが未選択です'); return; }
+    submitSet(selectedCell, els.editInput.value);
+    sendPresence(false); // 編集終了（activeCell のみ）
+  }
+
+  // ---- 文字列エスケープ ----
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function cssEscape(s) { return String(s).replace(/["\\]/g, '\\$&'); }
+
+  // ---- bootstrap ----
+  function bootstrap() {
+    fetch('/config').then(function (r) { return r.json(); }).then(function (cfg) {
+      if (cfg && cfg.documentId) { model.documentId = cfg.documentId; }
+      if (cfg && cfg.heartbeatMillis) { heartbeatMillis = cfg.heartbeatMillis; }
+    }).catch(function () { appendLog('config 取得失敗（既定値を使用）'); }).then(function () {
+      return fetch('/snapshot?documentId=' + encodeURIComponent(model.documentId)).then(function (r) { return r.json(); });
+    }).then(function (snap) {
+      buildModelFromSnapshot(snap.document);
+      render(); updateStatus();
+      appendLog('snapshot loaded: revision=' + model.revision + ' rows=' + model.rows.length);
+      connect();
+    }).catch(function (e) {
+      appendLog('bootstrap 失敗: ' + (e && e.message ? e.message : e));
+    });
+  }
+
+  bootstrap();
+})();
+</script>
+</body>
+</html>

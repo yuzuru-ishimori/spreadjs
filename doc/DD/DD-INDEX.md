@@ -6,8 +6,9 @@
 
 | DD | 件名 | ステータス | 補足 |
 |----|------|-----------|------|
-| DD-003 | PoC-C共同編集Operation | 検討中 | 仕様ユーザー合意済み。実装着手はDD-002のコードコミット後 |
-| DD-002 | PoC-A日本語IME | 進行中 | Phase 2完了＋合成リファレンス生成。Phase 3（状態機械TDD）着手。実機IME検証はPhase 6 |
+| DD-004 | PoC-BCanvas仮想スクロール | 検討中 | 起票のみ。要確認1〜3の回答待ち |
+| DD-003 | PoC-C共同編集Operation | 完了 | Operation収束性を実証（10,000件×3〜10体でhash一致・二重適用0・AC1〜5合格）。sheet-core/sheet-server-core/collaboration-server実装＋ADR-005/008ドラフト |
+| DD-002 | PoC-A日本語IME | 進行中 | Phase 3-5実装＋dev目視で実行時バグ2件修正・エビデンス取得。E2E保留・実機IME検証はPhase 6 |
 
 ## 保留・見送り
 

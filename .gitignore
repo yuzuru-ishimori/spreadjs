@@ -14,3 +14,6 @@ coverage/
 *.log
 .DS_Store
 Thumbs.db
+
+# Playwright MCP の一時出力（スナップショット・コンソールログ・スクリーンショット）
+.playwright-mcp/

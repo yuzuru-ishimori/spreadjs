@@ -1,0 +1,14 @@
+{
+  // collaboration-server はアダプター層（開発用WSサーバー）。Phase 4 で server.ts / ws-transport.ts が
+  // Node API（http/fs/timers）と ws/hono を使うため、Phase 3 までの types:[] を "node" へ緩める
+  // （tsconfig.base の DOM 無し方針は維持＝lib は ES2022 のみ）。
+  //
+  // 【重要】client-session コア（session.ts/deps.ts/inprocess-transport.ts）の環境非依存（Node/DOM 非参照）は
+  // tsconfig.core.json（types:[]）で別途機械検証する（`npm run typecheck:core`）。ws import は ws-transport.ts のみ。
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts"]
+}
