@@ -12,7 +12,7 @@
 
 ## 背景・課題
 
-- 正典は計画書 `doc/plan/nanairo_realtime_spreadsheet_development_plan_v1.md` の **§18.2（実装範囲・合格条件）**。設計は §12（Canvas描画）・§13（仮想スクロール）、目標値は §21（性能目標）。`doc/plan/phase0-dd-roadmap.md` の DD-004（DD-002 の後工程・DD-006 統合シナリオの前提）。
+- 正典は計画書 `doc/plan/nanairo_realtime_spreadsheet_development_plan_v1.md` の **§18.2（実装範囲・合格条件）**。設計は §12（Canvas描画）・§13（仮想スクロール）、目標値は §21（性能目標）。`doc/plan/phase0-dd-roadmap.md` の DD-004（DD-002 の後工程・DD-005 統合シナリオの前提）。
 - DD-002 が `apps/playground/src/grid/` に 20×10 固定グリッド土台（geometry/cell-store/navigation/grid-view）を実装済み。ただし現構造は 50,000行×200列では成立しない:
   - `grid-view.ts`: contentSize 全面の Canvas 1枚を確保して毎回全再描画 → 50,000行×28px≒140万px 高はバッキングストア上限・メモリで不可。viewport同サイズCanvas＋可視範囲描画（§13.1）への転換が必要
   - `geometry.ts`: 固定 cellWidth/cellHeight の均等割り計算 → 可変行高・列幅、固定行列、ID基準 anchor を表現できず、Axis構造（§13.2）への置換が必要
@@ -22,12 +22,12 @@
 ## 検討内容
 
 - **仮想スクロール方式は §13.1 をそのまま採用**: ブラウザー標準スクロールの DOM viewport＋内容サイズを表す spacer＋viewport 同サイズ固定 Canvas。scrollTop/Left から可視範囲を計算し可視セルのみ描画。50,000行×標準行高はスクロール座標範囲に収まるため segmented scrolling は不採用。
-- **既存 `src/grid/` は変更せず、PoC-B は別エントリーページ＋新モジュール群（`src/pocb/`）で実装**: DD-002 が Phase 6（実機IME受入試験）未完のため、その試験環境（`index.html`・`src/grid|ime|sim|ui/`）を凍結保全する。IME統合（textarea追従を ViewportTransform へ載せる §13.5）は DD-006 統合シナリオで実施。
+- **既存 `src/grid/` は変更せず、PoC-B は別エントリーページ＋新モジュール群（`src/pocb/`）で実装**: DD-002 が Phase 6（実機IME受入試験）未完のため、その試験環境（`index.html`・`src/grid|ime|sim|ui/`）を凍結保全する。IME統合（textarea追従を ViewportTransform へ載せる §13.5）は DD-005 統合シナリオで実施。
 - **Axis 初期実装は §13.2 の初期候補どおり**: RowId/ColumnId 順序配列＋ID→index Map＋標準サイズ＋疎 override。index↔offset は累積オフセット（prefix sum）キャッシュ＋二分探索。構造変更（挿入・削除・サイズ変更）はキャッシュ再構築で開始し再構築時間を計測、ボトルネックなら Fenwick Tree へ（→要確認3）。Axis API を抽象化し上位へ配列を露出しない。
-- **セルストアは行スロット＋チャンク化の最小実装**（ADR-011素材）: 可視範囲クエリを O(可視セル数) で返し、500,000非空セルのメモリ・生成/読取時間を計測。疎/密方式の本格比較は DD-005（PoC-D）が担い、ADR-011 ドラフトは本DDで起こして DD-005 が拡充する。
+- **セルストアは行スロット＋チャンク化の最小実装**（ADR-011素材）: 可視範囲クエリを O(可視セル数) で返し、500,000非空セルのメモリ・生成/読取時間を計測。疎/密方式の本格比較は DD-006（PoC-D）が担い、ADR-011 ドラフトは本DDで起こして DD-006 が拡充する。
 - **自動E2E（@playwright/test）は導入しない**: 並行セッションの npm install 競合回避に加え、受け入れ基準1〜5 はページ内計測ハーネス（fpsレコーダー・自動スクロールドライバー・メモリサンプリング・結果JSONエクスポート）で自動判定できるため。**新規 npm 依存ゼロ（install 不要）を厳守**。対話目視・スクショは主セッションの Playwright MCP スモークで代替（DD-002 と同運用）。
 - **計測は headed の実ブラウザーウィンドウ（Chrome/Edge）で実施**。ヘッドレス・最小化ウィンドウはGPU合成経路が異なるため参考値扱い。可視セル数は §18.2 の 2,000〜4,000 に合わせ、計測モードでは標準セルを縮小（56×22px 目安）しフルウィンドウで確保。メモリは performance.memory（Chromium限定）を基本、DevTools ヒープスナップショットを補助。
-- **スコープ外**: IME編集統合（DD-006）／実サーバーPresence（模擬タイマーで代替）／セル結合 §12.7・アクセシビリティ §12.8（描画構造の考慮のみ）／dirty rectangle・tile cache（§12.3「実測で必要なら」に該当した場合のみ導入検討）／CellStore方式比較・数式（DD-005）／製品機能としてのズーム（§12.4）。
+- **スコープ外**: IME編集統合（DD-005）／実サーバーPresence（模擬タイマーで代替）／セル結合 §12.7・アクセシビリティ §12.8（描画構造の考慮のみ）／dirty rectangle・tile cache（§12.3「実測で必要なら」に該当した場合のみ導入検討）／CellStore方式比較・数式（DD-006）／製品機能としてのズーム（§12.4）。
 
 ### 要確認への回答（2026-07-12 ユーザー確定＝推奨案どおり）
 
@@ -109,7 +109,7 @@
 - [ ] `apps/playground/src/pocb/metrics.ts`＋計測UI（新規）: fpsレコーダー（rAF間隔・p95/最悪値）・停止中full再描画計測・pointer→選択枠遅延計測・メモリサンプリング（performance.memory）・自動スクロールドライバー（速度指定・10分往復）・結果JSONエクスポート
 - [ ] `doc/DD/DD-004/measurement-spec.md`（新規・添付）: データ生成仕様・計測手順・計測条件（端末/ブラウザー/ウィンドウ/可視セル数）。50行超のため本体から分離（guides.md §6）
 - [ ] 計測実施 → `doc/DD/DD-004/measurement-report.md`（新規・添付）: 受け入れ基準1〜5の実測値・合否・ボトルネック分析（未達時は §12.3 dirty rect／§13.2 Fenwick 等の対策を適用し再計測）
-- [ ] `doc/adr/0011-row-slot-chunked-cell-store.md`（新規・ドラフト）: 背景・選択肢・PoC計測結果・決定案・再検討条件（DD-005 の疎/密比較で拡充予定）。`doc/DOC-MAP.md` へ ADR セクションを追加
+- [ ] `doc/adr/0011-row-slot-chunked-cell-store.md`（新規・ドラフト）: 背景・選択肢・PoC計測結果・決定案・再検討条件（DD-006 の疎/密比較で拡充予定）。`doc/DOC-MAP.md` へ ADR セクションを追加
 - [ ] Phase 1 へ引き継ぐ設計注意事項（packages/sheet-renderer-canvas 化の分割線・PoCで簡略化した点）を measurement-report 末尾へ記録
 - [ ] 🔬 **機械検証**: `test` / `typecheck` / `lint` / `build` → green、`bash scripts/doc-check.sh` → エラー0
 - [ ] 😈 **DA批判レビュー**（計測値の再現性・合否判定の根拠がJSON/レポートから追えるか）
@@ -128,6 +128,7 @@
 ### 2026-07-12
 - **要確認1〜3を推奨案どおり確定**（ユーザー回答）: ①参照端末=本機（Win11＋Chrome/Edge）で判定・機種情報を計測レポートに記録 ②Presence 20人固定 ③Axis=順序配列＋Mapで開始・ボトルネック時のみFenwick。決定事項へ反映済み → 実装開始
 - **DD-003 完了を確認**（別セッション 07/12 05:34 コミット・全体テスト270件green）。並行セッション制約は解除。ただし本DDは方針どおり `src/pocb/` 別エントリで実装し既存 `src/grid`（DD-002受入環境）は凍結する。sheet-core への新規依存もしない（PoC-Bは playground内CellStoreで計測）
+- **ロードマップ再構成に伴う参照番号更新**（ユーザー確定）: 旧DD-006（統合＋Go/No-Go）を DD-005（統合PoC・データ/数式より先に実施）と DD-007（最終判定）へ分割、データ表現・数式は DD-006 へ。本DD内の DD-005/006 参照を新番号へ差し替え（スコープ・受け入れ基準の変更なし）
 
 ## DA批判レビュー記録
 
