@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>spreadjs playground — PoC-B Canvas 仮想スクロール</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        font-family: system-ui, sans-serif;
+        background: #f5f5f5;
+        color: #222;
+      }
+
+      .pocb-wrap {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        box-sizing: border-box;
+        padding: 8px 12px;
+      }
+
+      .pocb-header {
+        flex: 0 0 auto;
+      }
+
+      .pocb-header h1 {
+        font-size: 15px;
+        margin: 0 0 4px;
+      }
+
+      .pocb-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 10px;
+        align-items: center;
+        font-size: 12px;
+        margin-bottom: 6px;
+      }
+
+      .pocb-controls fieldset {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 3px 8px;
+        margin: 0;
+      }
+
+      .pocb-controls legend {
+        font-size: 11px;
+        color: #777;
+        padding: 0 4px;
+      }
+
+      .pocb-controls button {
+        font: inherit;
+        padding: 3px 8px;
+        cursor: pointer;
+      }
+
+      .pocb-controls input[type='number'] {
+        width: 56px;
+        font: inherit;
+      }
+
+      /* §13.1: DOM viewport（native scroll）＋ spacer ＋ viewport 同サイズ固定 Canvas。
+         base/overlay canvas は絶対配置で不動、透明な scroller を最前面に置いて
+         スクロールバーとポインターを受ける（canvas は視覚のみ）。 */
+      .pocb-stage {
+        position: relative;
+        flex: 1 1 auto;
+        min-height: 240px;
+        border: 1px solid #bbb;
+        background: #fff;
+        overflow: hidden;
+      }
+
+      #pocb-base,
+      #pocb-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        display: block;
+      }
+
+      #pocb-scroller {
+        position: absolute;
+        inset: 0;
+        overflow: auto;
+      }
+
+      #pocb-spacer {
+        width: 1px;
+        height: 1px;
+      }
+
+      .pocb-readout {
+        flex: 0 0 auto;
+        font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+        font-size: 11px;
+        color: #333;
+        white-space: pre-wrap;
+        margin-top: 6px;
+        max-height: 96px;
+        overflow: auto;
+        background: #fff;
+        border: 1px solid #ddd;
+        padding: 4px 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="pocb-wrap">
+      <div class="pocb-header">
+        <h1>PoC-B — 50,000行×200列 Canvas 仮想スクロール（計画書 §18.2 / §12 / §13）</h1>
+        <div class="pocb-controls">
+          <fieldset>
+            <legend>固定行列</legend>
+            <label>行 <input id="pocb-frozen-rows" type="number" min="0" max="5" value="1" /></label>
+            <label>列 <input id="pocb-frozen-cols" type="number" min="0" max="5" value="1" /></label>
+          </fieldset>
+          <fieldset>
+            <legend>セル寸法(計測用)</legend>
+            <label>幅 <input id="pocb-col-width" type="number" min="24" max="240" value="56" /></label>
+            <label>高 <input id="pocb-row-height" type="number" min="14" max="120" value="22" /></label>
+            <button id="pocb-apply-size" type="button">適用</button>
+          </fieldset>
+          <fieldset>
+            <legend>構造変更(anchor 検証)</legend>
+            <button id="pocb-grow-rows" type="button">可視上方の行高+80</button>
+            <button id="pocb-insert-rows" type="button">可視上方へ1000行挿入</button>
+            <button id="pocb-delete-rows" type="button">可視上方の1000行削除</button>
+          </fieldset>
+          <fieldset>
+            <legend>Presence</legend>
+            <label><input id="pocb-presence-toggle" type="checkbox" checked /> 20人</label>
+          </fieldset>
+          <fieldset>
+            <legend>計測</legend>
+            <button id="pocb-autoscroll" type="button">自動スクロール開始</button>
+            <button id="pocb-stopped-redraw" type="button">停止中再描画×20</button>
+            <button id="pocb-reset-metrics" type="button">リセット</button>
+            <button id="pocb-export" type="button">JSONエクスポート</button>
+          </fieldset>
+        </div>
+      </div>
+      <div class="pocb-stage" id="pocb-stage">
+        <canvas id="pocb-base"></canvas>
+        <canvas id="pocb-overlay"></canvas>
+        <div id="pocb-scroller"><div id="pocb-spacer"></div></div>
+      </div>
+      <div class="pocb-readout" id="pocb-readout">計測待ち…</div>
+    </div>
+    <script type="module" src="/src/pocb/main.ts"></script>
+  </body>
+</html>

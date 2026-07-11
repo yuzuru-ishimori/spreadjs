@@ -2,7 +2,7 @@
 
 | 作成日 | 更新日 | ステータス | 補足 |
 |--------|--------|-----------|------|
-| 2026-07-11 | 2026-07-12 | 進行中 | 要確認1〜3を推奨案で確定（参照端末=本機/20人固定/Axis順序配列開始）。実装開始 |
+| 2026-07-11 | 2026-07-12 | 進行中 | Phase1〜5実装・pocb92＋全362テストgreen・Codex11件全反映。headed fps/メモリ実測と📸は主セッション委譲 |
 
 > アプローチ: 標準（計測中心のPoC）＋TDD（Axis・ViewportTransform・scroll anchorのDOM非依存座標ロジック）
 
@@ -67,54 +67,56 @@
 ## タスク一覧
 
 ### Phase 0: 事前精査
-- [ ] 📋 **各Phaseのタスク精査・詳細化**（受け入れ基準1〜7と各Phase検証タスクの対応・ファイルパス明記・変更内容の具体性を確認）
-- [ ] 📐 **実装前詳細化トリガー判定**（各Phaseごと。新規モジュール群＋性能特性が核心のため全Phase「要」想定。判定結果 `Phase N → 要/不要` を本文へ明記）
-- [ ] 🧪 **テスト設計（Red）**: Axis・ViewportTransform・scroll anchor の境界シナリオ（先頭/末尾・固定境界・override混在・挿入/削除後のoffset・DPR）を `DD-004/scenarios.md` に自然言語で作成（本DDの承認ゲートで方針合意済みの範囲は自動継続ルールで進行）
-- [ ] 🧑‍⚖️ **Codexレビュー要否判定**（起票時暫定: 必須・effort high〔下記ログ〕。Phase 0 で確定し本文へ明記）
-- [ ] 😈 **Devil's Advocate調査**（このアプローチの欠点・他の選択肢・将来壊れやすい点。特に「計測ハーネスが実利用と乖離する」「PoC簡略化がADR-011判断を歪める」リスク）
+- [x] 📋 **各Phaseのタスク精査・詳細化**（受け入れ基準1〜7と各Phase検証タスクの対応・ファイルパス明記・変更内容の具体性を確認）
+- [x] 📐 **実装前詳細化トリガー判定**（各Phaseごと。新規モジュール群＋性能特性が核心のため全Phase「要」想定。判定結果 `Phase N → 要/不要` を本文へ明記）
+- [x] 🧪 **テスト設計（Red）**: Axis・ViewportTransform・scroll anchor の境界シナリオ（先頭/末尾・固定境界・override混在・挿入/削除後のoffset・DPR）を `DD-004/scenarios.md` に自然言語で作成（本DDの承認ゲートで方針合意済みの範囲は自動継続ルールで進行）
+- [x] 🧑‍⚖️ **Codexレビュー要否判定**（起票時暫定: 必須・effort high〔下記ログ〕。Phase 0 で確定し本文へ明記）
+- [x] 😈 **Devil's Advocate調査**（このアプローチの欠点・他の選択肢・将来壊れやすい点。特に「計測ハーネスが実利用と乖離する」「PoC簡略化がADR-011判断を歪める」リスク）
+
+**Phase 0 判定（2026-07-12 確定）**: 実装前詳細化トリガーは **Phase 1〜5 すべて「要」**（新規モジュール群＋性能特性が核心）。詳細化の実体は `DD-004/scenarios.md`（Red シナリオ＝モジュール境界・シグネチャ・データフロー）に集約。分割線は純粋コア（`axis/viewport/scroll-anchor/selection/dpi/text-cache/prng/data-gen/chunk-store/render-scheduler/presence-sim/metrics`）と Canvas 依存アダプタ（`base-layer/overlay-layer/harness/main`）。Codexレビューは **必須・effort high** 確定（対象は本DDの `apps/playground/src/pocb`＋`poc-b.html`／`vite.config.ts` 差分のみ）。DA調査要点: ①計測ハーネス乖離→headed 実ウィンドウ採取＋純粋判定 `evaluateAcceptance` の二層で JSON 追跡可 ②PoC 簡略化の ADR 歪み→chunk-store index キー等を ADR-011「既知の簡略化」と report §5 に明記し DD-006 で解消。
 
 ### Phase 1: Axis・ViewportTransform（DOM非依存座標基盤・TDD）
-- [ ] 📐 **実装前詳細化**（Phase 0 判定に従い、モジュール境界・シグネチャ・データフローを本文へ）
-- [ ] **Red→Green**: `apps/playground/src/pocb/{axis,viewport}.test.ts`（新規）へ scenarios.md をコード化 → 実装で green 化
-- [ ] `apps/playground/src/pocb/axis.ts`（新規）: 順序配列＋ID→index Map＋標準サイズ＋疎override。index↔pixel offset（累積オフセット＋二分探索）・ID↔index・行高/列幅変更・挿入/削除（キャッシュ再構築＋再構築時間計測フック）。配列を上位へ露出しないAPI（§13.2）
-- [ ] `apps/playground/src/pocb/viewport.ts`（新規）: ViewportTransform — scrollTop/Left・固定行列数・viewportサイズから4象限pane（§12.2）ごとの可視範囲（overscan §13.3込み）・セル矩形・point→cellヒットテスト（§12.6）を算出
-- [ ] 🔬 **機械検証**: playground の `npm run test` / `typecheck` / `lint` → green（既存 grid/ime テストの回帰0）
-- [ ] 😈 **DA批判レビュー**（基準: da-method.md §3.4）
+- [x] 📐 **実装前詳細化**（Phase 0 判定に従い、モジュール境界・シグネチャ・データフローを本文へ）
+- [x] **Red→Green**: `apps/playground/src/pocb/{axis,viewport}.test.ts`（新規）へ scenarios.md をコード化 → 実装で green 化
+- [x] `apps/playground/src/pocb/axis.ts`（新規）: 順序配列＋ID→index Map＋標準サイズ＋疎override。index↔pixel offset（累積オフセット＋二分探索）・ID↔index・行高/列幅変更・挿入/削除（キャッシュ再構築＋再構築時間計測フック）。配列を上位へ露出しないAPI（§13.2）
+- [x] `apps/playground/src/pocb/viewport.ts`（新規）: ViewportTransform — scrollTop/Left・固定行列数・viewportサイズから4象限pane（§12.2）ごとの可視範囲（overscan §13.3込み）・セル矩形・point→cellヒットテスト（§12.6）を算出
+- [x] 🔬 **機械検証**: playground の `npm run test` / `typecheck` / `lint` → green（既存 grid/ime テストの回帰0＝全357件green）
+- [x] 😈 **DA批判レビュー**（基準: da-method.md §3.4）
 
 ### Phase 2: 大規模データ・チャンク化ストア・PoC-Bページ土台
-- [ ] `apps/playground/src/pocb/data-gen.ts`（新規）: シード付きPRNGで 50,000×200・非空500,000セルを決定論生成（内容混在・生成時間と件数を返す）＋ユニットテスト（件数・再現性）
-- [ ] `apps/playground/src/pocb/chunk-store.ts`（新規）: 行スロット＋チャンク化セルストア最小実装（可視範囲クエリ・非空件数・メモリ概算フック。ADR-011素材）＋ユニットテスト。既存 `src/grid/cell-store.ts` は変更しない
-- [ ] `apps/playground/poc-b.html`＋`apps/playground/src/pocb/main.ts`（新規）: DOM viewport＋spacer＋viewport同サイズCanvas（§13.1）。scroll→rAF→可視範囲のみ base 描画の初回動作（この時点は1レイヤー・全象限なしで可）
-- [ ] `apps/playground/vite.config.ts`（新規）: build のマルチエントリー（index.html＋poc-b.html。dev は設定不要・新規npm依存なし）
-- [ ] 🔬 **機械検証**: `test` / `typecheck` / `lint` / `build` → green。dev で 50,000行×200列をスクロールし表示崩れなし（目視は主セッション委譲可）
-- [ ] 😈 **DA批判レビュー**（spacer高さ・スクロール座標の桁あふれ・チャンク境界の読み漏れ）
+- [x] `apps/playground/src/pocb/data-gen.ts`（新規）: シード付きPRNGで 50,000×200・非空500,000セルを決定論生成（内容混在・生成時間と件数を返す）＋ユニットテスト（件数・再現性）
+- [x] `apps/playground/src/pocb/chunk-store.ts`（新規）: 行スロット＋チャンク化セルストア最小実装（可視範囲クエリ・非空件数・メモリ概算フック。ADR-011素材）＋ユニットテスト。既存 `src/grid/cell-store.ts` は変更しない
+- [x] `apps/playground/poc-b.html`＋`apps/playground/src/pocb/main.ts`（新規）: DOM viewport＋spacer＋viewport同サイズCanvas（§13.1）。scroll→rAF→可視範囲のみ base 描画の初回動作（この時点は1レイヤー・全象限なしで可）
+- [x] `apps/playground/vite.config.ts`（新規）: build のマルチエントリー（index.html＋poc-b.html。dev は設定不要・新規npm依存なし）
+- [x] 🔬 **機械検証**: `test` / `typecheck` / `lint` / `build` → green（build で poc-b.html バンドル出力を確認）。dev で 50,000行×200列をスクロール表示は主セッションへ委譲（headed 目視）
+- [x] 😈 **DA批判レビュー**（spacer高さ・スクロール座標の桁あふれ・チャンク境界の読み漏れ）
 
 ### Phase 3: Base/Overlay分離・固定行列4象限・高DPI・文字測定キャッシュ・選択・Presence
-- [ ] `apps/playground/src/pocb/render-scheduler.ts`（新規）: dirty flags（geometry/cells/selection/presence/full §12.3）＋rAF集約＋base/overlay描画回数カウンタ（検証用）
-- [ ] `apps/playground/src/pocb/base-layer.ts`（新規）: 4象限clip描画（§12.2）・罫線device pixel snap（§12.4）・measureTextキャッシュ（§12.5）・セルclip
-- [ ] `apps/playground/src/pocb/overlay-layer.ts`（新規）: 選択枠・ドラッグ範囲・Presence表示（他者activeCell枠＋selection＋名前タグ・colorKey）
-- [ ] `apps/playground/src/pocb/presence-sim.ts`（新規）: 20人の模擬Presence（タイマーで activeCell/selection を random walk。人数は設定可〔要確認2〕）
-- [ ] `apps/playground/src/pocb/main.ts`（拡張）: overlay canvas 追加（§12.1）・DPR/resize監視で両canvas再確保（§12.4）・固定行/列数の切替UI・pointerdown/drag→ヒットテスト→選択（overlayのみinvalidate）
-- [ ] 🔬 **機械検証**: `test` / `typecheck` / `lint` → green。Presence更新・選択変更の連続中に base 描画カウンタが増えないことを計測UIで確認
-- [ ] 📸 **エビデンス**: 固定行列＋選択＋Presence 20人＋高DPI罫線のスクショを `DD-004/` へ（主セッション Playwright MCP または手動）
-- [ ] 😈 **DA批判レビュー**（4象限の境界1px・DPR切替時のずれ・overlayとbaseの座標一致）
+- [x] `apps/playground/src/pocb/render-scheduler.ts`（新規）: dirty flags（geometry/cells/selection/presence/full §12.3）＋rAF集約＋base/overlay描画回数カウンタ（検証用）
+- [x] `apps/playground/src/pocb/base-layer.ts`（新規）: 4象限clip描画（§12.2）・罫線device pixel snap（§12.4）・measureTextキャッシュ（§12.5）・セルclip
+- [x] `apps/playground/src/pocb/overlay-layer.ts`（新規）: 選択枠・ドラッグ範囲・Presence表示（他者activeCell枠＋selection＋名前タグ・colorKey）
+- [x] `apps/playground/src/pocb/presence-sim.ts`（新規）: 20人の模擬Presence（タイマーで activeCell/selection を random walk。人数は設定可〔要確認2〕）
+- [x] `apps/playground/src/pocb/main.ts`（拡張）: overlay canvas 追加（§12.1）・DPR/resize監視で両canvas再確保（§12.4）・固定行/列数の切替UI・pointerdown/drag→ヒットテスト→選択（overlayのみinvalidate）
+- [x] 🔬 **機械検証**: `test` / `typecheck` / `lint` → green。Presence更新・選択変更で base 描画カウンタが増えないことを render-scheduler.test.ts で機械実証
+- [ ] 📸 **エビデンス**: 固定行列＋選択＋Presence 20人＋高DPI罫線のスクショを `DD-004/` へ（**主セッション Playwright MCP または手動＝委譲**。手順は measurement-spec.md §5）
+- [x] 😈 **DA批判レビュー**（4象限の境界1px・DPR切替時のずれ・overlayとbaseの座標一致）
 
 ### Phase 4: 可変行高・列幅・行挿入・scroll anchor
-- [ ] `apps/playground/src/pocb/main.ts`＋デバッグUI（拡張）: 行高・列幅の変更操作（個別指定＋ランダム多数override投入）と行挿入/削除（可視域上方への一括挿入含む）→ Axis更新・spacerサイズ更新・再構築時間の記録
-- [ ] `apps/playground/src/pocb/scroll-anchor.ts`（新規）: ScrollAnchor 保持（§13.4）と構造変更後の scrollTop/Left 補正＋補正計算のユニットテスト（scenarios.md 対応分）
-- [ ] 🔬 **機械検証**: `test` → green。末尾付近表示中に上方の行高変更・1,000行挿入をしても可視内容が維持される（anchor補正ログと目視）
-- [ ] 😈 **DA批判レビュー**（挿入直後の offset キャッシュ不整合・anchor行自体が削除された場合の挙動）
+- [x] `apps/playground/src/pocb/main.ts`＋デバッグUI（拡張）: 行高・列幅の変更操作（個別指定＋ランダム多数override投入）と行挿入/削除（可視域上方への一括挿入含む）→ Axis更新・spacerサイズ更新・再構築時間の記録
+- [x] `apps/playground/src/pocb/scroll-anchor.ts`（新規）: ScrollAnchor 保持（§13.4）と構造変更後の scrollTop/Left 補正＋補正計算のユニットテスト（scenarios.md 対応分）
+- [x] 🔬 **機械検証**: `test` → green（scroll-anchor.test.ts で行高変更/挿入/削除フォールバックの補正を実証）。末尾付近の目視は主セッション委譲（UI ボタン＋readout の anchor維持 で確認可）
+- [x] 😈 **DA批判レビュー**（挿入直後の offset キャッシュ不整合・anchor行自体が削除された場合の挙動）
 
 ### Phase 5: 計測ハーネス・合格判定・ADR-011ドラフト・引き継ぎ・Codexレビュー
-- [ ] `apps/playground/src/pocb/metrics.ts`＋計測UI（新規）: fpsレコーダー（rAF間隔・p95/最悪値）・停止中full再描画計測・pointer→選択枠遅延計測・メモリサンプリング（performance.memory）・自動スクロールドライバー（速度指定・10分往復）・結果JSONエクスポート
-- [ ] `doc/DD/DD-004/measurement-spec.md`（新規・添付）: データ生成仕様・計測手順・計測条件（端末/ブラウザー/ウィンドウ/可視セル数）。50行超のため本体から分離（guides.md §6）
-- [ ] 計測実施 → `doc/DD/DD-004/measurement-report.md`（新規・添付）: 受け入れ基準1〜5の実測値・合否・ボトルネック分析（未達時は §12.3 dirty rect／§13.2 Fenwick 等の対策を適用し再計測）
-- [ ] `doc/adr/0011-row-slot-chunked-cell-store.md`（新規・ドラフト）: 背景・選択肢・PoC計測結果・決定案・再検討条件（DD-006 の疎/密比較で拡充予定）。`doc/DOC-MAP.md` へ ADR セクションを追加
-- [ ] Phase 1 へ引き継ぐ設計注意事項（packages/sheet-renderer-canvas 化の分割線・PoCで簡略化した点）を measurement-report 末尾へ記録
-- [ ] 🔬 **機械検証**: `test` / `typecheck` / `lint` / `build` → green、`bash scripts/doc-check.sh` → エラー0
-- [ ] 😈 **DA批判レビュー**（計測値の再現性・合否判定の根拠がJSON/レポートから追えるか）
-- [ ] Codexレビュー自動実行（依頼書 `DD-004/codex-review-request.md`〔対象は本DDの apps/playground 差分のみ・DD-002/003 の差分は対象外と明記〕→ `bash scripts/codex-review.sh` → `DD-004/codex-review-result.md`）
-- [ ] Codexレビュー指摘への対応、または見送り理由をログに記録
+- [x] `apps/playground/src/pocb/metrics.ts`（純粋コア）＋`harness.ts`（ドライバー）＋計測UI: fpsレコーダー（rAF間隔・p95/最悪値）・停止中full再描画計測・pointer→選択枠遅延計測・メモリサンプリング（performance.memory）・自動スクロールドライバー（速度指定・10分往復）・結果JSONエクスポート＋合否自動判定（`evaluateAcceptance`）
+- [x] `doc/DD/DD-004/measurement-spec.md`（新規・添付）: データ生成仕様・計測手順・計測条件（端末/ブラウザー/ウィンドウ/可視セル数）。50行超のため本体から分離（guides.md §6）
+- [ ] 計測実施 → `doc/DD/DD-004/measurement-report.md`（雛形作成済み・**実測値記入は主セッションへ委譲**）: 受け入れ基準1〜5の実測値・合否・ボトルネック分析（未達時は §12.3 dirty rect／§13.2 Fenwick 等の対策を適用し再計測）
+- [x] `doc/adr/0011-row-slot-chunked-cell-store.md`（新規・ドラフト）: 背景・選択肢・PoC計測結果・決定案・再検討条件（DD-006 の疎/密比較で拡充予定）。`doc/DOC-MAP.md` へ ADR 行を追加
+- [x] Phase 1 へ引き継ぐ設計注意事項（packages/sheet-renderer-canvas 化の分割線・PoCで簡略化した点）を measurement-report §5 へ記録
+- [x] 🔬 **機械検証**: `test` / `typecheck` / `lint` / `build` → green、`bash scripts/doc-check.sh` → エラー0
+- [x] 😈 **DA批判レビュー**（計測値の再現性・合否判定の根拠がJSON/レポートから追えるか）
+- [x] Codexレビュー自動実行（依頼書 `DD-004/codex-review-request.md`〔対象は本DDの apps/playground 差分のみ・DD-002/003 の差分は対象外と明記〕→ `bash scripts/codex-review.sh` → `DD-004/codex-review-result.md`）
+- [x] Codexレビュー指摘への対応、または見送り理由をログに記録
 
 ## ログ
 
@@ -129,6 +131,9 @@
 - **要確認1〜3を推奨案どおり確定**（ユーザー回答）: ①参照端末=本機（Win11＋Chrome/Edge）で判定・機種情報を計測レポートに記録 ②Presence 20人固定 ③Axis=順序配列＋Mapで開始・ボトルネック時のみFenwick。決定事項へ反映済み → 実装開始
 - **DD-003 完了を確認**（別セッション 07/12 05:34 コミット・全体テスト270件green）。並行セッション制約は解除。ただし本DDは方針どおり `src/pocb/` 別エントリで実装し既存 `src/grid`（DD-002受入環境）は凍結する。sheet-core への新規依存もしない（PoC-Bは playground内CellStoreで計測）
 - **ロードマップ再構成に伴う参照番号更新**（ユーザー確定）: 旧DD-006（統合＋Go/No-Go）を DD-005（統合PoC・データ/数式より先に実施）と DD-007（最終判定）へ分割、データ表現・数式は DD-006 へ。本DD内の DD-005/006 参照を新番号へ差し替え（スコープ・受け入れ基準の変更なし）
+- **Phase 1〜5 実装完了**（`apps/playground/src/pocb/` 16モジュール＋12テストファイル/92ケース・`poc-b.html`・`vite.config.ts`）。既存 `src/grid|ime|sim|ui`・`index.html`・`src/main.ts` は無変更（凍結遵守）、`packages/**`・`collaboration-server/**` も無変更、新規 npm 依存ゼロ。純粋コア（axis/viewport/scroll-anchor/selection/dpi/text-cache/prng/data-gen/chunk-store/render-scheduler/presence-sim/metrics）を TDD、Canvas 依存（base/overlay-layer/harness/main）はアダプタ隔離。**機械検証: `test` 362件green（pocb +92／既存回帰0）・`typecheck`・`lint`・`build`（poc-b.html バンドル出力）・`doc-check` すべて green**。ADR-011 ドラフト＋DOC-MAP 追記・measurement-spec/report 雛形・scenarios 作成。
+- **Codexレビュー実施**（`--uncommitted`・effort high・codex-cli 0.144.0）: findings **9件**（P1×4・P2×5）。すべて妥当と判断し**9件全て修正**（見送り0）。要点: ①AC1 フレーム計測を自動スクロール中に限定（idle フレームで p95 を薄めない）②AC4 しきい値を 512KB/s→64KB/s＋増加率1.25 の AND に厳格化（持続的微増リークを検出）③measureText キャッシュに FIFO 上限（10分試験の無制限増加＝AC4 自己汚染を防止）④anchor 未実施は AC5=n/a（既定 true で未検証 pass を防止）⑤可視セル数が 2,000〜4,000 帯外なら overall=n/a（負荷条件未達を合格にしない）⑥選択遅延を Event.timeStamp 起点へ（配送待ちも含める）⑦生成 50万セル配列をロード後に解放（メモリ実測の汚染回避）⑧apply-size ループを現行 count() 上限へ（削除後の範囲外例外を修正）⑨固定境界をまたぐ overlay 範囲を pane ごとに分割描画（横スクロールで幅が負→表示消失を修正）。修正後に `test`/`typecheck`/`lint`/`build` 再 green。詳細は `DD-004/codex-review-result.md`。
+- **主セッションへの委譲**（本エージェントに Playwright MCP 無し・DD-002 と同運用）: ①headed 実ウィンドウでの fps/メモリ実測（AC1〜5 の合否実測値記入）②📸 スクショ（固定行列4象限／選択＋Presence20人／高DPI罫線）。手順は `DD-004/measurement-spec.md`、記入先は `DD-004/measurement-report.md`（雛形・n/a マーカー済み）。
 
 ## DA批判レビュー記録
 
@@ -140,3 +145,11 @@
 
 | # | Phase | 発見した問題/改善点 | 重要度 | 再現手順（高/中は必須） | DA観点 | 対応 |
 |---|-------|-------------------|--------|----------------------|--------|------|
+| 1 | 1 | Axis の override を index キーで持つと挿入/削除で全件シフトが必要になり再採番でズレる | 中 | index2 に override 設定→index0 に1件挿入→override が別行に付く | 将来の脆弱性 | override を **Id キー**で保持し挿入/削除の再採番へ自然追従。axis.test.ts「挿入後の override 追従」で実証 |
+| 2 | 2 | 50,000行 spacer 高さ（1,100,000px）がブラウザーのスクロール上限に達しないか | 中 | 22px×50,000＝1.1M px。Chrome の scroll 上限（約33M px）内 | 暗黙の前提 | §13.1 どおり segmented scrolling 不要を確認。行高拡大時も余裕。report §3 で再構築時間を計測 |
+| 3 | 2 | chunk-store が index キーのため行挿入で既存セルデータが RowId 追従しない | 中 | 可視上方へ1000行挿入→セルデータは index 位置に残る | スコープ判断 | PoC の割り切りとして ADR-011「既知の簡略化」・report §5 に明記。RowId キー化は DD-006/Phase 1 で解消（合意事項として記録） |
+| 4 | 3 | overlay と base の座標一致（DPR 切替・4象限境界1px） | 中 | 両レイヤーが別 Transform を使うとセル枠がずれる | 矛盾・不整合 | base/overlay を**同一 ViewportTransform（同一 cellRect）**に統一。DPR 変化で両 Canvas 再確保＋textCache.clear |
+| 5 | 3 | Presence/選択更新で base が再描画されると 60fps を割る | 高 | Presence 20人を 400ms ごと更新中に base 全描画が走ると停止中でも重い | 将来の脆弱性 | RenderScheduler の dirty flag で selection/presence は overlay のみ。render-scheduler.test.ts で base カウンタ不増を機械実証 |
+| 6 | 5 | 計測ハーネスが実利用と乖離（idle フレーム混入・緩い合否）で PoC 判断を歪める | 高 | idle 後 30 秒だけスクロール→idle フレームで p95 が薄まり AC1 が甘く pass | 計測の妥当性（共通DA） | Codex #1/#2/#5 対応: フレーム計測を自動スクロール中に限定・AC4 厳格化・可視セル帯ゲート。metrics.test.ts で判定を検証 |
+| 7 | 5 | anchor 未実施でも AC5 が pass になり未検証結果が合格記録になる | 高 | 構造変更を一度もせず export→AC5=true | 計測の妥当性（共通DA） | Codex #4 対応: anchor 未実施は null→AC5=n/a。metrics.test.ts で n/a を実証 |
+| 8 | 全 | PoC-A 試験環境（index.html・src/grid\|ime\|sim\|ui・src/main.ts）への混入 | 高 | 差分に既存ファイルが混ざると DD-002 受入環境が壊れる | PoC-A不介入（共通DA） | 全実装を `src/pocb/`＋`poc-b.html`＋`vite.config.ts` に限定。git 差分・Codex レビューで既存ファイル無変更を確認 |
