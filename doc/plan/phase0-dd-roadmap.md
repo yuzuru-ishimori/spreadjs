@@ -31,7 +31,7 @@
 | DD-001 | 開発基盤・monorepo | npm workspaces、TS strict、`sheet-types`骨格、playground土台、test/typecheck/lint（§17・§26-1） | `npm run dev/test/typecheck/lint` が動く骨格 | ✅完了 |
 | DD-002 | 日本語IME・常駐textarea | 20×10 Canvas＋常駐textarea＋生イベントrecorder＋実トレース採取→状態機械＋リモート更新シミュレーター（§18.1・§11） | 実IMEトレース、状態機械、合格判定（**実機手動試験含む**） | 進行中 |
 | DD-003 | 共同編集・Operation収束 | `sheet-core`/`sheet-server-core`最小＋WS同期＋楽観適用rollback/replay＋Presence(3種+識別・TTL)＋2ブラウザーデバッグデモ（§18.3・§7・§8・§9） | ランダムOperation収束（hash一致）、ADR-005/008ドラフト | 検討中 |
-| DD-004 | Canvas描画・仮想スクロール | 50,000行×200列、可変行高・列幅、固定行列、Presence overlay 20人、高DPI（§18.2・§12・§13） | fps・メモリ計測、scroll anchor検証、ADR-011ドラフト | 未起票 |
+| DD-004 | Canvas描画・仮想スクロール | 50,000行×200列、可変行高・列幅、固定行列、Presence overlay 20人、高DPI（§18.2・§12・§13） | fps・メモリ計測、scroll anchor検証、ADR-011ドラフト | 検討中 |
 | DD-005 | データ表現・簡易数式 | CellStore方式比較、500k非空セル計測、formula parser最小＋固定ID参照＋依存グラフ、replay計測（§18.4・§6・§14） | 計測レポート、ADR-011/022ドラフト | 未起票 |
 | DD-006 | Phase 0統合・Go/No-Go判定 | 各PoC結果の集約＋**最低限の統合シナリオを実装・検証**（下記）。主要ADR確定、性能SLO確定（§21）、Phase 1正式バックログ | 統合シナリオ成立の証跡＋Go／条件付きGo／No-Go 判断一式 | 未起票 |
 
