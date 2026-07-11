@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>spreadjs playground</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 16px;
+        font-family: system-ui, sans-serif;
+        background: #f5f5f5;
+        color: #222;
+      }
+
+      h1 {
+        font-size: 16px;
+        margin: 0 0 8px;
+      }
+
+      p {
+        margin: 0 0 16px;
+        color: #555;
+      }
+
+      #grid {
+        display: block;
+        background: #fff;
+        border: 1px solid #ccc;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>spreadjs playground</h1>
+    <p>PoC-A / PoC-B のグリッド描画をここに実装する土台です（現状は空の Canvas）。</p>
+    <canvas id="grid"></canvas>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

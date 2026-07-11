@@ -1,0 +1,22 @@
+{
+  // 全 workspace 共通の strict コンパイラ設定。
+  // 計画書 §17.2「coreにDOM型を持ち込まない」に従い、ここには lib を定義しない
+  // （DOM を含めない）。各 workspace が compilerOptions.lib を上書きして必要な lib を足す。
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "moduleDetection": "force",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "useDefineForClassFields": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true
+  }
+}

@@ -16,6 +16,7 @@
 |---------|------|
 | `doc/plan/nanairo_realtime_spreadsheet_development_plan_v1.md` | 開発計画・基本設計（正典。アーキテクチャ・ADR・プロトコル・IME・数式・性能・リスク） |
 | `doc/plan/nanairo_realtime_spreadsheet_concept_record_v1.md` | 構想記録（計画書の入力資料） |
+| `doc/plan/phase0-dd-roadmap.md` | Phase 0のDDロードマップ（計画書§18/§26→DDの写像。dd-auto実行順と進捗対応表） |
 
 ## プロセス・開発規約
 

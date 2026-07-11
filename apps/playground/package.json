@@ -1,0 +1,16 @@
+{
+  "name": "@spreadjs/playground",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "単体検証・IME event recorder 用の土台（PoC-A/B の実装先）",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@spreadjs/sheet-types": "*",
+    "vite": "^6.0.5"
+  }
+}

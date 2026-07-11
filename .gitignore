@@ -1,0 +1,16 @@
+# 依存とビルド成果物
+node_modules/
+dist/
+build/
+
+# TypeScript インクリメンタルビルド情報
+*.tsbuildinfo
+
+# Vite / Vitest のキャッシュ・カバレッジ
+.vite/
+coverage/
+
+# ログ・OS 生成ファイル
+*.log
+.DS_Store
+Thumbs.db

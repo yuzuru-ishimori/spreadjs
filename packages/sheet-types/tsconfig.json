@@ -1,0 +1,11 @@
+{
+  // sheet-types はコアの型パッケージ。計画書 §17.2 に従い DOM を持ち込まない。
+  // lib は ES2022 のみ（DOM なし）で型検査できることが受け入れ基準（DD-001 #3）。
+  // types:[] で @types/* の暗黙取り込みも止め、DOM/Node 非依存を強制する。
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "types": []
+  },
+  "include": ["src/**/*.ts"]
+}

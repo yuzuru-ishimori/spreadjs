@@ -1,0 +1,31 @@
+{
+  "name": "spreadjs",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "TypeScript製リアルタイム共同編集スプレッドシート型入力基盤（monorepo 骨格）",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "npm run dev --workspace apps/playground",
+    "build": "npm run build --workspace apps/playground",
+    "test": "vitest run",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "eslint": "^9.17.0",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.18.1",
+    "vitest": "^3.0.0"
+  },
+  "overrides": {
+    "vite": "^6.4.3"
+  }
+}
