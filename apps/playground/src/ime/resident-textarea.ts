@@ -1,9 +1,9 @@
-// 最小版・常駐 textarea（DD-002 新 Phase 2）。
+// 常駐 textarea（DD-002 Phase 3・状態機械本統合）。
 //
-// 目的は「状態機械を作る前に実 IME の生挙動を採取する」こと。ここでは高度な制御
-// （確定 Enter 抑止 = §11.5 の suppressCommitUntilKeyup 互換層など）を入れず、
-// 生イベントをそのまま観察できるよう **最小の commit/cancel だけ** を行う。
-// 本格的な編集状態機械（editor-state-machine.ts）は Phase 3 で実トレース確認後に作る。
+// Phase 2 の最小版（暫定 commit/cancel）を廃し、編集状態機械（editor-state-machine）の
+// 出力エフェクトで textarea・cell-store・選択（activeCell）を駆動する。activeCell の
+// 所有権は状態機械へ一本化した（DA #2）。DOM イベントは「記録（preventDefault 前）→
+// 状態機械への入力へ変換 → dispatch → エフェクト適用」の薄いアダプタに徹する。
 //
 // §11.3 常駐 textarea 原則を守る:
 // - グリッドに 1 個だけ生成し破棄しない（destroy まで保持）
@@ -11,10 +11,7 @@
 // - アクティブセル位置へ配置（IME 候補ウィンドウの基準をセル近傍に保つ）
 // - Navigation 中は値を空にし、直接入力で置換編集
 // - F2 / ダブルクリック時だけ既存値を設定
-// - composition 中に value / selection / DOM 親を変更しない（背景色の paint のみ許容）
-//
-// 本モジュールは DOM に依存する「配線アダプタ」。DOM 非依存のロジック（recorder の整形・
-// ナビゲーション計算）は event-recorder / navigation が担う。
+// - composition 中に value / selection / DOM 親を変更しない（背景色・アウトラインの paint のみ許容・I-3）
 
 import type {
   EventRecorder,
@@ -23,19 +20,13 @@ import type {
   RecorderEventSnapshot,
   TraceEnvironment,
 } from './event-recorder';
-import { type CellPosition, type GridLayout, cellRect } from '../grid/geometry';
+import {
+  type EditorStateMachine,
+  type Effect,
+  createEditorStateMachine,
+} from './editor-state-machine';
+import { type CellPosition, type GridLayout, cellKey, cellRect } from '../grid/geometry';
 import { type CellStore } from '../grid/cell-store';
-import { type NavigationDirection, keyToDirection } from '../grid/navigation';
-
-/** main が保持するアクティブセルへの読み書き（Phase 2 は main 所有。Phase 3 で machine へ一本化）。 */
-export interface EditorSelection {
-  /** 現在のアクティブセル。 */
-  get(): CellPosition;
-  /** アクティブセルを設定し再描画する（pointerdown 選択）。 */
-  set(cell: CellPosition): void;
-  /** 指定方向へ 1 セル移動し再描画する（端はクランプ）。 */
-  move(direction: NavigationDirection): void;
-}
 
 export interface ResidentEditorOptions {
   /** textarea を配置するスクロールコンテナ（position: relative・グリッドと一緒にスクロール）。 */
@@ -44,27 +35,28 @@ export interface ResidentEditorOptions {
   readonly pointerTarget: HTMLElement;
   readonly layout: GridLayout;
   readonly store: CellStore;
-  readonly selection: EditorSelection;
   readonly recorder: EventRecorder;
   /** 記録時の環境を供給する（trace-panel の ime 手入力を反映）。 */
   readonly getEnvironment: () => TraceEnvironment;
-  /** 記録・状態変化のたびに呼ぶ（パネル更新など）。 */
-  readonly onActivity?: () => void;
+  /** activeCell / 競合 / 記録が変化するたびに呼ぶ（Canvas 再描画・パネル更新）。 */
+  readonly onViewChange?: () => void;
 }
 
 export interface ResidentEditor {
-  /** 常駐 textarea へフォーカスする（入力受け口を 1 本に保つ・§11.9 I-5）。 */
+  /** 常駐 textarea へフォーカスする（入力受け口を 1 本に保つ・I-5）。 */
   focus(): void;
-  /** textarea をアクティブセル位置へ再配置する。 */
-  place(): void;
-  /** F2 / ダブルクリック相当。既存値を読み込んで編集開始（キャレット末尾）。 */
-  beginExisting(cell: CellPosition): void;
-  /** 編集中なら現在の draft を確定する（移動しない。pointerdown 選択の前段）。 */
-  commit(): void;
-  /** 編集中か。 */
-  isEditing(): boolean;
-  /** IME 変換中か（変換中は移動・再配置で composition を壊さない・§11.6/I-3）。 */
+  /** 現在のアクティブセル（状態機械が正・DA #2）。 */
+  getActiveCell(): CellPosition;
+  /** 競合インジケーター対象セルのキー集合（§11.7・描画用）。 */
+  getConflictCells(): ReadonlySet<string>;
+  /** IME 変換中か（main の pointer 判断・エビデンス用）。 */
   isComposing(): boolean;
+  /** Canvas クリック（main が hitTest 済み。null=ヘッダー/範囲外）。状態機械の pointerdown へ写す。 */
+  pointerdownCell(cell: CellPosition | null): void;
+  /** Canvas ダブルクリック（既存値編集開始）。 */
+  doubleClickCell(cell: CellPosition): void;
+  /** リモート更新の投入（Phase 4 シミュレーター）。store 反映 + 競合マーク（§11.7）。 */
+  applyRemoteUpdate(cell: CellPosition, value: string | null): void;
   /** リスナー解除と textarea 除去。 */
   destroy(): void;
 }
@@ -73,19 +65,26 @@ export interface ResidentEditor {
 const EDITING_BACKGROUND = '#ffffff';
 /** グリッドのセル文字と揃えるフォント（grid-view と一致させる）。 */
 const CELL_FONT = '13px system-ui, sans-serif';
+/** 競合インジケーター色（grid-view の conflict と揃える）。 */
+const CONFLICT_COLOR = '#d93025';
 
 /**
- * 最小版・常駐 textarea を生成する。
+ * 常駐 textarea を生成し、編集状態機械と本統合する。
  */
 export function createResidentEditor(options: ResidentEditorOptions): ResidentEditor {
-  const { host, pointerTarget, layout, store, selection, recorder } = options;
+  const { host, pointerTarget, layout, store, recorder } = options;
   const abort = new AbortController();
   const { signal } = abort;
+
+  const machine: EditorStateMachine = createEditorStateMachine({
+    layout,
+    initialCell: { row: 0, col: 0 },
+    getCellValue: (cell) => store.get(cell),
+  });
 
   const textarea = document.createElement('textarea');
   textarea.className = 'cell-editor';
   textarea.setAttribute('aria-label', 'セル入力');
-  // 1 行入力として扱う（改行はグリッド移動へ割り当てるため spellcheck 等も抑制）。
   textarea.rows = 1;
   textarea.spellcheck = false;
   textarea.autocapitalize = 'off';
@@ -105,30 +104,123 @@ export function createResidentEditor(options: ResidentEditorOptions): ResidentEd
   textarea.style.zIndex = '5';
   host.appendChild(textarea);
 
-  // 最小の編集モード。'navigation'（未編集・空）/ 'editing'（編集中）。
-  // 状態機械ではない（Phase 3）。composing は trace の状態ラベルと介入抑止の判断に使う。
-  let mode: 'navigation' | 'editing' = 'navigation';
-  let composing = false;
+  // --- textarea 配置・見た目（composition 中は value/位置を触らない・I-3） ---
 
-  const currentStateLabel = (): string => {
-    if (mode === 'navigation') {
+  const place = (): void => {
+    if (machine.isComposing()) {
+      return;
+    }
+    const rect = cellRect(layout, machine.getActiveCell());
+    textarea.style.left = `${rect.x}px`;
+    textarea.style.top = `${rect.y}px`;
+    textarea.style.width = `${rect.width}px`;
+    textarea.style.height = `${rect.height}px`;
+  };
+
+  const focus = (): void => {
+    textarea.focus();
+  };
+
+  /**
+   * §11.6 スクロール追従（方式2）: コンテナスクロール時も textarea をセル位置へ再配置する。
+   * cellRect はスクロール非依存のコンテンツ座標なので、位置のみ再設定する（value/selection/
+   * DOM 親は変更しない・I-3）。composition 中も安全に呼べる（強制 blur/commit をしない）。
+   */
+  const followScroll = (): void => {
+    const rect = cellRect(layout, machine.getActiveCell());
+    textarea.style.left = `${rect.x}px`;
+    textarea.style.top = `${rect.y}px`;
+    textarea.style.width = `${rect.width}px`;
+    textarea.style.height = `${rect.height}px`;
+  };
+
+  /** エフェクト適用後の見た目整合（Navigation=空/透明・編集=白・競合=赤枠）。 */
+  const reconcile = (): void => {
+    if (!machine.isComposing()) {
+      place();
+      if (machine.getPhase() === 'Navigation') {
+        if (textarea.value !== '') {
+          textarea.value = '';
+        }
+        textarea.style.background = 'transparent';
+      } else {
+        textarea.style.background = EDITING_BACKGROUND;
+      }
+    }
+    // 競合アウトライン（paint のみ・composition 中も可）。編集セル＝activeCell に競合マークが立つ。
+    const conflicted = machine.getConflictCells().has(cellKey(machine.getActiveCell()));
+    textarea.style.outline = conflicted ? `2px solid ${CONFLICT_COLOR}` : 'none';
+  };
+
+  const applyEffect = (effect: Effect): void => {
+    switch (effect.type) {
+      case 'BeginEdit':
+        place();
+        if (effect.mode === 'existing') {
+          // F2 / ダブルクリックのときだけ既存値を載せる（§11.3・§11.4）。キャレット末尾。
+          textarea.value = effect.initialValue;
+          const caret = textarea.value.length;
+          textarea.setSelectionRange(caret, caret);
+        }
+        // mode='replace' は value を触らない（直接入力の生値 / composition をそのまま使う・I-3）。
+        textarea.style.background = EDITING_BACKGROUND;
+        focus();
+        break;
+      case 'Commit':
+        // 値の正は input 後の draft（I-1）。整形しない。
+        store.set(effect.cell, effect.value);
+        break;
+      case 'Move':
+      case 'MoveTo':
+      case 'Cancel':
+        // Navigation へ戻る: 空・透明にして activeCell へ再配置し、フォーカスを保つ（I-5）。
+        place();
+        textarea.value = '';
+        textarea.style.background = 'transparent';
+        textarea.style.outline = 'none';
+        focus();
+        break;
+      case 'UpdateDraft':
+      case 'MarkConflict':
+      case 'SetPendingNavigation':
+      case 'ClearPendingNavigation':
+      case 'SuppressKey':
+        // UpdateDraft: textarea は生値が正のため書き換えない（I-1/I-3）。
+        // MarkConflict: 見た目は reconcile が反映。SuppressKey: preventDefault は keydown 側で実施。
+        break;
+    }
+  };
+
+  const applyEffects = (effects: readonly Effect[]): void => {
+    for (const effect of effects) {
+      applyEffect(effect);
+    }
+    reconcile();
+    options.onViewChange?.();
+  };
+
+  // --- 記録（イベント受信直後・preventDefault より前に呼ぶ = DA #5） ---
+
+  const phaseLabel = (): string => {
+    const phase = machine.getPhase();
+    if (phase === 'Navigation') {
       return 'Navigation';
     }
-    return composing ? 'Composing' : 'Editing';
+    if (phase === 'Composing') {
+      return 'Composing';
+    }
+    return 'Editing';
   };
 
   const currentContext = (): RecorderContext => ({
     environment: options.getEnvironment(),
-    state: currentStateLabel(),
-    activeCell: selection.get(),
+    state: phaseLabel(),
+    activeCell: machine.getActiveCell(),
   });
 
-  // --- 記録（イベント受信直後・preventDefault より前に呼ぶ = DA #5） ---
-
-  const readSnapshotBase = (type: RecordedEventType): Pick<
-    RecorderEventSnapshot,
-    'type' | 'timestamp' | 'value' | 'selectionStart' | 'selectionEnd'
-  > => ({
+  const readSnapshotBase = (
+    type: RecordedEventType,
+  ): Pick<RecorderEventSnapshot, 'type' | 'timestamp' | 'value' | 'selectionStart' | 'selectionEnd'> => ({
     type,
     timestamp: Math.round(performance.now()),
     value: textarea.value,
@@ -138,25 +230,14 @@ export function createResidentEditor(options: ResidentEditorOptions): ResidentEd
 
   const record = (snapshot: RecorderEventSnapshot): void => {
     recorder.record(snapshot, currentContext());
-    options.onActivity?.();
   };
 
   const recordKeyboard = (type: 'keydown' | 'keyup', event: KeyboardEvent): void => {
-    record({
-      ...readSnapshotBase(type),
-      key: event.key,
-      code: event.code,
-      isComposing: event.isComposing,
-    });
+    record({ ...readSnapshotBase(type), key: event.key, code: event.code, isComposing: event.isComposing });
   };
 
   const recordInput = (type: 'beforeinput' | 'input', event: InputEvent): void => {
-    record({
-      ...readSnapshotBase(type),
-      inputType: event.inputType,
-      data: event.data,
-      isComposing: event.isComposing,
-    });
+    record({ ...readSnapshotBase(type), inputType: event.inputType, data: event.data, isComposing: event.isComposing });
   };
 
   const recordComposition = (
@@ -170,140 +251,21 @@ export function createResidentEditor(options: ResidentEditorOptions): ResidentEd
     record(readSnapshotBase(type));
   };
 
-  // --- 最小の編集ライフサイクル ---
-
-  const place = (): void => {
-    // composition 中は DOM 位置を動かさない（I-3）。Navigation ではアクティブセルへ追従。
-    if (composing) {
-      return;
-    }
-    const rect = cellRect(layout, selection.get());
-    textarea.style.left = `${rect.x}px`;
-    textarea.style.top = `${rect.y}px`;
-    textarea.style.width = `${rect.width}px`;
-    textarea.style.height = `${rect.height}px`;
-  };
-
-  const focus = (): void => {
-    textarea.focus();
-  };
-
-  // 直接入力（非 IME）/ compositionstart で置換編集を開始する。
-  // textarea は Navigation 中は空なので、入力済み文字がそのまま draft になる（value を触らない・I-3）。
-  const enterEditingReplace = (): void => {
-    if (mode === 'editing') {
-      return;
-    }
-    mode = 'editing';
-    textarea.style.background = EDITING_BACKGROUND;
-  };
-
-  const endEditing = (): void => {
-    mode = 'navigation';
-    composing = false;
-    textarea.value = '';
-    textarea.style.background = 'transparent';
-  };
-
-  const commit = (): void => {
-    if (mode !== 'editing') {
-      return;
-    }
-    // 値の正は input 後の textarea.value（I-1）。整形しない。
-    store.set(selection.get(), textarea.value);
-    endEditing();
-    place();
-  };
-
-  const commitAndMove = (direction: NavigationDirection): void => {
-    commit();
-    selection.move(direction);
-    place();
-    focus();
-  };
-
-  const cancelEdit = (): void => {
-    endEditing();
-    place();
-    focus();
-  };
-
-  const beginExisting = (cell: CellPosition): void => {
-    selection.set(cell);
-    place();
-    mode = 'editing';
-    // F2 / ダブルクリックのときだけ既存値を設定（§11.3・§11.4）。
-    textarea.value = store.get(cell);
-    const caret = textarea.value.length;
-    textarea.setSelectionRange(caret, caret);
-    textarea.style.background = EDITING_BACKGROUND;
-    focus();
-    options.onActivity?.();
-  };
-
-  // --- keydown の最小制御（記録は済み。ここでは生挙動を極力変えない） ---
-
-  const handleKeydown = (event: KeyboardEvent): void => {
-    // 変換中は一切介入しない（確定 Enter を通常 Enter 扱いしない = §11.9 I-4 / 生挙動観察）。
-    if (event.isComposing) {
-      return;
-    }
-
-    if (mode === 'editing') {
-      if (event.key === 'Enter') {
-        event.preventDefault();
-        commitAndMove(event.shiftKey ? 'up' : 'down');
-      } else if (event.key === 'Tab') {
-        // Tab の既定（フォーカス移動）を止め、単一 textarea を維持する（I-5）。
-        event.preventDefault();
-        commitAndMove(event.shiftKey ? 'left' : 'right');
-      } else if (event.key === 'Escape') {
-        event.preventDefault();
-        cancelEdit();
-      }
-      // 文字・Backspace 等は textarea の既定編集に委ねる（draft は input で反映）。
-      return;
-    }
-
-    // Navigation 中。
-    const direction = keyToDirection({ key: event.key, shiftKey: event.shiftKey });
-    if (direction !== null) {
-      // Enter/Tab/矢印 は移動（textarea への改行・フォーカス移動を止める）。
-      event.preventDefault();
-      selection.move(direction);
-      place();
-      return;
-    }
-    if (event.key === 'F2') {
-      event.preventDefault();
-      beginExisting(selection.get());
-      return;
-    }
-    if (event.key === 'Delete') {
-      event.preventDefault();
-      store.clear(selection.get());
-      return;
-    }
-    // 印字可能キー等は textarea の既定入力に委ね、input/compositionstart で編集開始する
-    // （§11.9: 文字キーを検出してから input を生成・focus しない）。
-  };
-
-  // --- DOM リスナー（記録を最優先。preventDefault より前） ---
+  // --- DOM リスナー（記録 → 状態機械 dispatch → エフェクト適用） ---
 
   textarea.addEventListener(
     'compositionstart',
     (event) => {
       recordComposition('compositionstart', event);
-      composing = true;
-      enterEditingReplace();
+      applyEffects(machine.dispatch({ type: 'compositionstart' }));
     },
     { signal },
   );
   textarea.addEventListener(
     'compositionupdate',
     (event) => {
-      // draft は input 後の value が正（I-1）。ここでは記録のみで value を触らない。
       recordComposition('compositionupdate', event);
+      applyEffects(machine.dispatch({ type: 'compositionupdate', data: event.data }));
     },
     { signal },
   );
@@ -311,8 +273,7 @@ export function createResidentEditor(options: ResidentEditorOptions): ResidentEd
     'compositionend',
     (event) => {
       recordComposition('compositionend', event);
-      // 確定テキストは後続 input で value に載る（I-1）。最小版では追加処理をしない。
-      composing = false;
+      applyEffects(machine.dispatch({ type: 'compositionend', data: event.data }));
     },
     { signal },
   );
@@ -320,21 +281,24 @@ export function createResidentEditor(options: ResidentEditorOptions): ResidentEd
     'beforeinput',
     (event) => {
       recordInput('beforeinput', event);
-      // 生挙動観察のため beforeinput を抑止しない。
+      // 値の正は input（I-1）。beforeinput は記録のみで抑止しない。
     },
     { signal },
   );
   textarea.addEventListener(
     'input',
     (event) => {
-      // 'input' は DOM lib で汎用 Event 型のため InputEvent へ型ガードで絞り込む
-      // （textarea のユーザー入力は常に InputEvent。プログラム的な value 設定では発火しない）。
+      // textarea のユーザー入力は常に InputEvent（プログラム的 value 設定では発火しない）。
       if (event instanceof InputEvent) {
         recordInput('input', event);
-      }
-      // 非 IME の直接入力はここで編集開始（compositionstart を伴わない ASCII など）。
-      if (mode === 'navigation') {
-        enterEditingReplace();
+        applyEffects(
+          machine.dispatch({
+            type: 'input',
+            value: textarea.value,
+            isComposing: event.isComposing,
+            inputType: event.inputType,
+          }),
+        );
       }
     },
     { signal },
@@ -343,7 +307,20 @@ export function createResidentEditor(options: ResidentEditorOptions): ResidentEd
     'keydown',
     (event) => {
       recordKeyboard('keydown', event);
-      handleKeydown(event);
+      const effects = machine.dispatch({
+        type: 'keydown',
+        key: event.key,
+        code: event.code,
+        isComposing: event.isComposing,
+        shiftKey: event.shiftKey,
+        altKey: event.altKey,
+      });
+      // 状態機械が消費したキー（Move/Commit/Cancel/BeginEdit/SuppressKey）は既定動作を止める
+      // （改行・フォーカス移動・確定 Enter の二重発火を防ぐ）。空エフェクトは既定に委ねる。
+      if (effects.length > 0) {
+        event.preventDefault();
+      }
+      applyEffects(effects);
     },
     { signal },
   );
@@ -351,16 +328,34 @@ export function createResidentEditor(options: ResidentEditorOptions): ResidentEd
     'keyup',
     (event) => {
       recordKeyboard('keyup', event);
+      applyEffects(machine.dispatch({ type: 'keyup', key: event.key, isComposing: event.isComposing }));
     },
     { signal },
   );
-  textarea.addEventListener('focus', () => recordSimple('focus'), { signal });
-  textarea.addEventListener('blur', () => recordSimple('blur'), { signal });
+  textarea.addEventListener(
+    'focus',
+    () => {
+      recordSimple('focus');
+      applyEffects(machine.dispatch({ type: 'focus' }));
+    },
+    { signal },
+  );
+  textarea.addEventListener(
+    'blur',
+    () => {
+      recordSimple('blur');
+      applyEffects(machine.dispatch({ type: 'blur' }));
+    },
+    { signal },
+  );
   // pointerdown は textarea 外（別セルクリック）も採るため範囲を広げ、capture で最早記録する。
+  // 論理的な pointerdown（セル選択・pendingNavigation 判定）は main が pointerdownCell で投入する。
   pointerTarget.addEventListener('pointerdown', () => recordSimple('pointerdown'), {
     signal,
     capture: true,
   });
+  // §11.6 方式2: スクロール追従（位置のみ・composition 中も value/selection/DOM は不変）。
+  host.addEventListener('scroll', followScroll, { signal });
 
   // 初期配置とフォーカス（入力受け口を textarea 一本に固定・DA #3）。
   place();
@@ -368,11 +363,32 @@ export function createResidentEditor(options: ResidentEditorOptions): ResidentEd
 
   return {
     focus,
-    place,
-    beginExisting,
-    commit,
-    isEditing: () => mode === 'editing',
-    isComposing: () => composing,
+    getActiveCell: () => machine.getActiveCell(),
+    getConflictCells: () => machine.getConflictCells(),
+    isComposing: () => machine.isComposing(),
+    pointerdownCell: (cell) => {
+      const effects =
+        cell === null
+          ? machine.dispatch({ type: 'pointerdown', target: 'outside' })
+          : machine.dispatch({ type: 'pointerdown', target: 'cell', cell });
+      applyEffects(effects);
+      // クリック選択後は入力受け口を textarea に戻す（変換中は自然な blur/compositionend に委ねる）。
+      if (cell !== null && !machine.isComposing()) {
+        focus();
+      }
+    },
+    doubleClickCell: (cell) => {
+      applyEffects(machine.dispatch({ type: 'doubleClick', cell }));
+    },
+    applyRemoteUpdate: (cell, value) => {
+      // §11.7: リモート値は cell-store（Canvas の正）へ反映する（textarea/draft は書き換えない）。
+      if (value === null) {
+        store.clear(cell);
+      } else {
+        store.set(cell, value);
+      }
+      applyEffects(machine.dispatch({ type: 'remoteUpdate', cell, value }));
+    },
     destroy: () => {
       abort.abort();
       textarea.remove();

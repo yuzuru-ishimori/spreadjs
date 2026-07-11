@@ -2,7 +2,7 @@
 
 | 作成日 | 更新日 | ステータス | 補足 |
 |--------|--------|-----------|------|
-| 2026-07-11 | 2026-07-11 | 進行中 | Phase 2完了＋合成リファレンス生成。Phase 3（状態機械TDD）着手。実機IME検証はPhase 6 |
+| 2026-07-11 | 2026-07-11 | 進行中 | Phase 3-5実装完了（状態機械TDD・シミュレーター・手順書・Codex）。E2Eと実機IME検証はPhase 6/主セッション |
 
 > アプローチ: トレース先行（実IMEの生イベントを先に採取し、scenarios.md と状態機械を実挙動から確定）＋TDD（確定後の編集状態機械）＋標準（Canvasグリッド土台・手順書・実機試験）
 
@@ -22,7 +22,11 @@
 - **実装先**: playground 内で完結（§17.1 の playground 役割＝「単体検証・IME event recorder」）。編集状態機械・event recorder は **DOM型に依存しない分離モジュール**（`src/ime/`）とし、将来 `sheet-editor-ime` へ移設しやすくする。UI配線（DOMイベント→状態機械入力の変換）は薄いアダプタに隔離する。
 - **検証は二層**: (a) 自動＝状態機械ユニットテスト（vitest・synthetic イベント列で駆動。**実採取トレースを再生素材に使う**）＋基本操作E2E（Playwright・dev依存のみ）。(b) 手動＝ユーザーの Windows 11 実機での実IME受入試験（手順書 `DD-002/manual-ime-test-guide.md` を成果物に含める）。
 - **ユーザー確認ゲートは2回のみ**（下記 Phase 2末・Phase 6）。それ以外の Phase（状態機械・シミュレーター・E2E 等の内部詳細）は、合意済みスコープ内であれば DA・テスト・Codexレビューを通過した時点で**停止せず継続**する。仕様・受け入れ基準・ユーザー体験を変える必要が生じたときのみ停止する。
-- **変換中スクロール**: §11.6 の3方式比較は行わず、1方式（textarea のセル追従＝方式2）＋残り方式の比較メモに留める（過剰実装回避。方式確定は Phase 4）。
+- **変換中スクロール（§11.6・方式2採用の比較メモ／Phase 4確定）**: 3方式を比較し、PoCは**方式2（textareaをセルへ位置追従）**を採用した。
+  - **方式1（編集セルを画面内へクランプ）**: スクロールしても編集セルを常に可視域へ引き戻す。実装は重く、ユーザーのスクロール意図を奪う（見たい別セルを見られない）。変換中の強制スクロールはIMEを乱す恐れ。→不採用。
+  - **方式2（textareaをセルへ追従・採用）**: textareaは`#grid-scroll`（position:relative）内の絶対配置で、cellRectのコンテンツ座標に置くためスクロールでCanvasと一体に動く（CSSで自然追従）。`scroll`イベントで位置のみ再アサート（`followScroll`）。**value/selection/DOM親は不変**（I-3）で変換を壊さず、強制blur/commitもしない。実装が最軽量でブラウザー差が最小。
+  - **方式3（編集セルをoverlayへ固定表示）**: スクロールは自由だが編集セルだけ別レイヤーで固定。座標の二重管理・zIndex/クリップ処理が増え、候補ウィンドウ基準位置がずれやすい。→過剰。
+  - 実機での追従精度・変換中スクロール時の候補ウィンドウ挙動はPhase 6手順書§8で観察する。
 - **スコープ外**: paste（recorderでは記録のみ）・セル内改行（Alt+Enter は手動試験の観察項目のみ）・複数セル選択・undo・数式・仮想スクロール/大量行（PoC-B）・実サーバー同期（PoC-C。リモート更新はローカルシミュレーターで代替）。
 - **ADR**: PoC-A 固有の新規ADRなし（ADR-002「Canvas 2D＋常駐textarea」は Accepted 済みで、本PoCはその成立性検証。結果はDD本文・トレース・手順書に記録し、Phase 0 判定〔ロードマップ⑥〕の材料にする）。
 
@@ -108,30 +112,31 @@
 - [x] 📊 **トレース分析（方針確定）**: scenarios.md の Q-1〜5・S-D3/D5 は仮決めどおり確定済み（ユーザー合意）。確定Enterの順序A/B差は合成リファレンスで表現し、Phase 3 で両方コード化（DA #1）。実機での順序差・Chrome/Edge差・Google固有差はPhase 6で確認する（scenarios.md変更が要る差異が出たらそこで反映）
 
 ### Phase 3: 編集状態機械（TDD）＋常駐textarea本統合
-- [ ] 📐 **実装前詳細化**（Phase 2トレースを踏まえ、状態機械の入出力・§11.5互換層〔suppressCommitUntilKeyup 等〕の具体条件・activeCell所有権の machine 一本化〔DA #2〕を確定）
-- [ ] **Red**: 確定済み `DD-002/scenarios.md` を `apps/playground/src/ime/editor-state-machine.test.ts`（新規）へコード化（synthetic composition/keyboard/input 列＝**実採取トレースを再生素材に使う**）→ 全件失敗を確認。S-D3（順序A）とS-D5（順序B）は必ず両方コード化（DA #1）
-- [ ] **Green**: `apps/playground/src/ime/editor-state-machine.ts`（新規・DOM型非依存）: §11.2 の5状態と遷移、§11.5 原則（input後value正・keyCode 229非依存・isComposing＋内部state併用・`suppressCommitUntilKeyup` 互換層）、変換中クリックの pendingNavigation（§11.6）、リモート更新時 MarkConflictOnly（§11.7）を実装 → 全件成功
-- [ ] `apps/playground/src/ime/resident-textarea.ts`（改修）: 最小版を状態機械と本統合（DOMイベント→状態機械入力への変換アダプタ・状態機械出力に応じた value/配置更新）
-- [ ] `apps/playground/src/main.ts`: 状態機械の出力（編集開始・commit・cancel・移動・置換/既存値編集）を cell-store / navigation / grid-view へ配線（直接入力・F2・ダブルクリック・Escape・Delete を含む）
-- [ ] **Refactor** + 🔬 **機械検証**: `npm run test` → 状態機械テスト全pass / `typecheck` / `lint` → green
-- [ ] 😈 **DA批判レビュー**（§11.9 禁止事項への違反がないかを必須観点にする）
+- [x] 📐 **実装前詳細化**（状態機械の入出力〔`EditorEvent`/`Effect`〕・§11.5互換層〔`suppressCommitUntilKeyup`＝compositionend時セット・keyup{Enter}で解除〕・composition取消/確定の判別〔`escapePressedDuringComposition`〕・activeCell所有権の machine 一本化〔DA #2〕を確定）
+- [x] **Red→Green**: `apps/playground/src/ime/editor-state-machine.test.ts`（新規・44シナリオ＋順序A/B/direct再生＝計47件）へ scenarios.md をコード化。S-D3（順序A）とS-D5（順序B）を両方コード化（DA #1）。合成リファレンス3本と同一イベント列をインライン再生素材にした（playground tsconfigは`types:[]`でnode型を含まないためファイル読込ではなくインライン化）
+- [x] **Green**: `apps/playground/src/ime/editor-state-machine.ts`（新規・DOM型非依存）: §11.2 の5状態と遷移、§11.5 原則（input後value正・keyCode 229/key"Process"非依存・isComposing＋内部state併用・`suppressCommitUntilKeyup` 互換層）、変換中クリックの pendingNavigation（§11.6・Q-3破棄）、リモート更新時 MarkConflictOnly（§11.7）、Q-1 Backspace/Q-4 blur=commit を実装 → 47件 pass
+- [x] `apps/playground/src/ime/resident-textarea.ts`（改修）: 最小版の暫定commit/cancelを廃し状態機械と本統合（DOMイベント→`EditorEvent`変換・`Effect`適用〔applyEffect/reconcile〕・activeCell所有権を machine へ一本化）
+- [x] `apps/playground/src/main.ts`: activeCell/競合を`editor.getActiveCell()/getConflictCells()`から読む配線へ変更。pointerdown/dblclickを`editor.pointerdownCell/doubleClickCell`へ委譲（変換中判定・commit・pendingNavigationは状態機械が担う）
+- [x] **Refactor** + 🔬 **機械検証**: `npm run test`（**102件 pass**・状態機械47件）／`typecheck`／`lint`／`build` → green
+- [x] 😈 **DA批判レビュー**（§11.9 全7項目を確認＝下記記録 #8。文字キー後input生成なし／composition中の再マウント・value整形・サーバー値反映なし／確定Enter通常扱いなし／focus付け替えなし）
 
 ### Phase 4: リモート更新シミュレーター・スクロール追従
-- [ ] `apps/playground/src/sim/remote-update-simulator.ts`（新規）: 「編集中セルへ書込」「他セルへ書込」「インターバル連続書込（再描画誘発）」操作 → cell-store 更新。§11.7 準拠（textarea不変・Canvas再描画・競合インジケーター表示）
-- [ ] スクロール追従（§11.6）: コンテナスクロール時に textarea をセル位置へ再配置（composition中も value/selection/DOM は不変）。採用1方式（方式2）と残り2方式の比較メモを本DD検討内容へ追記
-- [ ] 📸 **エビデンス**: シミュレーターUI＋競合インジケーター表示のキャプチャ（`DD-002/` へ配置）
-- [ ] 🔬 **機械検証**: `npm run dev` → 変換中相当の編集中に他セル書込→編集値保持、連続書込で再描画されても draft 不変、スクロール追従をスモーク確認。`test`/`typecheck`/`lint` → green
-- [ ] 😈 **DA批判レビュー**（シミュレーターと§11.7の乖離・スクロール中のtextarea座標ズレ）
+- [x] `apps/playground/src/sim/remote-update-simulator.ts`（新規）: 「編集中セルへ書込」「他セルへ書込」「インターバル連続書込（再描画誘発）」操作 → `editor.applyRemoteUpdate` 経由で cell-store 更新。§11.7 準拠（textarea不変・Canvas再描画・競合インジケーター表示）。セル選択は純粋関数 `pickDistinctCell` に分離しユニットテスト（`remote-update-simulator.test.ts`＝6件）
+- [x] スクロール追従（§11.6・方式2）: `resident-textarea.ts` の `followScroll` を host の scroll に配線。位置のみ再配置（composition中も value/selection/DOM は不変・I-3）。3方式の比較メモを本DD検討内容へ追記済み
+- [x] `apps/playground/index.html`／`main.ts`: シミュレーターUI（編集中セルへ書込／他セルへ書込／連続書込 開始・停止）を追加・配線
+- [ ] 📸 **エビデンス**: シミュレーターUI＋競合インジケーター表示のキャプチャ（`DD-002/` へ配置）**※主セッションキャプチャ要（本エージェントにPlaywright MCPなし）**
+- [x] 🔬 **機械検証（自動分）**: `test`（102件）／`typecheck`／`lint`／`build` → green。**※`npm run dev` の変換中書込・連続書込・スクロール追従の目視スモークは主セッション（📸）で実施**
+- [x] 😈 **DA批判レビュー**（下記記録 #9。シミュレーターは必ず `applyRemoteUpdate` 経由で§11.7契約を維持／`followScroll` はコンテンツ座標で座標ズレなし・位置のみ変更）
 
 ### Phase 5: 基本操作E2E・手動試験手順書・Codexレビュー
-- [ ] Playwright 導入（ルート devDependencies に `@playwright/test`・`apps/playground/e2e/`＋設定。vitest 対象と分離。ランタイム依存は追加しない。webServer は明示ポート＋strictPort でポート競合を避ける）
-- [ ] `apps/playground/e2e/basic-operations.spec.ts`（新規）: クリック選択→矢印/Enter/Shift+Enter/Tab/Shift+Tab→直接入力で既存値置換→F2既存値編集→Escape取消→移動直後の再入力（受け入れ#3の自動分）
-- [ ] `apps/playground/e2e/synthetic-composition.spec.ts`（新規）: synthetic composition 列の再生で状態遷移・確定Enter抑止をスモーク確認（実IMEの代替ではない旨をコメント明記）
-- [ ] `doc/DD/DD-002/manual-ime-test-guide.md`（新規）: 実機手動試験手順書 — 環境情報の記録欄（OS/ブラウザー/IME各バージョン）、受け入れ基準1〜5の手順A〜E（操作・確認項目・回数）、トレースJSONの保存方法（`traces/phase6-acceptance/`）、観察項目（Backspace開始挙動・Alt+Enter・変換中クリック・変換中スクロール・長文変換・文節移動・再変換）
-- [ ] 🔬 **機械検証**: E2E全pass ＋ `npm run test` / `typecheck` / `lint` / `build` → green
-- [ ] 😈 **DA批判レビュー**（E2Eが実IME差を担保しない前提の確認・手順書だけで第三者が再現できるか）
-- [ ] Codexレビュー自動実行（Phase 2〜5 の実装差分。依頼書 `DD-002/codex-review-request.md`〔目的・スコープ・§11.2/11.5/11.9 の設計意図・制約・**対象はDD-002実装差分のみ**を含める〕→ `bash scripts/codex-review.sh` → `DD-002/codex-review-result.md`。effort: high）
-- [ ] Codexレビュー指摘への対応、または見送り理由をログに記録
+- [ ] Playwright 導入（ルート devDependencies に `@playwright/test`・`apps/playground/e2e/`＋設定。vitest 対象と分離。ランタイム依存は追加しない。webServer は明示ポート＋strictPort でポート競合を避ける）**※保留: 並行セッション（DD-003）のnpm install競合回避のため今夜は実装しない。主セッションが後で実施**
+- [ ] `apps/playground/e2e/basic-operations.spec.ts`（新規）: クリック選択→矢印/Enter/Shift+Enter/Tab/Shift+Tab→直接入力で既存値置換→F2既存値編集→Escape取消→移動直後の再入力（受け入れ#3の自動分）**※E2E保留（上記）**
+- [ ] `apps/playground/e2e/synthetic-composition.spec.ts`（新規）: synthetic composition 列の再生で状態遷移・確定Enter抑止をスモーク確認（実IMEの代替ではない旨をコメント明記）**※E2E保留（上記）**
+- [x] `doc/DD/DD-002/manual-ime-test-guide.md`（新規）: 実機手動試験手順書 — 環境情報の記録欄（OS/ブラウザー/IME各バージョン）、受け入れ基準1〜5の手順A〜E（操作・確認項目・回数）、トレースJSONの保存方法（`traces/phase6-acceptance/`）、観察項目（Backspace開始挙動・Alt+Enter・変換中クリック・変換中スクロール・長文変換・文節移動・再変換）
+- [x] 🔬 **機械検証（E2E以外）**: `npm run test`（102件）/ `typecheck` / `lint` / `build` → green。**※E2E全passは保留（Playwright未導入）**
+- [x] 😈 **DA批判レビュー**（手順書だけで第三者が再現できるか＝手順A〜Eに操作/確認/回数/保存先を明記済み。E2Eが実IME差を担保しない前提の確認はE2E実装時＝主セッションへ委譲）
+- [x] Codexレビュー自動実行（依頼書 `DD-002/codex-review-request.md`〔目的・スコープ・§11.2/11.5/11.9 の設計意図・制約・**対象はDD-002のapps/playground実装差分のみ**〕→ `bash scripts/codex-review.sh --uncommitted --effort high` → `DD-002/codex-review-result.md`）
+- [x] Codexレビュー指摘への対応、または見送り理由をログに記録（下記ログ参照）
 
 ### Phase 6: 実機受入試験・合格判定（ユーザー実機作業を含む）★ユーザー実機ゲート2
 - [ ] ユーザーへ実機試験を依頼（Windows 11・手順書 `DD-002/manual-ime-test-guide.md` に従う。対象IME・ブラウザーは決定事項「試験対象環境」＝Microsoft IME／Google日本語入力 × Chrome／Edge）
@@ -192,6 +197,34 @@
 - recorderのcomposition整形はユニット16件で検証済みのためツールは実機採取可能状態。実機採取（`phase2-raw/`）は任意・後日でも可（未採取でもPhase 6で実機確定）
 - 次: Phase 3（編集状態機械 TDD）へ着手。順序A/B両方をコード化（DA #1）
 
+### 2026-07-11（Phase 3-5実装セッション：状態機械TDD・シミュレーター・手順書・Codex）
+
+> ユーザー就寝中・合意済みスコープ（Phase 3〜5、E2E除く）を自律実行。並行セッション（DD-003）と衝突回避のため編集は `apps/playground/**` と `doc/DD/DD-002/**` のみ、`npm install`・`git`・`packages/**`・`collaboration-server` に一切触れず。
+
+- **Phase 3（編集状態機械 TDD ＋ 常駐textarea本統合）**:
+  - `apps/playground/src/ime/editor-state-machine.ts`（新規・**DOM型非依存**）— §11.2 の5状態を実装。入力=`EditorEvent`、出力=`Effect`。§11.5 原則（input後value正・keyCode229/"Process"非依存・isComposing＋内部フラグ併用）。**確定Enter抑止は順序A（composing中Enter→SuppressKey）と順序B（compositionend時 `suppressCommitUntilKeyup`）の両方**（DA #1）。pendingNavigation（§11.6・Q-3破棄）、MarkConflictOnly（§11.7）、Q-1 Backspace＝空EditingReplace、Q-4 非composing blur＝commit。composition取消/確定の判別に `escapePressedDuringComposition` を導入（変換中Escape→compositionend{""}を取消扱いにして誤commit回避＝S-D10/11/E4）。
+  - `apps/playground/src/ime/editor-state-machine.test.ts`（新規）— scenarios.md の44シナリオ（A〜H）をコード化＋合成リファレンス3本（orderA/orderB/direct-input）と同一イベント列をインライン再生。playground tsconfigは`types:[]`でnode型を含まないためファイル読込でなくインライン化（同一データ）。
+  - `resident-textarea.ts` を状態機械と本統合（最小版の暫定commit/cancelを廃止）。DOMイベント→`EditorEvent`変換→`machine.dispatch`→`applyEffect`/`reconcile`。keydownは `effects.length>0` で preventDefault。activeCell所有権を machine へ一本化（DA #2）。
+  - `main.ts` — activeCell/競合を `editor.getActiveCell()/getConflictCells()` から読む配線へ。pointerdown/dblclickを `editor.pointerdownCell/doubleClickCell` へ委譲。
+- **Phase 4（リモート更新シミュレーター・スクロール追従）**:
+  - `apps/playground/src/sim/remote-update-simulator.ts`（新規）＋テスト— 編集中/他セル/連続書込。書込は必ず `editor.applyRemoteUpdate` 経由で §11.7 契約（textarea/draft不変・編集中セルは競合マークのみ）を維持。選択ロジックは純粋関数 `pickDistinctCell` に分離しユニット検証。
+  - スクロール追従（§11.6 **方式2**）— `followScroll` を host の scroll に配線。cellRect（スクロール非依存座標）で位置のみ再設定（I-3）。3方式比較メモを「検討内容」へ追記。
+  - `index.html`／`main.ts` — シミュレーターUI（3ボタン＋状態表示）を追加・配線。
+- **Phase 5（E2E以外）**:
+  - `manual-ime-test-guide.md`（新規）— 実機手動試験手順書（4環境記録欄・受け入れ1〜5の手順A〜E・`traces/phase6-acceptance/` 保存・観察項目・確定Enter順序A/B比較表・合否まとめ）。
+  - **E2E（basic-operations / synthetic-composition）は保留**＝並行セッション（DD-003）の `npm install`（hono/ws）と `@playwright/test` 導入が package-lock 競合を起こすため。該当タスク `[ ]` のまま「主セッションが後で実施」と注記。
+- **機械検証**: `apps/playground` の `npm run test` **103件 pass**（状態機械52＝44シナリオ＋Codex回帰5＋再生3、simulator6、recorder16、grid29）／`typecheck`／`lint`（`any`/`as`/`!`/`console`不使用）／`build` すべて green。※`npm run test`（全体）は DD-003 の未完成 `packages/sheet-core/*.test.ts`（`./apply` 未作成）が2ファイル load 失敗するが**本DDの範囲外**（packages は DD-003 所有・不介入）。dev目視スモークとスクショ📸は主セッション（Playwright MCPなし）へ委譲＝Phase 4📸は `[ ]` のまま。
+- **Codexレビュー（effort high・`--uncommitted`）**: 依頼書で対象を DD-002 の apps/playground 差分に限定（DD-003 は対象外と明記）。findings **5件**（P1×4・P2×1）を全て妥当と判断し**あなた（実装側）が修正**:
+  1. **[P1] I-2 違反**（editor-state-machine.ts）: 変換中判定が内部フラグ/phaseのみで `event.isComposing` を見ていなかった。イベント順差で内部フラグ未設定でも `isComposing:true` の Enter が通常移動になりうる。→ 変換中ガードに `event.isComposing` を追加。回帰テスト追加。
+  2. **[P1] 抑止窓が広すぎ**（同）: `suppressCommitUntilKeyup` が全 compositionend で無条件に立ち、マウス確定/フォーカス変更後の正規 Enter を飲む恐れ。→ 抑止した Enter で self-clear ＋ 任意 keyup / pointerdown / blur / focus / 非Enter keydown で解除し窓を最小化。回帰テスト追加。※完全なマウス確定直後Enterの識別は timing 依存で残余（Phase 6で実機調整）。
+  3. **[P1] 最終input前blurの暫定commit**（同）: `compositionend→blur→input` の順で暫定値（base+data）を commit し、後続の確定 input が Navigation で宙に浮き I-1 違反。→ `EditingAwaitFinalInput` 中の blur は `blurPendingCommit` で保留し、最終 input の確定値で commit。回帰テスト（暫定と異なる最終値で検証）追加。
+  4. **[P1] 競合中ダブルクリックで draft 破棄**（同）: 競合中に別セルをダブルクリックすると Commit を飛ばしたまま既存値編集へ遷移し、draft と競合フラグが黙って消える（S-F5 迂回）。→ 競合中のダブルクリックは無視（破棄しない）。回帰テスト追加。
+  5. **[P2] シミュレーター操作前の blur**（main.ts）: ボタンの既定フォーカス移動で textarea が blur し、変換中リモート更新（§11.7・#4/#5）を検証できない。→ 各ボタンの `mousedown` を preventDefault してフォーカスを保持。
+  - 見送り findings: なし（全件対応）。修正後 `test`（103件）/`typecheck`/`lint`/`build` 再 green。
+- **DA（#8/#9）**: §11.9 全7項目クリア（#8）。シミュレーターの§11.7契約維持・followScroll座標ズレなし（#9）。
+- **停止・要判断**: なし（合意済みスコープ内で完走。仕様・受け入れ基準・UXの変更は不要）。
+- **コミット**: 本セッションでは行っていない（`git` 不実行。主セッションがスコープ指定でコミット）。
+
 ---
 
 ## DA批判レビュー記録
@@ -211,3 +244,5 @@
 | 5 | 0/2 | 生イベントrecorderが `preventDefault` 後に記録すると、抑止されたキーやブラウザー既定挙動が観察できず、トレース先行の目的（実挙動採取）を損なう | 中 | Phase 2 で recorder を preventDefault の後段に置くと確定Enterの生挙動が採れない | テストのための実装・観察妥当性 | **Phase 2 で recorder はイベント受信直後（preventDefault前）に記録**。最小textareaは生挙動を極力変えない（commit最小化）。recorderタスクのチェック項目 → **Phase 2 実装で担保済**（#6） |
 | 6 | 2 | 最小 textarea の commit（Enter/Tab の preventDefault）がイベント順・生挙動を変え、確定Enterの観察を妨げないか | 中 | dev で確定Enter → keydown記録→commit の順、変換中Enterで移動しないことを確認 | テストのための実装・観察妥当性 | record を全リスナー冒頭（preventDefault前）で実行（コードで担保）。**変換中（`event.isComposing`）は preventDefault しない**ため確定Enterの生挙動は無改変で記録される。commit は非composingの Enter/Tab のみ（その生キー列も記録済み）。順序B環境で確定Enterが下移動しうるのは既知・観察対象（手順メモに明記） |
 | 7 | 2 | recorder の取りこぼし（§11.5 監視対象の記録漏れ）で実挙動確定を損なう | 中 | dev で composition→input→keydown 列が漏れなく並ぶか（主セッション Playwright スモーク） | 観察妥当性・回帰 | compositionstart/update/end・beforeinput・input・keydown・keyup・focus・blur・pointerdown を購読（§11.5 準拠）。copy/cut/paste は本Phaseスコープ外（検討内容の scope-out）。整形の網羅は `event-recorder.test.ts`（16件）で検証。取りこぼし最終目視は主セッション Playwright スモークで確認 |
+| 8 | 3 | §11.9 禁止事項の混入（状態機械統合で最も起きやすい） | 高 | `resident-textarea.ts` の applyEffect/reconcile/followScroll を精査 | §11.9 全項目 | 全7項目クリアを確認: ①編集開始は `input`/`compositionstart` 起点で keydown文字推測なし ②composition中は place() が return し再マウント/位置変更なし ③UpdateDraft は DOM 無操作・reconcile は composing 中 value を触らない（value整形なし）④applyRemoteUpdate は store のみ・textarea へサーバー値を入れない ⑤確定Enterは composing/suppress で SuppressKey（通常Enter扱いなし）⑥textarea 1個を destroy まで保持・focus 付け替えなし ⑦React 不使用・値の正は textarea.value。テスト47件で遷移を固定 |
+| 9 | 4 | シミュレーターが §11.7 契約を破る／スクロール追従で座標ズレ | 中 | simulator は store 直書きせず editor.applyRemoteUpdate 経由か・followScroll が composition を壊さないか | §11.7・I-3・回帰 | simulator は `RemoteUpdateSink.applyRemoteUpdate` のみを呼び、store反映+MarkConflictは editor/machine が一元処理（§11.7 の textarea不変・競合マークのみが保たれる）。`followScroll` は cellRect（スクロール非依存のコンテンツ座標）で left/top/width/height のみ再設定＝座標ズレなし・value/selection/DOM不変（I-3）。連続書込中も draft 不変は S-F4 テストで担保 |

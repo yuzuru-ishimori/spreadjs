@@ -47,6 +47,36 @@
         left: 0;
       }
 
+      /* リモート更新シミュレーター（§11.7 検証）。 */
+      .sim-panel {
+        margin-top: 16px;
+        max-width: 1004px;
+        font-size: 12px;
+      }
+
+      .sim-panel__title {
+        font-size: 14px;
+        margin: 0 0 8px;
+      }
+
+      .sim-panel__controls {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .sim-panel__controls button {
+        font: inherit;
+        padding: 4px 10px;
+        cursor: pointer;
+      }
+
+      .sim-panel__hint {
+        color: #777;
+        margin: 6px 0 0;
+      }
+
       /* 生 IME トレースパネル。 */
       .trace-panel {
         margin-top: 16px;
@@ -129,6 +159,19 @@
     </p>
     <div id="grid-scroll">
       <canvas id="grid"></canvas>
+    </div>
+    <div id="sim-panel" class="sim-panel">
+      <h2 class="sim-panel__title">リモート更新シミュレーター（§11.7）</h2>
+      <div class="sim-panel__controls">
+        <button id="sim-active" type="button">編集中セルへ書込（競合）</button>
+        <button id="sim-other" type="button">他セルへ書込</button>
+        <button id="sim-burst" type="button">連続書込 開始</button>
+        <span id="sim-status" class="sim-panel__hint">停止中</span>
+      </div>
+      <p class="sim-panel__hint">
+        変換中に「編集中セルへ書込」→ 競合インジケーター表示・ドラフト保持。「他セル／連続書込」→ Canvas
+        再描画されてもドラフトは消えません（textarea・値・selection は不変）。
+      </p>
     </div>
     <div id="trace-panel"></div>
     <script type="module" src="/src/main.ts"></script>
