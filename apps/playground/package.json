@@ -1,5 +1,5 @@
 {
-  "name": "@spreadjs/playground",
+  "name": "@nanairo-sheet/playground",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@spreadjs/sheet-types": "*",
+    "@nanairo-sheet/sheet-types": "*",
     "vite": "^6.0.5"
   }
 }

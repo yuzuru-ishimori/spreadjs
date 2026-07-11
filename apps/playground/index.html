@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>spreadjs playground</title>
+    <title>spreadjs playground — PoC-A</title>
     <style>
       html,
       body {
@@ -24,17 +24,34 @@
         color: #555;
       }
 
+      /* スクロール検証用の overflow コンテナ（グリッドはこれより大きい）。 */
+      #grid-scroll {
+        width: 680px;
+        height: 440px;
+        overflow: auto;
+        border: 1px solid #bbb;
+        background: #fff;
+        outline: none;
+      }
+
+      #grid-scroll:focus-visible {
+        box-shadow: inset 0 0 0 2px #1a73e8;
+      }
+
       #grid {
         display: block;
-        background: #fff;
-        border: 1px solid #ccc;
       }
     </style>
   </head>
   <body>
-    <h1>spreadjs playground</h1>
-    <p>PoC-A / PoC-B のグリッド描画をここに実装する土台です（現状は空の Canvas）。</p>
-    <canvas id="grid"></canvas>
+    <h1>spreadjs playground — PoC-A グリッド土台</h1>
+    <p>
+      クリック / 矢印 / Enter（下）/ Shift+Enter（上）/ Tab（右）/ Shift+Tab（左）で選択セルを移動できます。
+      編集・IME・リモート更新は後続 Phase で実装します。
+    </p>
+    <div id="grid-scroll" tabindex="0">
+      <canvas id="grid"></canvas>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

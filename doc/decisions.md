@@ -32,4 +32,12 @@
 - **帰結**: 追加のパッケージマネージャ（pnpm 等）やタスクランナー（turborepo/nx）は導入しない。`packages/*` はランタイム依存ゼロを維持し、dev 依存はルートに集約する。パッケージが増えた段階で package boundary lint 等を別 DD で再検討する。
 - **元DD**: DD-001
 
-<!-- 以降、D-003, D-004... と追記していく -->
+## D-003: npm パッケージスコープは `@nanairo-sheet/*`
+
+- **日付**: 2026-07-11
+- **背景**: DD-001 では npm スコープを `@spreadjs/*` で暫定採用していたが、商用スプレッドシート製品「SpreadJS」（GrapeCity/MESCIUS）と名称が衝突し、依存・検索・公開時に混同を招くリスクがあった。
+- **決定**: 全ワークスペースの npm スコープを `@nanairo-sheet/*` に統一する（`@nanairo-sheet/sheet-types`・`@nanairo-sheet/playground`、以降 `@nanairo-sheet/sheet-core` 等も同様）。
+- **帰結**: 新規パッケージは `@nanairo-sheet/*` で作成する。リポジトリ名 `spreadjs` とプロジェクト通称は現状据え置き（必要になれば別途判断）。DD-001（`@spreadjs/*`）は覆され、本決定が正。
+- **元DD**: DD-001（暫定採用）→ ユーザー指摘により D-003 で変更（2026-07-11）
+
+<!-- 以降、D-004, D-005... と追記していく -->
