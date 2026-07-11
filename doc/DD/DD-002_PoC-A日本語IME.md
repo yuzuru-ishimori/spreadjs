@@ -2,7 +2,7 @@
 
 | 作成日 | 更新日 | ステータス | 補足 |
 |--------|--------|-----------|------|
-| 2026-07-11 | 2026-07-11 | 進行中 | Phase 3-5実装＋dev目視で実行時バグ2件修正・エビデンス取得。E2E保留・実機IME検証はPhase 6 |
+| 2026-07-11 | 2026-07-12 | 進行中 | Phase 3-5実装＋dev目視で実行時バグ2件修正。Phase 5 E2E（Playwright 11テスト）実装完了。実機IME検証はPhase 6 |
 
 > アプローチ: トレース先行（実IMEの生イベントを先に採取し、scenarios.md と状態機械を実挙動から確定）＋TDD（確定後の編集状態機械）＋標準（Canvasグリッド土台・手順書・実機試験）
 
@@ -129,11 +129,12 @@
 - [x] 😈 **DA批判レビュー**（下記記録 #9。シミュレーターは必ず `applyRemoteUpdate` 経由で§11.7契約を維持／`followScroll` はコンテンツ座標で座標ズレなし・位置のみ変更）
 
 ### Phase 5: 基本操作E2E・手動試験手順書・Codexレビュー
-- [ ] Playwright 導入（ルート devDependencies に `@playwright/test`・`apps/playground/e2e/`＋設定。vitest 対象と分離。ランタイム依存は追加しない。webServer は明示ポート＋strictPort でポート競合を避ける）**※保留: 並行セッション（DD-003）のnpm install競合回避のため今夜は実装しない。主セッションが後で実施**
-- [ ] `apps/playground/e2e/basic-operations.spec.ts`（新規）: クリック選択→矢印/Enter/Shift+Enter/Tab/Shift+Tab→直接入力で既存値置換→F2既存値編集→Escape取消→移動直後の再入力（受け入れ#3の自動分）**※E2E保留（上記）**
-- [ ] `apps/playground/e2e/synthetic-composition.spec.ts`（新規）: synthetic composition 列の再生で状態遷移・確定Enter抑止をスモーク確認（実IMEの代替ではない旨をコメント明記）**※E2E保留（上記）**
+- [x] Playwright 導入（ルート devDependencies に `@playwright/test`・`apps/playground/e2e/`＋設定。vitest 対象と分離。ランタイム依存は追加しない。webServer は明示ポート＋strictPort でポート競合を避ける）**（2026-07-12 実装: `@playwright/test`^1.61.1 を devDependencies へ・`test:e2e` script・`apps/playground/playwright.config.ts`〔port 5199+strictPort・testDir e2e・vitest の src/**.test.ts と分離〕。`npx playwright install chromium` 成功）**
+- [x] `apps/playground/e2e/basic-operations.spec.ts`（新規）: クリック選択→矢印/Enter/Shift+Enter/Tab/Shift+Tab→直接入力で既存値置換→F2既存値編集→Escape取消→移動直後の再入力（受け入れ#3の自動分）**（2026-07-12 実装・7テスト green）**
+- [x] `apps/playground/e2e/synthetic-composition.spec.ts`（新規）: synthetic composition 列の再生で状態遷移・確定Enter抑止をスモーク確認（実IMEの代替ではない旨をコメント明記）**（2026-07-12 実装・順序A/B 2テスト green）**
+- [x] `apps/playground/e2e/regression.spec.ts`（新規・DA #10）: (a) ロード時コンソールエラー/未捕捉例外0件（TDZ初期化バグ回帰・favicon 404 除外）(b) セルクリック→printable入力で編集開始（クリック時フォーカス喪失バグ回帰）**（2026-07-12 実装・2テスト green）**
 - [x] `doc/DD/DD-002/manual-ime-test-guide.md`（新規）: 実機手動試験手順書 — 環境情報の記録欄（OS/ブラウザー/IME各バージョン）、受け入れ基準1〜5の手順A〜E（操作・確認項目・回数）、トレースJSONの保存方法（`traces/phase6-acceptance/`）、観察項目（Backspace開始挙動・Alt+Enter・変換中クリック・変換中スクロール・長文変換・文節移動・再変換）
-- [x] 🔬 **機械検証（E2E以外）**: `npm run test`（102件）/ `typecheck` / `lint` / `build` → green。**※E2E全passは保留（Playwright未導入）**
+- [x] 🔬 **機械検証（E2E以外）**: `npm run test`（102件）/ `typecheck` / `lint` / `build` → green。**（2026-07-12 追記: E2E も導入・`npm run test:e2e` 11テスト green＝計 basic7/synthetic2/regression2。下記ログ）**
 - [x] 😈 **DA批判レビュー**（手順書だけで第三者が再現できるか＝手順A〜Eに操作/確認/回数/保存先を明記済み。E2Eが実IME差を担保しない前提の確認はE2E実装時＝主セッションへ委譲）
 - [x] Codexレビュー自動実行（依頼書 `DD-002/codex-review-request.md`〔目的・スコープ・§11.2/11.5/11.9 の設計意図・制約・**対象はDD-002のapps/playground実装差分のみ**〕→ `bash scripts/codex-review.sh --uncommitted --effort high` → `DD-002/codex-review-result.md`）
 - [x] Codexレビュー指摘への対応、または見送り理由をログに記録（下記ログ参照）
@@ -241,6 +242,24 @@
 - 修正後 `apps/playground` スコープで `test` 103 pass／`typecheck`／`lint` 再 green。
 - **回帰カバレッジのメモ**: 2件は DOM/ブラウザー統合バグでユニット（node）では検出困難。保留中の Phase 5 E2E（Playwright）に「ロード時エラー0」「クリック→入力」を回帰として必ず含める（E2E実装時のTODO・下記DA #10）。
 
+### 2026-07-12（Phase 5 E2E 実装セッション：Playwright 導入・基本操作/synthetic/回帰 E2E）
+
+> 保留していた Phase 5 E2E を実装（DD-003 完了で `npm install` 競合が解消・並行セッションなし）。編集は `apps/playground/e2e/`・`apps/playground/playwright.config.ts`・ルート `package.json`/lock・本DDのみ。`src/**`・`index.html`・`vite.config.ts` は不変（DD-002 実装は確定済み＝E2E はそれを検証するだけ）。`git` 不実行（コミットは主セッション）。
+
+- **Playwright 導入**: ルート `package.json` devDependencies に `@playwright/test`（^1.61.1）＋ `test:e2e` script。`npm install`（+3 packages）→ `npx playwright install chromium`（chromium/headless-shell v1228 取得）**成功**。ランタイム依存は増やしていない（devDependencies のみ）。
+- **設定** `apps/playground/playwright.config.ts`（新規）: `testDir: 'e2e'`・`testMatch: '**/*.spec.ts'`・webServer=`npm run dev -- --port 5199 --strictPort`（cwd=設定ファイル位置=apps/playground）・`baseURL: http://localhost:5199`・`reuseExistingServer: !CI`・reporter list・workers 1。vitest（`apps/**/*.test.ts`・node）とは命名（.spec.ts / .test.ts）＋ testDir で分離＝二重実行なし（vitest 362 件に E2E は非混入を確認）。
+- **E2E（計11テスト・green・2回連続で安定）**:
+  - `e2e/helpers.ts`（testMatch 外）— グリッド座標（`DEFAULT_GRID_LAYOUT` の写経）・`clickCell`・`expectActiveCell`（常駐 textarea の `style.left/top` で activeCell を検証＝`place()` が cellRect へ配置する性質を利用）・背景色ヘルパー。
+  - `e2e/basic-operations.spec.ts`（7）— クリック選択・矢印/Enter/Shift+Enter/Tab/Shift+Tab移動（端クランプ・改行/フォーカス移動が起きないことも確認）・直接入力で既存値置換・F2既存値編集・Escape取消（元値保持）・移動直後の再入力（受け入れ#3の自動分）。セル確定値は Canvas 描画で DOM から読めないため「移動後にそのセルを F2 で開き直し `textarea.value` を読む」で検証。
+  - `e2e/synthetic-composition.spec.ts`（2）— synthetic composition 順序A（確定Enterが変換中）/順序B（compositionend後）を dispatch（`traces/synthetic-reference/` の orderA/orderB に一致）。確定Enterが移動しない→次のEnterで確定・下移動を検証（受け入れ#2の弁別）。**実IMEの代替ではない旨をコメント明記**（§11.8/§20.5・実機確定は Phase 6）。
+  - `e2e/regression.spec.ts`（2・DA #10）— (a) ロード時にコンソールエラー/未捕捉例外0件（TDZ初期化バグ回帰・favicon 404 は許容除外）(b) セルクリック→printable打鍵で編集開始（クリック時フォーカス喪失バグ回帰＝textarea が focus・値が入る・白背景）。診断で実測: 健全ロード時の console error / pageerror は 0 件（favicon 404 も発生せず）＝(a) は空振りでなく真 green で、TDZ 再発時は pageerror で赤くなる。
+- **機械検証**: `npm run test:e2e` **11 pass**（×2 安定）／`npm run lint` clean（e2e 含む）／`npm run typecheck` clean（playground tsc は `src/**` のみ＝e2e 対象外）／`npm run test`（vitest）362 pass・E2E `.spec.ts` は非対象で不干渉。
+- **Codexレビュー（E2E差分・effort high・`--uncommitted`）**: 依頼書で対象を「今回のE2E追加のみ（src は前回 Phase 5 でレビュー済み・不変）」に限定。findings **1件**を妥当と判断し**実装側で修正**:
+  - **[P2] favicon 除外が広すぎ**（regression.spec.ts）: `favicon` を含むだけで console error を除外していたため、favicon 由来の本物の `console.error` や 404 以外の失敗まで見逃す恐れ。→「favicon への言及」かつ「リソース読込失敗(404)の署名」の両方を満たす場合のみ除外へ厳格化（`isFaviconNotFound`）。修正後 11 pass 再 green・lint clean。
+  - 見送り findings: なし（全件対応）。※依頼書・結果はスコープ制約（編集は e2e/・config・package.json のみ）に従いリポジトリ外（scratchpad）に置き、findings は本ログへ集約した。
+- **要判断/停止**: なし（合意済みスコープ内で完走。仕様・受け入れ基準・UX の変更なし）。
+- **主セッションへの申し送り**: E2E 実行で `apps/playground/test-results/.last-run.json`（Playwright の実行状態ファイル）が生成される。`.gitignore` に `test-results/` を追加推奨（本セッションは編集スコープ外のため未追加）。コミットは主セッションで（`git` 不実行）。
+
 ---
 
 ## DA批判レビュー記録
@@ -262,4 +281,4 @@
 | 7 | 2 | recorder の取りこぼし（§11.5 監視対象の記録漏れ）で実挙動確定を損なう | 中 | dev で composition→input→keydown 列が漏れなく並ぶか（主セッション Playwright スモーク） | 観察妥当性・回帰 | compositionstart/update/end・beforeinput・input・keydown・keyup・focus・blur・pointerdown を購読（§11.5 準拠）。copy/cut/paste は本Phaseスコープ外（検討内容の scope-out）。整形の網羅は `event-recorder.test.ts`（16件）で検証。取りこぼし最終目視は主セッション Playwright スモークで確認 |
 | 8 | 3 | §11.9 禁止事項の混入（状態機械統合で最も起きやすい） | 高 | `resident-textarea.ts` の applyEffect/reconcile/followScroll を精査 | §11.9 全項目 | 全7項目クリアを確認: ①編集開始は `input`/`compositionstart` 起点で keydown文字推測なし ②composition中は place() が return し再マウント/位置変更なし ③UpdateDraft は DOM 無操作・reconcile は composing 中 value を触らない（value整形なし）④applyRemoteUpdate は store のみ・textarea へサーバー値を入れない ⑤確定Enterは composing/suppress で SuppressKey（通常Enter扱いなし）⑥textarea 1個を destroy まで保持・focus 付け替えなし ⑦React 不使用・値の正は textarea.value。テスト47件で遷移を固定 |
 | 9 | 4 | シミュレーターが §11.7 契約を破る／スクロール追従で座標ズレ | 中 | simulator は store 直書きせず editor.applyRemoteUpdate 経由か・followScroll が composition を壊さないか | §11.7・I-3・回帰 | simulator は `RemoteUpdateSink.applyRemoteUpdate` のみを呼び、store反映+MarkConflictは editor/machine が一元処理（§11.7 の textarea不変・競合マークのみが保たれる）。`followScroll` は cellRect（スクロール非依存のコンテンツ座標）で left/top/width/height のみ再設定＝座標ズレなし・value/selection/DOM不変（I-3）。連続書込中も draft 不変は S-F4 テストで担保 |
-| 10 | 3/4 | ユニット（node）が DOM 配線順・ブラウザー既定挙動を検証せず、実行時バグ（TDZ初期化・クリック時フォーカス喪失）が緑テストをすり抜けた | 高 | 主セッション dev目視で発見（本ログ参照）。①ロード時 `ReferenceError` ②クリック後 activeElement=BODY で入力不可 | テスト盲点・回帰 | 2件とも修正済み（initialized フラグ／canvas mousedown preventDefault）。**保留中の Phase 5 E2E に必須回帰を追加**: (a) ページロードでコンソールエラー0（未捕捉例外なし）(b) セルをクリック→printable入力で編集開始（activeElement=textarea・白背景）。E2E導入時のTODOとして固定 |
+| 10 | 3/4 | ユニット（node）が DOM 配線順・ブラウザー既定挙動を検証せず、実行時バグ（TDZ初期化・クリック時フォーカス喪失）が緑テストをすり抜けた | 高 | 主セッション dev目視で発見（本ログ参照）。①ロード時 `ReferenceError` ②クリック後 activeElement=BODY で入力不可 | テスト盲点・回帰 | 2件とも修正済み（initialized フラグ／canvas mousedown preventDefault）。**→ 2026-07-12 `apps/playground/e2e/regression.spec.ts` として回帰E2E化・green**: (a) ページロードでコンソールエラー/未捕捉例外0（実測でも0件＝真green）(b) セルをクリック→printable入力で編集開始（textarea が focus・白背景・値が入る）。以後デグレ時に赤くなる |

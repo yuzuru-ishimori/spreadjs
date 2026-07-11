@@ -17,3 +17,8 @@ Thumbs.db
 
 # Playwright MCP の一時出力（スナップショット・コンソールログ・スクリーンショット）
 .playwright-mcp/
+
+# Playwright E2E の実行結果・レポート
+test-results/
+playwright-report/
+.last-run.json
