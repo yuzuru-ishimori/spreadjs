@@ -125,7 +125,7 @@
 - 画面を伴う実装Phaseなし（Node計測CLI＋純ロジック）のためPlaywright MCP・スクショエビデンスは対象外。エビデンスは計測JSON・レポートで代替
 - 要確認1〜5（AC2定量基準／関数範囲／Node計測のみで判定／ADR-011 Accepted化タイミング／エラー値セット）を「検討内容」に記載。ユーザー回答後に決定事項へ反映する
 - 制約の記録: playground・既存packages・collaboration-serverは無変更（独立領域）。新規npm依存ゼロ。ワークスペース追加による `package-lock.json` 更新は並行DDのないタイミングで実施。DD-INDEX再生成は親セッションが一括実施（本起票では実行しない）
-- 外部レビュー（ChatGPT・手動運用方針に基づく）を受領・6指摘を全て反映: ①4実装3カテゴリ表記統一 ②Node主評価＋採用候補ブラウザ最小確認（`apps/pocd-browser-bench` 追加・AC9） ③AC2を影響式数別に分割（合否=影響100式以下、他4系はWorker分離閾値素材） ④sheet-core実文書との結合試験追加（AC3/4） ⑤parser資源制限をAC8へ昇格 ⑥snapshot参考計測（素朴JSON化）追加。あわせて要確認1〜5をユーザー回答で確定し「決定事項」へ反映
+- 外部レビュー（ChatGPT・手動運用方針に基づく）を受領・6指摘を全て反映（詳細記録: `DD-006/chatgpt-review-20260712.md`）: ①4実装3カテゴリ表記統一 ②Node主評価＋採用候補ブラウザ最小確認（`apps/pocd-browser-bench` 追加・AC9） ③AC2を影響式数別に分割（合否=影響100式以下、他4系はWorker分離閾値素材） ④sheet-core実文書との結合試験追加（AC3/4） ⑤parser資源制限をAC8へ昇格 ⑥snapshot参考計測（素朴JSON化）追加。あわせて要確認1〜5をユーザー回答で確定し「決定事項」へ反映
 - スコープ増（②④⑥）への注記: 本DDはPhase 0最後の重量級PoCのため、実装中に肥大化の兆候（1レビューサイクル超過）が出た場合はreplay/snapshot計測（Phase 4）を別DDへ分割する
 
 ---
