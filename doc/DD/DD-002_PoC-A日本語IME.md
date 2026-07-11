@@ -2,7 +2,7 @@
 
 | 作成日 | 更新日 | ステータス | 補足 |
 |--------|--------|-----------|------|
-| 2026-07-11 | 2026-07-11 | 進行中 | Phase 0-1完了。実装順を「生recorder先行→実トレース採取→状態機械確定」へ変更（Phase 2着手前） |
+| 2026-07-11 | 2026-07-11 | 進行中 | Phase 2完了・対話スモーク/エビデンス取得済み。実機トレース採取待ち（ユーザー作業・ゲート1） |
 
 > アプローチ: トレース先行（実IMEの生イベントを先に採取し、scenarios.md と状態機械を実挙動から確定）＋TDD（確定後の編集状態機械）＋標準（Canvasグリッド土台・手順書・実機試験）
 
@@ -85,13 +85,23 @@
 
 ### Phase 2: 最小常駐textarea＋生イベントrecorder（実トレース採取）★ユーザー実機ゲート1
 > 目的は「状態機械を作る前に実挙動を採取する」こと。ここでは高度な制御（確定Enter抑止等）を入れず、**生イベントをそのまま記録**する。
-- [ ] 📐 **実装前詳細化**（最小textareaの責務・recorderのイベント購読点・trace-panelの表示/エクスポート仕様を箇条書き）
-- [ ] `apps/playground/src/ime/resident-textarea.ts`（新規・最小版）: §11.3 準拠の常駐textarea を1個生成しアクティブセル位置へ配置。直接入力/F2で編集開始・Enter/Escで最小 commit/cancel のみ（状態機械なし）。keydown/IME入力受け口をこの textarea 一本にし、Phase 1 の `scroll.focus()` を撤去（DA #3）
-- [ ] `apps/playground/src/ime/event-recorder.ts`（新規・UI非依存）: Appendix B `ImeEventTrace` 形式で compositionstart/update/end・beforeinput・input・keydown・keyup・focus・blur・pointerdown を記録。**preventDefault より前に記録**し、recorder 自身が入力挙動へ干渉しない（DA #5）
-- [ ] `apps/playground/src/ui/trace-panel.ts`（新規）＋ `index.html`: トレースの画面表示（直近件数）・JSONエクスポート（ダウンロード）・クリア・環境情報（UA）付与
-- [ ] 🔬 **機械検証**: `npm run test`（recorderの整形ユニット）/ `typecheck` / `lint` → green。`npm run dev` で composition→input→keydown が漏れなく記録・JSONエクスポートできることを主セッションのPlaywrightでスモークしDDへ記録
-- [ ] 📸 **エビデンス**: グリッド＋常駐textarea＋trace-panel のキャプチャ（`DD-002/` へ配置）
-- [ ] 😈 **DA批判レビュー**（recorderの取りこぼし・最小textareaのcommitがイベント観察を妨げないか）
+
+#### Phase 2 詳細設計（📐 → モジュール境界・責務）
+
+依存: `event-recorder`（DOM非依存・純粋関数＋ストア）← `resident-textarea`（DOMアダプタ）／`trace-panel`（DOM UI）← `main`（配線）。整形ロジックは event-recorder に集約し node 環境で単体テスト可能にする。
+
+- **event-recorder.ts（UI非依存・DOMに一切触れない）**: `ImeEventTrace`（Appendix B 形式）/ `RecorderEventSnapshot`（DOMイベント＋textareaから抽出した構造的スナップショット）/ `RecorderContext`（環境・状態ラベル・activeCell）。`formatTrace()`＝イベント種別ごとに意味のあるフィールドだけを載せる純粋関数（keydown/keyup→key/code/isComposing、beforeinput/input→inputType/data/isComposing、composition→data、focus/blur/pointerdown→補足なし）。`detectEnvironment(ua)`＝browser/os 推定（Edge を Chrome より先に判定）。`createEventRecorder()`＝蓄積/getTraces/getRecent/size/clear/subscribe。将来 `sheet-editor-ime` へ移設しやすい。
+- **resident-textarea.ts（DOMアダプタ・最小版）**: §11.3 準拠の textarea を1個生成しアクティブセルへ配置（transparent、編集中のみ白背景=paintのみ）。購読点＝textarea の compositionstart/update/end・beforeinput・input・keydown・keyup・focus・blur、および host（スクロールコンテナ）capture の pointerdown。**各リスナー冒頭（preventDefault より前）に record**（DA #5）。最小 commit/cancel のみ（Enter=確定+下／Tab=確定+右／Esc=取消／F2・dblclick=既存値編集／Delete=クリア）。**変換中（`event.isComposing`）は一切介入しない**（確定 Enter を通常 Enter 扱いしない・生挙動観察・§11.9 I-4）。状態機械・`suppressCommitUntilKeyup`・pendingNavigation・スクロール追従は入れない（Phase 3/4）。
+- **trace-panel.ts（DOM UI）**: 直近 N 件を新しい順で表示（idx/state/event/detail/value）、件数、環境（UA・browser/os 自動・ime 手入力欄）、JSONエクスポート（`{meta, traces}` を `{ime}-{browser}.json` でダウンロード）、クリア。`getEnvironment()` を editor へ供給し record 文脈の環境にする。
+- **main.ts**: recorder/editor/panel を生成・配線。keydown/IME 受け口を textarea 一本へ（`scroll.focus()`・`tabindex` 撤去・DA #3）。pointerdown→選択（変換中は移動しない）、dblclick→既存値編集。activeCell は main 保持（Phase 3 で machine へ一本化・DA #2）。
+
+- [x] 📐 **実装前詳細化**（上記「Phase 2 詳細設計」に記載）
+- [x] `apps/playground/src/ime/resident-textarea.ts`（新規・最小版）: §11.3 準拠の常駐textarea を1個生成しアクティブセル位置へ配置。直接入力/F2で編集開始・Enter/Escで最小 commit/cancel のみ（状態機械なし）。keydown/IME入力受け口をこの textarea 一本にし、Phase 1 の `scroll.focus()` を撤去（DA #3）
+- [x] `apps/playground/src/ime/event-recorder.ts`（新規・UI非依存）: Appendix B `ImeEventTrace` 形式で compositionstart/update/end・beforeinput・input・keydown・keyup・focus・blur・pointerdown を記録。**preventDefault より前に記録**し、recorder 自身が入力挙動へ干渉しない（DA #5）
+- [x] `apps/playground/src/ui/trace-panel.ts`（新規）＋ `index.html`: トレースの画面表示（直近件数）・JSONエクスポート（ダウンロード）・クリア・環境情報（UA）付与
+- [x] 🔬 **機械検証（自動）**: `npm run test`（recorderの整形ユニット16件＝計49件 pass）/ `typecheck` / `lint` / `build` → green。dev-serve スモーク＝各モジュールが HTTP 200 で配信・変換OK。**対話スモーク（主セッション Playwright）実施済み**: セル選択→キー入力（x/y/Enter）で keydown/beforeinput/input/keyup が種別ごとに整形記録（16件）・state/value 追従・preventDefault前記録を確認。JSONエクスポートが `{meta, traces}`（Appendix B 全フィールド）の有効JSONを出力することを Blob 横取りで検証（下記ログ）
+- [x] 📸 **エビデンス**: グリッド＋常駐textarea＋trace-panel のキャプチャ（`DD-002/phase2-recorder-smoke.png`。主セッション Playwright で取得・trace-panel を赤枠強調）
+- [x] 😈 **DA批判レビュー**（recorderの取りこぼし・最小textareaのcommitがイベント観察を妨げないか → 下記記録 #6・#7）
 - [ ] 🧑‍🔬 **ユーザー実機トレース採取（実機作業）**: 手順メモ `DD-002/phase2-trace-collection.md` に従い、Microsoft IME／Google日本語入力 × Chrome／Edge で代表操作（直接入力→変換→確定→移動→再入力／確定Enter／変換中クリック／変換中スクロール）の生トレースを `DD-002/traces/phase2-raw/` へ保存
 - [ ] 📊 **トレース分析**: 確定Enterの発火順（順序A/B）・先頭文字挙動・composition境界のブラウザー/IME差を観察記録にまとめ、`scenarios.md`（特にQ-1〜5・S-D3/D5）へ反映 → **ユーザー確認**（テスト設計の確定＝guides.md §8）
 
@@ -151,6 +161,28 @@
 - **プロセス方針（ユーザー指摘）**: 合意済みスコープ内の内部詳細は各Phaseで停止せず、DA・テスト・Codex通過で継続。停止は仕様・受け入れ基準・UX変更時とユーザー実機ゲート（Phase 2末のトレース確認・Phase 6受入）のみ
 - **scenarios.md 合意**: 44シナリオ＋Q-1〜5を仮決めどおりユーザー合意（Q-1 Backspace=クリア後に空EditingReplace／Q-2 競合はマーク＋draft保持でcommit保留／Q-3 pendingNavigationは破棄／Q-4 非composing blur=commit／Q-5 スクロールは方式2先行）。ただしトレース先行方針により、**Phase 2の実トレースで最終確定**する
 
+### 2026-07-11（Phase 2 実装セッション：最小常駐textarea＋生recorder）
+
+- **実装（新規）**:
+  - `apps/playground/src/ime/event-recorder.ts` — DOM非依存の生イベントレコーダー。`ImeEventTrace`（Appendix B 形式）・`formatTrace()`（種別ごとにフィールドを整形）・`detectEnvironment(ua)`・`createEventRecorder()`（蓄積/getRecent/clear/subscribe）。
+  - `apps/playground/src/ime/resident-textarea.ts` — §11.3 準拠の最小常駐textarea（DOMアダプタ）。compositionstart/update/end・beforeinput・input・keydown・keyup・focus・blur・host capture の pointerdown を**受信直後（preventDefault前）に記録**。最小 commit/cancel のみ（Enter/Tab/Esc/F2/dblclick/Delete）。**変換中は一切介入しない**（生挙動観察）。状態機械・確定Enter抑止・pendingNavigation・スクロール追従は入れない（Phase 3/4）。
+  - `apps/playground/src/ui/trace-panel.ts` — 直近トレース表示・JSONエクスポート（`{ime}-{browser}.json`）・クリア・環境情報（UA/browser/os自動・ime手入力）。
+  - `apps/playground/src/ime/event-recorder.test.ts` — 整形ロジックのユニット16件（synthetic オブジェクト駆動・node）。
+- **改修**: `main.ts`／`index.html` — recorder/editor/panel を配線。**`scroll.focus()`・`tabindex` を撤去し入力受け口を textarea 一本へ**（DA #3・§11.9 I-5）。`#grid-scroll` を `position:relative` にして textarea をセル追従の absolute 配置に。activeCell は main 保持（Phase 3 で machine へ一本化・DA #2）。
+- **機械検証**: `npm run test` **49 pass**（新規16）／`typecheck` clean／`lint` clean（`console.log`・`any`・`as`不使用）／`build` 成功。dev-serve スモーク＝index.html・4モジュールが HTTP 200 で配信・TS変換OK。**対話目視（composition記録・JSONエクスポート）とスクリーンショットは主セッション Playwright 作業**（本エージェントに Playwright MCP なし＝手動キャプチャ要。📸未チェック）。
+- **DA（#6/#7）**: recorder は全リスナー冒頭・preventDefault前に record／変換中は preventDefault しない（確定Enter生挙動を無改変で記録）／§11.5 監視対象を網羅購読（copy/cut/pasteはスコープ外）。取りこぼし最終目視は主セッションスモーク。
+- **成果物**: 実機採取手順メモ `DD-002/phase2-trace-collection.md`、保存先 `DD-002/traces/phase2-raw/`（.gitkeep）を用意。
+- **停止点（ユーザー実機ゲート1）**: ここで一旦戻る。次は**ユーザーが実機で生トレースを採取**（MS IME/Google × Chrome/Edge、手順メモ参照）→ `traces/phase2-raw/` へ保存 → 📊トレース分析で scenarios.md 確定 → Phase 3（状態機械 TDD）。Phase 3 へは進めていない。
+- **コミット**: 本セッションでは行っていない（主セッションでユーザー確認後）。
+
+### 2026-07-11（Phase 2 対話スモーク・エビデンス / 主セッション）
+- Playwright MCP で playground（:5173）を開き、実装エージェントが委譲した対話スモークを実施:
+  - セル選択 → キー入力（x/y/Enter）で **keydown/beforeinput/input/keyup が種別ごとに整形記録**（16件）・state（Navigation/Editing）・value 追従・**preventDefault前記録**を確認
+  - **JSONエクスポート**を Blob 横取りで検証 → `{meta:{browser,os,ime,userAgent,exportedAt,traceCount}, traces:[…]}` の有効JSON、各 trace は Appendix B 全フィールド（timestamp/browser/os/ime/state/eventType/value/selection/activeCell）
+  - エビデンス `DD-002/phase2-recorder-smoke.png`（trace-panel を赤枠強調）取得 → 📸完了
+- コンソールエラーは favicon 404（想定内）と、検証で `URL.createObjectURL` をモックしたことによる `blob:mock` 拒否（＝スモーク由来。実挙動では実blob URLで正常DL）の2件のみ。**実バグなし**
+- DA #7（recorder取りこぼし最終目視）・#6（commitが観察を妨げないか）を本スモークで確認済み。Phase 2 の主セッション作業完了 → ユーザー実機トレース採取（ゲート1）へ
+
 ---
 
 ## DA批判レビュー記録
@@ -167,4 +199,6 @@
 | 2 | 0/3 | activeCell の所有権が Phase 1 は main、Phase 3 は編集状態機械（Move/MoveTo 出力）に跨る。二重管理すると commit 後の移動先がズレる | 中 | Phase 3 で machine が MoveTo を出す一方 main も activeCell を更新すると競合 | 依存関係の波及 | scenarios を「machine が Move/MoveTo を出す・main は反映のみ」で設計済み。**Phase 3 詳細化で activeCell を machine 出力へ一本化** |
 | 3 | 0/2 | Phase 1 の keydown 受け口は `#grid-scroll`（tabindex）。常駐 textarea 導入時に移行しないと、二重フォーカス／§11.9 I-5「セル移動ごとに別inputへfocus」違反になりうる | 中 | textarea 追加後も scroll.focus() が残ると入力受け口が2系統 | 将来脆弱性・§11.9 I-5 | **Phase 2 で keydown/IME を常駐 textarea 一本へ移し `scroll.focus()` を撤去**（最小textareaタスクのチェック項目） |
 | 4 | 0/5 | Codex は Phase 5 で全差分1回の予定。状態機械が肥大化するとレビュー粒度が粗くなる | Info | — | スコープ判断 | 現状は枠節約優先で Phase 5 一括。Phase 3 が想定超に膨らんだ場合のみ中間 Codex を検討 |
-| 5 | 0/2 | 生イベントrecorderが `preventDefault` 後に記録すると、抑止されたキーやブラウザー既定挙動が観察できず、トレース先行の目的（実挙動採取）を損なう | 中 | Phase 2 で recorder を preventDefault の後段に置くと確定Enterの生挙動が採れない | テストのための実装・観察妥当性 | **Phase 2 で recorder はイベント受信直後（preventDefault前）に記録**。最小textareaは生挙動を極力変えない（commit最小化）。recorderタスクのチェック項目 |
+| 5 | 0/2 | 生イベントrecorderが `preventDefault` 後に記録すると、抑止されたキーやブラウザー既定挙動が観察できず、トレース先行の目的（実挙動採取）を損なう | 中 | Phase 2 で recorder を preventDefault の後段に置くと確定Enterの生挙動が採れない | テストのための実装・観察妥当性 | **Phase 2 で recorder はイベント受信直後（preventDefault前）に記録**。最小textareaは生挙動を極力変えない（commit最小化）。recorderタスクのチェック項目 → **Phase 2 実装で担保済**（#6） |
+| 6 | 2 | 最小 textarea の commit（Enter/Tab の preventDefault）がイベント順・生挙動を変え、確定Enterの観察を妨げないか | 中 | dev で確定Enter → keydown記録→commit の順、変換中Enterで移動しないことを確認 | テストのための実装・観察妥当性 | record を全リスナー冒頭（preventDefault前）で実行（コードで担保）。**変換中（`event.isComposing`）は preventDefault しない**ため確定Enterの生挙動は無改変で記録される。commit は非composingの Enter/Tab のみ（その生キー列も記録済み）。順序B環境で確定Enterが下移動しうるのは既知・観察対象（手順メモに明記） |
+| 7 | 2 | recorder の取りこぼし（§11.5 監視対象の記録漏れ）で実挙動確定を損なう | 中 | dev で composition→input→keydown 列が漏れなく並ぶか（主セッション Playwright スモーク） | 観察妥当性・回帰 | compositionstart/update/end・beforeinput・input・keydown・keyup・focus・blur・pointerdown を購読（§11.5 準拠）。copy/cut/paste は本Phaseスコープ外（検討内容の scope-out）。整形の網羅は `event-recorder.test.ts`（16件）で検証。取りこぼし最終目視は主セッション Playwright スモークで確認 |

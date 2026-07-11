@@ -24,34 +24,113 @@
         color: #555;
       }
 
-      /* スクロール検証用の overflow コンテナ（グリッドはこれより大きい）。 */
+      /* スクロール検証用の overflow コンテナ（グリッドはこれより大きい）。
+         常駐 textarea を absolute 配置するため position: relative にする。 */
       #grid-scroll {
+        position: relative;
         width: 680px;
         height: 440px;
         overflow: auto;
         border: 1px solid #bbb;
         background: #fff;
-        outline: none;
-      }
-
-      #grid-scroll:focus-visible {
-        box-shadow: inset 0 0 0 2px #1a73e8;
       }
 
       #grid {
         display: block;
       }
+
+      /* 常駐 textarea（§11.3）。1 個だけ生成し破棄しない・ゼロサイズ/非表示にしない。
+         位置とサイズは JS がアクティブセルへ追従させる。 */
+      .cell-editor {
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+
+      /* 生 IME トレースパネル。 */
+      .trace-panel {
+        margin-top: 16px;
+        max-width: 1004px;
+        font-size: 12px;
+      }
+
+      .trace-panel__title {
+        font-size: 14px;
+        margin: 0 0 8px;
+      }
+
+      .trace-panel__env,
+      .trace-panel__controls {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 8px;
+      }
+
+      .trace-panel__ua {
+        color: #777;
+        word-break: break-all;
+        margin-bottom: 8px;
+      }
+
+      .trace-panel__ime-input {
+        margin-left: 4px;
+        font: inherit;
+      }
+
+      .trace-panel__controls button {
+        font: inherit;
+        padding: 4px 10px;
+        cursor: pointer;
+      }
+
+      .trace-panel__count {
+        color: #555;
+      }
+
+      .trace-panel__list {
+        height: 220px;
+        overflow: auto;
+        border: 1px solid #ddd;
+        background: #fff;
+        font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+      }
+
+      .trace-panel__row {
+        display: grid;
+        grid-template-columns: 44px 96px 130px 1fr 1fr;
+        gap: 8px;
+        padding: 2px 8px;
+        border-bottom: 1px solid #f0f0f0;
+        white-space: nowrap;
+      }
+
+      .trace-panel__cell {
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .trace-panel__cell--idx {
+        color: #999;
+      }
+
+      .trace-panel__cell--event {
+        color: #1a73e8;
+      }
     </style>
   </head>
   <body>
-    <h1>spreadjs playground — PoC-A グリッド土台</h1>
+    <h1>spreadjs playground — PoC-A グリッド + 生 IME トレース採取</h1>
     <p>
       クリック / 矢印 / Enter（下）/ Shift+Enter（上）/ Tab（右）/ Shift+Tab（左）で選択セルを移動できます。
-      編集・IME・リモート更新は後続 Phase で実装します。
+      文字入力・IME 変換で編集開始、Enter/Tab で確定移動、Escape で取消、F2・ダブルクリックで既存値編集。
+      入力イベントは下のパネルへ記録され、JSON でエクスポートできます（実機トレース採取用）。
     </p>
-    <div id="grid-scroll" tabindex="0">
+    <div id="grid-scroll">
       <canvas id="grid"></canvas>
     </div>
+    <div id="trace-panel"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

@@ -1,0 +1,3 @@
+# このフォルダに Phase 2 の生 IME トレース JSON を置く。
+# 命名: {ime}-{browser}.json（例: microsoft-ime-chrome.json）
+# 手順: ../../phase2-trace-collection.md
