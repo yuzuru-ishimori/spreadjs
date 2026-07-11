@@ -8,6 +8,14 @@
 | ファイル | 説明 |
 |---------|------|
 | `doc/project-overview.md` | プロジェクトスコープ・環境・方針（未作成。最初に書くことを推奨） |
+| `README.md`（ルート） | 製品概要・アーキテクチャ・ロードマップ（開発者向けの入口） |
+
+## 計画・構想
+
+| ファイル | 説明 |
+|---------|------|
+| `doc/plan/nanairo_realtime_spreadsheet_development_plan_v1.md` | 開発計画・基本設計（正典。アーキテクチャ・ADR・プロトコル・IME・数式・性能・リスク） |
+| `doc/plan/nanairo_realtime_spreadsheet_concept_record_v1.md` | 構想記録（計画書の入力資料） |
 
 ## プロセス・開発規約
 

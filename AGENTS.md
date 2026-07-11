@@ -4,21 +4,22 @@
 
 ## プロジェクト概要
 
-{プロジェクトの説明を1〜2行で。詳細は doc/ に置き、ここには書かない}
+spreadjs — 業務Webアプリへ組み込む TypeScript製リアルタイム共同編集スプレッドシート型入力基盤。日本語IME・数万行Canvas描画・サーバー主導の共同編集を優先する。詳細は `doc/plan/`。
 
-- **技術スタック**: {FE} / {BE} / {DB} / {インフラ}
+- **ステータス**: Phase 0 着手判断段階（実装未着手。現状は計画・設計ドキュメントのみ）
+- **技術スタック**: React（業務UI外周） / TypeScript製グリッドコア（Canvas 2D・依存ゼロ） / Hono + `@hono/node-server` + `ws`（API・WebSocket） / PostgreSQL
+- **正典**: `doc/plan/nanairo_realtime_spreadsheet_development_plan_v1.md`（アーキテクチャ・ADR・プロトコル・IME・数式・性能・リスク）
 - **ドキュメント一覧**: `doc/DOC-MAP.md`（全ドキュメントの場所と目的。迷ったらまずここ）
+- **概要**: `README.md`
 
 ## コマンド
 
+> ビルド／テスト系（`npm run dev|build|lint|test|precheck`）は monorepo 未構築のため**未整備**。Phase 0 で `packages/` を作成する際に定義する（想定構成は `README.md` / 計画書 §5・§17 を参照）。現状で使えるのはドキュメント系スクリプトのみ。
+
 | コマンド | 用途 |
 |---------|------|
-| {`npm run dev`} | 開発サーバー起動 |
-| {`npm run build`} | ビルド + 型チェック |
-| {`npm run lint`} | Lint（修正ヒント: `tools/lint-fix-hints.json`） |
-| {`npm test`} | テスト実行 |
 | `bash scripts/doc-check.sh` | ドキュメント整合性チェック（DOC-MAP孤児・リンク切れ） |
-| {`npm run precheck`} | DD完了前の集約チェック（lint + テスト + doc-check） |
+| `bash scripts/dd-index-gen.sh` | DD-INDEX.md 再生成（直接編集しない） |
 
 ## DD設定
 
@@ -26,6 +27,7 @@
 - **パス設定**: ルート直下の `.dd-config`（スクリプト・フックはここを読む。上の実パスと常に一致させる）
 - **ステータス**: 固定6種（検討中/進行中/確認待ち/保留/見送り/完了）+ 補足列。語彙ルール: `doc/templates/guides.md` §3
 - **スキル**: `/dd new|list|log|archive|search|rebuild-index|health`（Claude Code: `.claude/skills/` / Codex: `.agents/skills/` — 同一内容のミラー）
+- **自動フロー**: `/dd-auto <機能>` = 起票(Fable)→〔仕様確認〕→実装(Opus)→Codexレビューを自動振り分け（`.claude/agents/dd-drafter`・`dd-implementer` を使用。Claude Code 専用）
 - **開発フロー**: DD作成 → 仕様確認 → 実装 → 検証 → 完了（いきなりコードを書かない）
 - **DA メソッド**: `doc/da-method.md` / **コミット**: `DD-{番号}: 概要` 形式
 
