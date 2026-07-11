@@ -2,7 +2,7 @@
 
 | 作成日 | 更新日 | ステータス | 補足 |
 |--------|--------|-----------|------|
-| 2026-07-11 | 2026-07-12 | 進行中 | Phase1〜5実装・pocb92＋全362テストgreen・Codex11件全反映。headed fps/メモリ実測と📸は主セッション委譲 |
+| 2026-07-11 | 2026-07-12 | 確認待ち | 実装＋headed計測完了・AC1〜5合格（p95 16.8ms/再描画0.39ms/選択15.3ms/メモリ17KB/s/anchor維持）。ユーザー実機での確認run待ち |
 
 > アプローチ: 標準（計測中心のPoC）＋TDD（Axis・ViewportTransform・scroll anchorのDOM非依存座標ロジック）
 
@@ -98,7 +98,7 @@
 - [x] `apps/playground/src/pocb/presence-sim.ts`（新規）: 20人の模擬Presence（タイマーで activeCell/selection を random walk。人数は設定可〔要確認2〕）
 - [x] `apps/playground/src/pocb/main.ts`（拡張）: overlay canvas 追加（§12.1）・DPR/resize監視で両canvas再確保（§12.4）・固定行/列数の切替UI・pointerdown/drag→ヒットテスト→選択（overlayのみinvalidate）
 - [x] 🔬 **機械検証**: `test` / `typecheck` / `lint` → green。Presence更新・選択変更で base 描画カウンタが増えないことを render-scheduler.test.ts で機械実証
-- [ ] 📸 **エビデンス**: 固定行列＋選択＋Presence 20人＋高DPI罫線のスクショを `DD-004/` へ（**主セッション Playwright MCP または手動＝委譲**。手順は measurement-spec.md §5）
+- [x] 📸 **エビデンス**: 固定行列＋50,000行仮想スクロール＋混在データ＋ドラッグ選択枠のスクショ `DD-004/pocb-grid-frozen-presence-selection.png`（主セッション Playwright で取得。Presence 20人は50k行をrandom walkするため任意ビューポートに同時可視されにくく描画は unit test で担保＝measurement-report §6 に注記）
 - [x] 😈 **DA批判レビュー**（4象限の境界1px・DPR切替時のずれ・overlayとbaseの座標一致）
 
 ### Phase 4: 可変行高・列幅・行挿入・scroll anchor
@@ -110,7 +110,7 @@
 ### Phase 5: 計測ハーネス・合格判定・ADR-011ドラフト・引き継ぎ・Codexレビュー
 - [x] `apps/playground/src/pocb/metrics.ts`（純粋コア）＋`harness.ts`（ドライバー）＋計測UI: fpsレコーダー（rAF間隔・p95/最悪値）・停止中full再描画計測・pointer→選択枠遅延計測・メモリサンプリング（performance.memory）・自動スクロールドライバー（速度指定・10分往復）・結果JSONエクスポート＋合否自動判定（`evaluateAcceptance`）
 - [x] `doc/DD/DD-004/measurement-spec.md`（新規・添付）: データ生成仕様・計測手順・計測条件（端末/ブラウザー/ウィンドウ/可視セル数）。50行超のため本体から分離（guides.md §6）
-- [ ] 計測実施 → `doc/DD/DD-004/measurement-report.md`（雛形作成済み・**実測値記入は主セッションへ委譲**）: 受け入れ基準1〜5の実測値・合否・ボトルネック分析（未達時は §12.3 dirty rect／§13.2 Fenwick 等の対策を適用し再計測）
+- [x] 計測実施 → `doc/DD/DD-004/measurement-report.md` 記入（主セッション Playwright 実測）: AC1〜5 すべて合格（p95 16.8ms／停止中再描画 0.39ms／選択遅延 15.3ms／メモリ傾き 17.1KB/s・増加率1.03／anchor維持 true）。未達なし＝対策不要。※MCPブラウザ実測＝参考強・正式判定はユーザー実機推奨（report 冒頭注記）
 - [x] `doc/adr/0011-row-slot-chunked-cell-store.md`（新規・ドラフト）: 背景・選択肢・PoC計測結果・決定案・再検討条件（DD-006 の疎/密比較で拡充予定）。`doc/DOC-MAP.md` へ ADR 行を追加
 - [x] Phase 1 へ引き継ぐ設計注意事項（packages/sheet-renderer-canvas 化の分割線・PoCで簡略化した点）を measurement-report §5 へ記録
 - [x] 🔬 **機械検証**: `test` / `typecheck` / `lint` / `build` → green、`bash scripts/doc-check.sh` → エラー0
@@ -134,6 +134,12 @@
 - **Phase 1〜5 実装完了**（`apps/playground/src/pocb/` 16モジュール＋12テストファイル/92ケース・`poc-b.html`・`vite.config.ts`）。既存 `src/grid|ime|sim|ui`・`index.html`・`src/main.ts` は無変更（凍結遵守）、`packages/**`・`collaboration-server/**` も無変更、新規 npm 依存ゼロ。純粋コア（axis/viewport/scroll-anchor/selection/dpi/text-cache/prng/data-gen/chunk-store/render-scheduler/presence-sim/metrics）を TDD、Canvas 依存（base/overlay-layer/harness/main）はアダプタ隔離。**機械検証: `test` 362件green（pocb +92／既存回帰0）・`typecheck`・`lint`・`build`（poc-b.html バンドル出力）・`doc-check` すべて green**。ADR-011 ドラフト＋DOC-MAP 追記・measurement-spec/report 雛形・scenarios 作成。
 - **Codexレビュー実施**（`--uncommitted`・effort high・codex-cli 0.144.0）: findings **9件**（P1×4・P2×5）。すべて妥当と判断し**9件全て修正**（見送り0）。要点: ①AC1 フレーム計測を自動スクロール中に限定（idle フレームで p95 を薄めない）②AC4 しきい値を 512KB/s→64KB/s＋増加率1.25 の AND に厳格化（持続的微増リークを検出）③measureText キャッシュに FIFO 上限（10分試験の無制限増加＝AC4 自己汚染を防止）④anchor 未実施は AC5=n/a（既定 true で未検証 pass を防止）⑤可視セル数が 2,000〜4,000 帯外なら overall=n/a（負荷条件未達を合格にしない）⑥選択遅延を Event.timeStamp 起点へ（配送待ちも含める）⑦生成 50万セル配列をロード後に解放（メモリ実測の汚染回避）⑧apply-size ループを現行 count() 上限へ（削除後の範囲外例外を修正）⑨固定境界をまたぐ overlay 範囲を pane ごとに分割描画（横スクロールで幅が負→表示消失を修正）。修正後に `test`/`typecheck`/`lint`/`build` 再 green。詳細は `DD-004/codex-review-result.md`。
 - **主セッションへの委譲**（本エージェントに Playwright MCP 無し・DD-002 と同運用）: ①headed 実ウィンドウでの fps/メモリ実測（AC1〜5 の合否実測値記入）②📸 スクショ（固定行列4象限／選択＋Presence20人／高DPI罫線）。手順は `DD-004/measurement-spec.md`、記入先は `DD-004/measurement-report.md`（雛形・n/a マーカー済み）。
+
+### 2026-07-12（主セッション実測・合否判定）
+- **headed計測（Playwright MCP 駆動 Chrome）で AC1〜5 すべて合格**を実測: AC1 フレーム p95 **16.8ms**（<33ms・6,349フレーム・over33=0）／AC2 停止中再描画 **0.39ms**（≤12ms）／AC3 選択遅延worst **15.3ms**（<50ms）／AC4 メモリ傾き **17.1KB/s**・増加率 **1.03**（<64KB/s・<1.25・11標本約100秒・usedJSHeapSize 25.5〜29MB でトレンドなし）／AC5 anchor維持 **true**。Axis再構築 2.0〜3.5ms＝Fenwick不要。環境: Chrome150・DPR1.25・16コア・32GB。値は `measurement-report.md` §1 に記入。
+- **注記（正式判定の残タスク）**: (a) 実測は mcp-chrome 駆動＝GPU合成/ウィンドウ寸法がユーザー手動 headed と異なりうるため、**参照端末（本機）での確認 run をユーザーに推奨**（特に AC1/AC4）。(b) 単一 JSON の `overall` は n/a（AC4前のリセットで AC2/AC3標本消去＋export時可視4,018が帯上限4,000を18超過）だが各基準は個別に合格＝クリーン run（帯内固定・無リセットで5基準連続）で overall=pass を取れる。
+- 📸 `DD-004/pocb-grid-frozen-presence-selection.png` 取得（固定行列・50k行仮想スクロール・混在データ・ドラッグ選択・合格 readout）。Presence 20人は50k行 random walk のため同時可視されにくく描画は unit test で担保。
+- **残: 実機での確認 run（ユーザー）**。DD-004 は実装・計測とも完了、Phase 0 の Canvas 成立性（No-Go条件）は**成立（Go相当）**の見込み。最終確定はユーザー実機 run 後。
 
 ## DA批判レビュー記録
 
