@@ -76,6 +76,11 @@ export function createResidentEditor(options: ResidentEditorOptions): ResidentEd
   const abort = new AbortController();
   const { signal } = abort;
 
+  // 構築中（初期 focus）に onViewChange を発火させない。呼び出し側の onViewChange は
+  // `const editor = createResidentEditor(...)` の代入前に走ると editor 参照が TDZ になるため。
+  // 初期描画は呼び出し側が構築後に明示的に行う（main の render()）。
+  let initialized = false;
+
   const machine: EditorStateMachine = createEditorStateMachine({
     layout,
     initialCell: { row: 0, col: 0 },
@@ -196,7 +201,10 @@ export function createResidentEditor(options: ResidentEditorOptions): ResidentEd
       applyEffect(effect);
     }
     reconcile();
-    options.onViewChange?.();
+    // 構築完了後のみ通知（初期 focus では呼ばない・上記 initialized 参照）。
+    if (initialized) {
+      options.onViewChange?.();
+    }
   };
 
   // --- 記録（イベント受信直後・preventDefault より前に呼ぶ = DA #5） ---
@@ -358,8 +366,11 @@ export function createResidentEditor(options: ResidentEditorOptions): ResidentEd
   host.addEventListener('scroll', followScroll, { signal });
 
   // 初期配置とフォーカス（入力受け口を textarea 一本に固定・DA #3）。
+  // focus() は DOM の focus リスナー→applyEffects を同期発火させるが、initialized=false の間は
+  // onViewChange を呼ばない（初期描画は呼び出し側が構築後に行う）。ここで初期化完了とする。
   place();
   focus();
+  initialized = true;
 
   return {
     focus,

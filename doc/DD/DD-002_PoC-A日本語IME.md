@@ -2,7 +2,7 @@
 
 | 作成日 | 更新日 | ステータス | 補足 |
 |--------|--------|-----------|------|
-| 2026-07-11 | 2026-07-11 | 進行中 | Phase 3-5実装完了（状態機械TDD・シミュレーター・手順書・Codex）。E2Eと実機IME検証はPhase 6/主セッション |
+| 2026-07-11 | 2026-07-11 | 進行中 | Phase 3-5実装＋dev目視で実行時バグ2件修正・エビデンス取得。E2E保留・実機IME検証はPhase 6 |
 
 > アプローチ: トレース先行（実IMEの生イベントを先に採取し、scenarios.md と状態機械を実挙動から確定）＋TDD（確定後の編集状態機械）＋標準（Canvasグリッド土台・手順書・実機試験）
 
@@ -124,8 +124,8 @@
 - [x] `apps/playground/src/sim/remote-update-simulator.ts`（新規）: 「編集中セルへ書込」「他セルへ書込」「インターバル連続書込（再描画誘発）」操作 → `editor.applyRemoteUpdate` 経由で cell-store 更新。§11.7 準拠（textarea不変・Canvas再描画・競合インジケーター表示）。セル選択は純粋関数 `pickDistinctCell` に分離しユニットテスト（`remote-update-simulator.test.ts`＝6件）
 - [x] スクロール追従（§11.6・方式2）: `resident-textarea.ts` の `followScroll` を host の scroll に配線。位置のみ再配置（composition中も value/selection/DOM は不変・I-3）。3方式の比較メモを本DD検討内容へ追記済み
 - [x] `apps/playground/index.html`／`main.ts`: シミュレーターUI（編集中セルへ書込／他セルへ書込／連続書込 開始・停止）を追加・配線
-- [ ] 📸 **エビデンス**: シミュレーターUI＋競合インジケーター表示のキャプチャ（`DD-002/` へ配置）**※主セッションキャプチャ要（本エージェントにPlaywright MCPなし）**
-- [x] 🔬 **機械検証（自動分）**: `test`（102件）／`typecheck`／`lint`／`build` → green。**※`npm run dev` の変換中書込・連続書込・スクロール追従の目視スモークは主セッション（📸）で実施**
+- [x] 📸 **エビデンス**: シミュレーターUI＋競合インジケーター表示のキャプチャ（`DD-002/phase3-4-statemachine-conflict-smoke.png`。主セッション Playwright で取得＝編集中セル "abc" に赤の競合枠・ドラフト保持）
+- [x] 🔬 **機械検証（自動分）**: `test`（103件）／`typecheck`／`lint`／`build` → green。**主セッション dev目視スモーク実施**: クリック→入力→編集開始、Enter確定＋下移動、編集セルへリモート更新→ドラフト保持＋赤枠（§11.7）を確認（下記ログ）。2件の実行時バグを発見・修正（TDZ初期化・クリック時フォーカス喪失）
 - [x] 😈 **DA批判レビュー**（下記記録 #9。シミュレーターは必ず `applyRemoteUpdate` 経由で§11.7契約を維持／`followScroll` はコンテンツ座標で座標ズレなし・位置のみ変更）
 
 ### Phase 5: 基本操作E2E・手動試験手順書・Codexレビュー
@@ -225,6 +225,14 @@
 - **停止・要判断**: なし（合意済みスコープ内で完走。仕様・受け入れ基準・UXの変更は不要）。
 - **コミット**: 本セッションでは行っていない（`git` 不実行。主セッションがスコープ指定でコミット）。
 
+### 2026-07-11（Phase 3-4 dev目視スモーク・実行時バグ2件修正 / 主セッション）
+- 主セッションで `npm run dev`（:5176）を開き Playwright MCP で目視スモーク。ユニットテスト（103件）は green だが**DOM配線順の実行時バグを2件発見・修正**（テストが検証しない領域＝dev目視の価値）:
+  1. **[実行時バグ] TDZ 初期化エラー**（`resident-textarea.ts`）: `createResidentEditor` 構築中の初期 `focus()` が DOM focus リスナー→`applyEffects`→`onViewChange`→main の `render()` を同期発火させ、まだ代入前の `const editor` を参照して `ReferenceError: Cannot access 'editor' before initialization`＝**アプリがロード時に落ちる**。→ `initialized` フラグを追加し、構築完了までは `applyEffects` が `onViewChange` を呼ばないよう修正（初期描画は main が明示実行）。
+  2. **[実行時バグ] クリック時フォーカス喪失**（`main.ts`）: canvas は非フォーカス要素のため、セルクリックの mousedown 既定動作でフォーカスが body へ移り、pointerdown の `focus()` が打ち消され**「クリック後に入力」（§11.4）ができない**（activeElement=BODY）。→ canvas の `mousedown` を preventDefault して textarea フォーカスを保持（Codex #5 と同型）。
+- **修正後の目視確認（green）**: (a) ロード時エラー0。(b) セルクリック→直接入力 "abc" で編集開始（白背景・Editing）。(c) Enter で確定＋下移動（textarea 空・透明・top +28px・フォーカス維持）。(d) 編集中セルへリモート更新（sim-active）→**ドラフト "abc" 保持＋赤枠競合インジケーター**（§11.7 MarkConflictOnly・受け入れ#5の中核ロジック。※実IME composition ではなく ASCII での検証）。エビデンス `DD-002/phase3-4-statemachine-conflict-smoke.png`。
+- 修正後 `apps/playground` スコープで `test` 103 pass／`typecheck`／`lint` 再 green。
+- **回帰カバレッジのメモ**: 2件は DOM/ブラウザー統合バグでユニット（node）では検出困難。保留中の Phase 5 E2E（Playwright）に「ロード時エラー0」「クリック→入力」を回帰として必ず含める（E2E実装時のTODO・下記DA #10）。
+
 ---
 
 ## DA批判レビュー記録
@@ -246,3 +254,4 @@
 | 7 | 2 | recorder の取りこぼし（§11.5 監視対象の記録漏れ）で実挙動確定を損なう | 中 | dev で composition→input→keydown 列が漏れなく並ぶか（主セッション Playwright スモーク） | 観察妥当性・回帰 | compositionstart/update/end・beforeinput・input・keydown・keyup・focus・blur・pointerdown を購読（§11.5 準拠）。copy/cut/paste は本Phaseスコープ外（検討内容の scope-out）。整形の網羅は `event-recorder.test.ts`（16件）で検証。取りこぼし最終目視は主セッション Playwright スモークで確認 |
 | 8 | 3 | §11.9 禁止事項の混入（状態機械統合で最も起きやすい） | 高 | `resident-textarea.ts` の applyEffect/reconcile/followScroll を精査 | §11.9 全項目 | 全7項目クリアを確認: ①編集開始は `input`/`compositionstart` 起点で keydown文字推測なし ②composition中は place() が return し再マウント/位置変更なし ③UpdateDraft は DOM 無操作・reconcile は composing 中 value を触らない（value整形なし）④applyRemoteUpdate は store のみ・textarea へサーバー値を入れない ⑤確定Enterは composing/suppress で SuppressKey（通常Enter扱いなし）⑥textarea 1個を destroy まで保持・focus 付け替えなし ⑦React 不使用・値の正は textarea.value。テスト47件で遷移を固定 |
 | 9 | 4 | シミュレーターが §11.7 契約を破る／スクロール追従で座標ズレ | 中 | simulator は store 直書きせず editor.applyRemoteUpdate 経由か・followScroll が composition を壊さないか | §11.7・I-3・回帰 | simulator は `RemoteUpdateSink.applyRemoteUpdate` のみを呼び、store反映+MarkConflictは editor/machine が一元処理（§11.7 の textarea不変・競合マークのみが保たれる）。`followScroll` は cellRect（スクロール非依存のコンテンツ座標）で left/top/width/height のみ再設定＝座標ズレなし・value/selection/DOM不変（I-3）。連続書込中も draft 不変は S-F4 テストで担保 |
+| 10 | 3/4 | ユニット（node）が DOM 配線順・ブラウザー既定挙動を検証せず、実行時バグ（TDZ初期化・クリック時フォーカス喪失）が緑テストをすり抜けた | 高 | 主セッション dev目視で発見（本ログ参照）。①ロード時 `ReferenceError` ②クリック後 activeElement=BODY で入力不可 | テスト盲点・回帰 | 2件とも修正済み（initialized フラグ／canvas mousedown preventDefault）。**保留中の Phase 5 E2E に必須回帰を追加**: (a) ページロードでコンソールエラー0（未捕捉例外なし）(b) セルをクリック→printable入力で編集開始（activeElement=textarea・白背景）。E2E導入時のTODOとして固定 |

@@ -63,6 +63,11 @@ function render(): void {
 // セル値が変わったら再描画（cell-store が唯一の値の正。リモート更新の Canvas 反映もここ）。
 store.subscribe(render);
 
+// canvas の mousedown 既定フォーカス移動を止め、pointerdown で focus した textarea を保つ。
+// canvas は非フォーカス要素のため、既定では click で focus が body へ移り「クリック後に入力」
+// （§11.4）が壊れる。選択は下の pointerdown で処理するので既定を止めても支障しない（Codex #5 と同型）。
+canvas.addEventListener('mousedown', (event) => event.preventDefault());
+
 // クリックでセル選択（ヘッダー・範囲外は null として状態機械に委ねる）。
 // 変換中クリックの pendingNavigation 判定・編集中の commit も状態機械が担う（§11.6）。
 canvas.addEventListener('pointerdown', (event) => {
