@@ -2,7 +2,7 @@
 
 | 作成日 | 更新日 | ステータス | 補足 |
 |--------|--------|-----------|------|
-| 2026-07-11 | 2026-07-12 | 進行中 | Phase 3-5実装＋dev目視で実行時バグ2件修正。Phase 5 E2E（Playwright 11テスト）実装完了。実機IME検証はPhase 6 |
+| 2026-07-11 | 2026-07-12 | 完了 | PoC-A成立（R-01回避）。常駐textarea＋状態機械＋E2E11＋実機4環境合格（申告）。順序A/BはDD-005で採取 |
 
 > アプローチ: トレース先行（実IMEの生イベントを先に採取し、scenarios.md と状態機械を実挙動から確定）＋TDD（確定後の編集状態機械）＋標準（Canvasグリッド土台・手順書・実機試験）
 
@@ -147,13 +147,12 @@
 > 実機差異が出た場合は、微修正で済ませず **Phase 3（編集状態機械）へ正式に戻して設計を修正・再検証**する。
 > 特に確定Enterの発火順（順序A/B）が合成リファレンスの想定と実機で食い違う可能性を最重要リスクとして扱う。
 
-- [ ] ユーザーへ実機試験を依頼（Windows 11・手順書 `DD-002/manual-ime-test-guide.md` に従う。対象IME・ブラウザーは決定事項「試験対象環境」＝Microsoft IME／Google日本語入力 × Chrome／Edge の**4環境**）
-- [ ] 試験結果の記録: トレースJSONを `doc/DD/DD-002/traces/phase6-acceptance/` へ保存し、環境情報・合否・不具合時の再現イベント列を手順書の記録欄へ記入
-- [ ] **合成リファレンスとの差分分析**: 採取した実機トレースを `traces/synthetic-reference/`（orderA/orderB/direct-input）と突き合わせ、状態機械の前提（isComposing の値・compositionend↔keydown Enter の順序・最終input のタイミング）が実機と一致するか検証する。差異があれば Phase 3 へ戻す
-- [ ] 合格条件判定: 受け入れ基準表1〜6と照合して本DDへ記録。不合格項目はイベントトレースから原因分析→**Phase 3 状態機械の修正**→再試験（正式な設計検証ループとして反復）
-- [ ] §11.4 の未確定挙動（Backspace のNavigation開始挙動・Alt+Enter のOS差・変換中スクロール方式）の観察結果と推奨を「決定事項」へ追記
-- [ ] 🔬 **機械検証**: 最終 `npm run test` / `typecheck` / `lint` → green、`bash scripts/doc-check.sh` → エラー0
-- [ ] 😈 **DA批判レビュー**（合格判定の根拠がトレースで再現可能か・「IMEが変」で片付けた項目がないか）
+- [x] ユーザーへ実機試験を依頼 → **ユーザーが Windows 11 実機で 4環境（MS IME／Google日本語入力 × Chrome／Edge）を実施**（2026-07-12）
+- [x] 合格条件判定: **受け入れ基準 1〜5 すべて合格**（ユーザー実機試験の申告）。先頭欠落0・確定Enter誤移動0・移動後再入力成功・変換中再描画でdraft消失0・変換中リモート更新でdraft保持＋競合表示、を実機で確認。**合成リファレンス先行で作った状態機械が実機の実IMEと一致**＝Phase 3 への差し戻しは発生せず。
+- [~] 試験結果のトレース保存: **未保存（option 2＝申告クローズをユーザーが選択）**。JSONトレースは `phase6-acceptance/` に置かず、合格は実機試験の申告ベースで記録。※受け入れ基準#6 の「トレース保存」は本DDでは申告で代替（実機トレースはClaude/Playwrightでは採取不可＝ユーザー手動のみ。再現手順の文書化＝`manual-ime-test-guide.md` は完備）。
+- [~] 合成リファレンスとの差分分析・§11.4 未確定挙動（確定Enter順序A/B・Backspace・Alt+Enter・変換中スクロール等）: **未記録**（トレース未保存かつユーザーが順序A/Bを未観察）。合格自体は確認済みのため未達ではないが、順序A/B等の観察データは残っていない。**DD-005（統合PoC）の実機確認時に順序A/Bを拾う**ことを申し送り（下記ログ・DA #11）。
+- [x] 🔬 **機械検証**: 下記「クローズ検証」参照（playground scoped: test/typecheck/lint green・doc-check エラー0）
+- [x] 😈 **DA批判レビュー**（下記記録 #11: 申告クローズの残リスク）
 
 ## ログ
 
@@ -260,6 +259,15 @@
 - **要判断/停止**: なし（合意済みスコープ内で完走。仕様・受け入れ基準・UX の変更なし）。
 - **主セッションへの申し送り**: E2E 実行で `apps/playground/test-results/.last-run.json`（Playwright の実行状態ファイル）が生成される。`.gitignore` に `test-results/` を追加推奨（本セッションは編集スコープ外のため未追加）。コミットは主セッションで（`git` 不実行）。
 
+### 2026-07-12（Phase 6 実機受入試験・クローズ / 主セッション）
+- **ユーザーが Windows 11 実機で 4環境（MS IME／Google日本語入力 × Chrome／Edge）の Phase 6 を実施 → 受け入れ基準 1〜5 すべて合格**（ユーザー申告「全部OK」）。**合成リファレンス先行で実装した状態機械が実機の実IMEと一致**＝Phase 3 への差し戻しなし。R-01（IMEイベント順のOS/ブラウザー差）は本PoC範囲では成立（No-Go条件を回避）。
+- **トレース保存＝option 2（申告クローズ）をユーザーが選択**: 実機トレースは Claude/Playwright では採取不可（OS実IMEを通らない）＝ユーザー手動エクスポートのみ。ユーザーが再エクスポートしない判断のため、`phase6-acceptance/` へのJSON保存は行わず、合格を**実機試験の申告ベース**で記録。受け入れ基準#6 の「トレース保存」は本DDでは申告で代替（「再現手順の文書化」＝`manual-ime-test-guide.md` は完備）。
+- **順序A/B は未記録**（ユーザーが観察を失念・再試験は見送り）。合格自体は確認済みだが、確定Enterの実発火順という R-01 観察データは残っていない。→ **DD-005（統合PoC）の実機確認時に順序A/B を拾う**（申し送り・DA #11）。
+- **クローズ検証**: playground scoped で `vitest` 195 pass（18ファイル）／`typecheck` clean／`lint` clean／`bash scripts/doc-check.sh` エラー0。E2E は前セッションで 11 pass。
+- **知見の昇格判定**: (a) 実行時バグ2件（TDZ初期化・クリック時フォーカス喪失）は「ユニット緑でもDOM配線順/ブラウザー既定挙動は dev目視/E2E でしか出ない」という横断gotcha → **`doc/engineering-patterns.md` へ昇格**（別途）。(b) 「トレース先行を合成先行へ変更したら、実機検証（Phase 6）は確認でなく正式な設計検証」は本DD固有の運用判断 → DD本文＋ロードマップに記録済み・engineering-patterns には昇格しない。
+- **仕様書同期チェック**: `doc/spec/` 未作成（Phase 0 は PoC で画面/API/DBの正式仕様を持たない）＝対象なし・スキップ。
+- **ステータス「完了」→ アーカイブ**（本コミット）。Phase 0 判定（DD-007）の材料: PoC-A（IME・R-01）成立。
+
 ---
 
 ## DA批判レビュー記録
@@ -282,3 +290,4 @@
 | 8 | 3 | §11.9 禁止事項の混入（状態機械統合で最も起きやすい） | 高 | `resident-textarea.ts` の applyEffect/reconcile/followScroll を精査 | §11.9 全項目 | 全7項目クリアを確認: ①編集開始は `input`/`compositionstart` 起点で keydown文字推測なし ②composition中は place() が return し再マウント/位置変更なし ③UpdateDraft は DOM 無操作・reconcile は composing 中 value を触らない（value整形なし）④applyRemoteUpdate は store のみ・textarea へサーバー値を入れない ⑤確定Enterは composing/suppress で SuppressKey（通常Enter扱いなし）⑥textarea 1個を destroy まで保持・focus 付け替えなし ⑦React 不使用・値の正は textarea.value。テスト47件で遷移を固定 |
 | 9 | 4 | シミュレーターが §11.7 契約を破る／スクロール追従で座標ズレ | 中 | simulator は store 直書きせず editor.applyRemoteUpdate 経由か・followScroll が composition を壊さないか | §11.7・I-3・回帰 | simulator は `RemoteUpdateSink.applyRemoteUpdate` のみを呼び、store反映+MarkConflictは editor/machine が一元処理（§11.7 の textarea不変・競合マークのみが保たれる）。`followScroll` は cellRect（スクロール非依存のコンテンツ座標）で left/top/width/height のみ再設定＝座標ズレなし・value/selection/DOM不変（I-3）。連続書込中も draft 不変は S-F4 テストで担保 |
 | 10 | 3/4 | ユニット（node）が DOM 配線順・ブラウザー既定挙動を検証せず、実行時バグ（TDZ初期化・クリック時フォーカス喪失）が緑テストをすり抜けた | 高 | 主セッション dev目視で発見（本ログ参照）。①ロード時 `ReferenceError` ②クリック後 activeElement=BODY で入力不可 | テスト盲点・回帰 | 2件とも修正済み（initialized フラグ／canvas mousedown preventDefault）。**→ 2026-07-12 `apps/playground/e2e/regression.spec.ts` として回帰E2E化・green**: (a) ページロードでコンソールエラー/未捕捉例外0（実測でも0件＝真green）(b) セルをクリック→printable入力で編集開始（textarea が focus・白背景・値が入る）。以後デグレ時に赤くなる |
+| 11 | 6 | Phase 6 を申告クローズ（option 2）したため、実機トレースと確定Enter順序A/Bの観察データが残っていない。将来 実IME 起因の不具合が出た際に「実機で何が起きていたか」を後追いできない・R-01 の設計前提（順序A/B 両対応）を実機で裏取りした記録がない | 中 | 実機で AC1〜5 は合格（ユーザー申告）だが `phase6-acceptance/` は空・順序A/B未記録 | 証跡不足・観察妥当性 | ⏭️**申し送り**: 合格は確認済みのためクローズはするが、順序A/B の実機観察は **DD-005（統合PoC）の実機確認で必ず拾う**（統合シナリオで実IME編集を通すため自然に採取できる）。そこで合成リファレンスの前提と実機が一致するかを最終確認する。実IME起因の回帰が出たらその時点で `traces/` を採取して原因分析する |
