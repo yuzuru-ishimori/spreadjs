@@ -6,6 +6,8 @@
 
 > アプローチ: 標準（基盤構築であり、画面・ビジネスロジックの検証は後続PoC DDで行うため）
 
+> ⚠️ **後日改名**: 本DD本文中の npm スコープ `@spreadjs/*` は、その後 `@nanairo-sheet/*` へ改名された（商用SpreadJSとの混同回避。2026-07-11・decisions.md **D-003**）。以下の `@spreadjs/*` 表記は起票当時の履歴であり、現行の正はD-003。
+
 ## 目的
 
 npm workspaces による monorepo 骨格（`packages/` と `apps/`）と、`npm run dev|test|typecheck|lint` が動く最小の開発基盤を構築する。以降の PoC-A〜D（IME / Canvas / 共同編集 / データ表現）のDDはすべてこの基盤の上で実装する。
