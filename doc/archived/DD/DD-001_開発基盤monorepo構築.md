@@ -2,7 +2,7 @@
 
 | 作成日 | 更新日 | ステータス | 補足 |
 |--------|--------|-----------|------|
-| 2026-07-11 | 2026-07-11 | 確認待ち | 実装+Codexレビュー完了。機械検証1〜7 green・エビデンス取得済み。ユーザーレビュー待ち |
+| 2026-07-11 | 2026-07-11 | 完了 | npm workspaces基盤（sheet-types+playground）構築。dev/test/typecheck/lint整備、D-001/D-002記録 |
 
 > アプローチ: 標準（基盤構築であり、画面・ビジネスロジックの検証は後続PoC DDで行うため）
 
@@ -139,6 +139,11 @@ npm workspaces による monorepo 骨格（`packages/` と `apps/`）と、`npm 
 - Playwright MCP で playground（`npm run dev` → :5174）を開き、Canvasを赤枠ハイライトして `DD-001/playground-after-empty-canvas.png` を取得 → 📸タスク完了（受け入れ基準 #1 の目視分を充足）
 - ブラウザーコンソール: `favicon.ico` の404が1件のみ（favicon未設定のplaygroundでは想定内のノイズ。機能影響なし）。JSエラーなし
 - 全タスク完了。ステータス「確認待ち」＝ユーザーレビューとコミット判断待ち
+
+### 2026-07-11（クローズ）
+- ユーザー承認 → コミット e17dfac（`DD-001: 開発基盤monorepo構築`）→ ステータス「完了」へ更新しアーカイブ
+- 仕様書同期チェック: 対象なし（`doc/spec/` は未作成・本DDは画面/API/DBの仕様変更を含まない基盤構築のため）
+- 知見の昇格判定: 長寿命の決定は実装時に `doc/decisions.md` D-001/D-002 へ記録済み。横断gotcha（幽霊依存対策・DOM lib分離等）はDD本文のDA記録と decisions.md でカバーされるため engineering-patterns.md への追加なしと判断
 
 ---
 
