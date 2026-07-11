@@ -1,0 +1,20 @@
+{
+  "meta": {
+    "browser": "(synthetic)",
+    "os": "(synthetic)",
+    "ime": "SYNTHETIC (hand-authored per plan §11.5 — NOT real IME output)",
+    "userAgent": "n/a — hand-authored reference",
+    "exportedAt": "2026-07-11 (hand-authored)",
+    "traceCount": 7,
+    "note": "確定Enterがcompositionend後(isComposing:false)に来る順序B。scenarios.md S-D5。最小textareaではこのEnterがセル下移動になりうる=状態機械がsuppressCommitUntilKeyupで抑止し、keyupで解除。"
+  },
+  "traces": [
+    { "timestamp": 0,  "browser": "(synthetic)", "os": "(synthetic)", "ime": "SYNTHETIC", "state": "Composing", "eventType": "compositionstart", "data": "",     "value": "",    "selectionStart": 0, "selectionEnd": 0, "activeCell": { "row": 1, "col": 0 } },
+    { "timestamp": 40, "browser": "(synthetic)", "os": "(synthetic)", "ime": "SYNTHETIC", "state": "Composing", "eventType": "compositionupdate", "data": "にほ", "value": "にほ", "selectionStart": 2, "selectionEnd": 2, "activeCell": { "row": 1, "col": 0 } },
+    { "timestamp": 80, "browser": "(synthetic)", "os": "(synthetic)", "ime": "SYNTHETIC", "state": "Composing", "eventType": "compositionupdate", "data": "日本", "value": "日本", "selectionStart": 2, "selectionEnd": 2, "activeCell": { "row": 1, "col": 0 } },
+    { "timestamp": 120, "browser": "(synthetic)", "os": "(synthetic)", "ime": "SYNTHETIC", "state": "Composing", "eventType": "compositionend", "data": "日本", "value": "日本", "selectionStart": 2, "selectionEnd": 2, "activeCell": { "row": 1, "col": 0 } },
+    { "timestamp": 125, "browser": "(synthetic)", "os": "(synthetic)", "ime": "SYNTHETIC", "state": "Editing", "eventType": "input", "inputType": "insertCompositionText", "data": "日本", "isComposing": false, "value": "日本", "selectionStart": 2, "selectionEnd": 2, "activeCell": { "row": 1, "col": 0 } },
+    { "timestamp": 130, "browser": "(synthetic)", "os": "(synthetic)", "ime": "SYNTHETIC", "state": "Editing", "eventType": "keydown", "key": "Enter", "code": "Enter", "isComposing": false, "value": "日本", "selectionStart": 2, "selectionEnd": 2, "activeCell": { "row": 1, "col": 0 } },
+    { "timestamp": 180, "browser": "(synthetic)", "os": "(synthetic)", "ime": "SYNTHETIC", "state": "Editing", "eventType": "keyup", "key": "Enter", "code": "Enter", "isComposing": false, "value": "日本", "selectionStart": 2, "selectionEnd": 2, "activeCell": { "row": 1, "col": 0 } }
+  ]
+}

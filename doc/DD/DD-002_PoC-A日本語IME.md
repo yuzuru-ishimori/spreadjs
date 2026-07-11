@@ -2,7 +2,7 @@
 
 | 作成日 | 更新日 | ステータス | 補足 |
 |--------|--------|-----------|------|
-| 2026-07-11 | 2026-07-11 | 進行中 | Phase 2完了・対話スモーク/エビデンス取得済み。実機トレース採取待ち（ユーザー作業・ゲート1） |
+| 2026-07-11 | 2026-07-11 | 進行中 | Phase 2完了＋合成リファレンス生成。Phase 3（状態機械TDD）着手。実機IME検証はPhase 6 |
 
 > アプローチ: トレース先行（実IMEの生イベントを先に採取し、scenarios.md と状態機械を実挙動から確定）＋TDD（確定後の編集状態機械）＋標準（Canvasグリッド土台・手順書・実機試験）
 
@@ -83,8 +83,9 @@
 - [x] 🔬 **機械検証**: `npm run test`（33 pass）/ `typecheck` / `lint` / `build` → green。`npm run dev` の対話目視（クリック・キー移動）は主セッションの Playwright スモークで確認済み（`DD-002/phase1-grid-smoke.png`・下記ログ）
 - [x] 😈 **DA批判レビュー**（基準: da-method.md §3.4 → 下記記録 #1〜4）
 
-### Phase 2: 最小常駐textarea＋生イベントrecorder（実トレース採取）★ユーザー実機ゲート1
-> 目的は「状態機械を作る前に実挙動を採取する」こと。ここでは高度な制御（確定Enter抑止等）を入れず、**生イベントをそのまま記録**する。
+### Phase 2: 最小常駐textarea＋生イベントrecorder（トレース採取土台）
+> 目的は「状態機械を作る前に実挙動の土台を用意する」こと。高度な制御（確定Enter抑止等）を入れず**生イベントをそのまま記録**する。
+> 実機の実IMEはClaude/Playwrightで採取できないため（下記）、Phase 3の種は**合成リファレンス＋scenarios.md**とし、実機の実IME検証はPhase 6へ委譲する（2026-07-11 ユーザー選択）。
 
 #### Phase 2 詳細設計（📐 → モジュール境界・責務）
 
@@ -102,8 +103,9 @@
 - [x] 🔬 **機械検証（自動）**: `npm run test`（recorderの整形ユニット16件＝計49件 pass）/ `typecheck` / `lint` / `build` → green。dev-serve スモーク＝各モジュールが HTTP 200 で配信・変換OK。**対話スモーク（主セッション Playwright）実施済み**: セル選択→キー入力（x/y/Enter）で keydown/beforeinput/input/keyup が種別ごとに整形記録（16件）・state/value 追従・preventDefault前記録を確認。JSONエクスポートが `{meta, traces}`（Appendix B 全フィールド）の有効JSONを出力することを Blob 横取りで検証（下記ログ）
 - [x] 📸 **エビデンス**: グリッド＋常駐textarea＋trace-panel のキャプチャ（`DD-002/phase2-recorder-smoke.png`。主セッション Playwright で取得・trace-panel を赤枠強調）
 - [x] 😈 **DA批判レビュー**（recorderの取りこぼし・最小textareaのcommitがイベント観察を妨げないか → 下記記録 #6・#7）
-- [ ] 🧑‍🔬 **ユーザー実機トレース採取（実機作業）**: 手順メモ `DD-002/phase2-trace-collection.md` に従い、Microsoft IME／Google日本語入力 × Chrome／Edge で代表操作（直接入力→変換→確定→移動→再入力／確定Enter／変換中クリック／変換中スクロール）の生トレースを `DD-002/traces/phase2-raw/` へ保存
-- [ ] 📊 **トレース分析**: 確定Enterの発火順（順序A/B）・先頭文字挙動・composition境界のブラウザー/IME差を観察記録にまとめ、`scenarios.md`（特にQ-1〜5・S-D3/D5）へ反映 → **ユーザー確認**（テスト設計の確定＝guides.md §8）
+- [x] 🧪 **合成リファレンス生成（2026-07-11 ユーザー選択）**: 実機の実IMEはClaude/Playwrightで採取不可（Playwrightは`insertText`でOS IMEを通らない）と確定。代替として計画書§11.5準拠の合成リファレンストレースを `DD-002/traces/synthetic-reference/` に生成（orderA=確定Enterがcomposition中／orderB=compositionend後／direct-input=確定の次Enterで移動）。**実機の実IME検証はPhase 6受入試験へ委譲**（合格条件1〜5は実機で判定）。合成は明確にラベル（`meta.ime: SYNTHETIC…`）し実機用 `phase2-raw/` と分離
+- [ ] 🧑‍🔬 **（任意・後日）ユーザー実機トレース採取**: 余力があれば手順メモ `DD-002/phase2-trace-collection.md` に従い実機4環境（MS IME/Google × Chrome/Edge）を `traces/phase2-raw/` へ採取するとR-01の実挙動が早期に確定できる。未採取でもPhase 3は合成リファレンス＋scenarios.mdで進め、Phase 6で実機確定する
+- [x] 📊 **トレース分析（方針確定）**: scenarios.md の Q-1〜5・S-D3/D5 は仮決めどおり確定済み（ユーザー合意）。確定Enterの順序A/B差は合成リファレンスで表現し、Phase 3 で両方コード化（DA #1）。実機での順序差・Chrome/Edge差・Google固有差はPhase 6で確認する（scenarios.md変更が要る差異が出たらそこで反映）
 
 ### Phase 3: 編集状態機械（TDD）＋常駐textarea本統合
 - [ ] 📐 **実装前詳細化**（Phase 2トレースを踏まえ、状態機械の入出力・§11.5互換層〔suppressCommitUntilKeyup 等〕の具体条件・activeCell所有権の machine 一本化〔DA #2〕を確定）
@@ -181,7 +183,14 @@
   - **JSONエクスポート**を Blob 横取りで検証 → `{meta:{browser,os,ime,userAgent,exportedAt,traceCount}, traces:[…]}` の有効JSON、各 trace は Appendix B 全フィールド（timestamp/browser/os/ime/state/eventType/value/selection/activeCell）
   - エビデンス `DD-002/phase2-recorder-smoke.png`（trace-panel を赤枠強調）取得 → 📸完了
 - コンソールエラーは favicon 404（想定内）と、検証で `URL.createObjectURL` をモックしたことによる `blob:mock` 拒否（＝スモーク由来。実挙動では実blob URLで正常DL）の2件のみ。**実バグなし**
-- DA #7（recorder取りこぼし最終目視）・#6（commitが観察を妨げないか）を本スモークで確認済み。Phase 2 の主セッション作業完了 → ユーザー実機トレース採取（ゲート1）へ
+- DA #7（recorder取りこぼし最終目視）・#6（commitが観察を妨げないか）を本スモークで確認済み。
+
+### 2026-07-11（合成リファレンス生成・トレース方針確定 / 主セッション）
+- **実機IME採取の可否をユーザーに提示**: Claude/Playwrightはブラウザに`insertText`で直接挿入するためOSの実IME（MS IME/Google日本語入力）を通らず、本物のcomposition/isComposingを再現不可（§11.8/§20.5）。実機4環境の採取と6観点（順序A/B・Chrome/Edge差・最終input遅延・Google固有差）は実機でのみ判定可能と説明
+- **ユーザー選択 = 「合成リファレンス生成＋Phase 3着手」**: 実機の実IME検証はPhase 6受入試験へ委譲し、Phase 3は合成リファレンス＋scenarios.mdを種に進める
+- **合成リファレンス生成**: `DD-002/traces/synthetic-reference/` に3本＋README。orderA（確定Enterがcomposition中・isComposing:true）／orderB（compositionend後・isComposing:false＝最小版では下移動しうる＝抑止対象）／direct-input（確定の次Enterで下移動＝受け入れ#2）。全て `meta.ime: SYNTHETIC…` と明記し実機用`phase2-raw/`と分離。JSON整合を検証（7/7/9件）
+- recorderのcomposition整形はユニット16件で検証済みのためツールは実機採取可能状態。実機採取（`phase2-raw/`）は任意・後日でも可（未採取でもPhase 6で実機確定）
+- 次: Phase 3（編集状態機械 TDD）へ着手。順序A/B両方をコード化（DA #1）
 
 ---
 

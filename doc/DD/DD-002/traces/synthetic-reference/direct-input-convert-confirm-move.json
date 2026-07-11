@@ -1,0 +1,22 @@
+{
+  "meta": {
+    "browser": "(synthetic)",
+    "os": "(synthetic)",
+    "ime": "SYNTHETIC (hand-authored per plan §11.5 — NOT real IME output)",
+    "userAgent": "n/a — hand-authored reference",
+    "exportedAt": "2026-07-11 (hand-authored)",
+    "traceCount": 9,
+    "note": "直接入力→変換→確定(順序B)→独立した次のEnterで下移動。受け入れ#2『確定の次のEnterで移動』。確定Enter(idx5)は抑止、次のEnter(idx8)でcommit+下移動。"
+  },
+  "traces": [
+    { "timestamp": 0,  "browser": "(synthetic)", "os": "(synthetic)", "ime": "SYNTHETIC", "state": "Composing", "eventType": "compositionstart", "data": "",     "value": "",    "selectionStart": 0, "selectionEnd": 0, "activeCell": { "row": 1, "col": 0 } },
+    { "timestamp": 40, "browser": "(synthetic)", "os": "(synthetic)", "ime": "SYNTHETIC", "state": "Composing", "eventType": "compositionupdate", "data": "にほ", "value": "にほ", "selectionStart": 2, "selectionEnd": 2, "activeCell": { "row": 1, "col": 0 } },
+    { "timestamp": 80, "browser": "(synthetic)", "os": "(synthetic)", "ime": "SYNTHETIC", "state": "Composing", "eventType": "compositionupdate", "data": "日本", "value": "日本", "selectionStart": 2, "selectionEnd": 2, "activeCell": { "row": 1, "col": 0 } },
+    { "timestamp": 120, "browser": "(synthetic)", "os": "(synthetic)", "ime": "SYNTHETIC", "state": "Composing", "eventType": "compositionend", "data": "日本", "value": "日本", "selectionStart": 2, "selectionEnd": 2, "activeCell": { "row": 1, "col": 0 } },
+    { "timestamp": 125, "browser": "(synthetic)", "os": "(synthetic)", "ime": "SYNTHETIC", "state": "Editing", "eventType": "input", "inputType": "insertCompositionText", "data": "日本", "isComposing": false, "value": "日本", "selectionStart": 2, "selectionEnd": 2, "activeCell": { "row": 1, "col": 0 } },
+    { "timestamp": 130, "browser": "(synthetic)", "os": "(synthetic)", "ime": "SYNTHETIC", "state": "Editing", "eventType": "keydown", "key": "Enter", "code": "Enter", "isComposing": false, "value": "日本", "selectionStart": 2, "selectionEnd": 2, "activeCell": { "row": 1, "col": 0 } },
+    { "timestamp": 180, "browser": "(synthetic)", "os": "(synthetic)", "ime": "SYNTHETIC", "state": "Editing", "eventType": "keyup", "key": "Enter", "code": "Enter", "isComposing": false, "value": "日本", "selectionStart": 2, "selectionEnd": 2, "activeCell": { "row": 1, "col": 0 } },
+    { "timestamp": 600, "browser": "(synthetic)", "os": "(synthetic)", "ime": "SYNTHETIC", "state": "Editing", "eventType": "keydown", "key": "Enter", "code": "Enter", "isComposing": false, "value": "日本", "selectionStart": 2, "selectionEnd": 2, "activeCell": { "row": 1, "col": 0 } },
+    { "timestamp": 640, "browser": "(synthetic)", "os": "(synthetic)", "ime": "SYNTHETIC", "state": "Navigation", "eventType": "keyup", "key": "Enter", "code": "Enter", "isComposing": false, "value": "", "selectionStart": 0, "selectionEnd": 0, "activeCell": { "row": 2, "col": 0 } }
+  ]
+}
