@@ -28,17 +28,25 @@
 ## 決定事項
 
 - **Operationは3種のみ**（§7.4/7.5・Appendix A準拠）: `SetCells`（conflictPolicy は `reject-overlap` 固定）／`InsertRows`（`afterRowId` アンカー・新RowIdはOperationに同梱）／`DeleteRows`（rowIds指定・スロットtombstone化）。Envelopeは §7.3 の Client/Server 両形式。
+- **Operationの原子性・境界仕様**（2026-07-11 ユーザー指摘で明記。scenarios/protocol-subset に具体例を書く）:
+  - **SetCells は全件適用または全件拒否の原子的Operation**（§7.5「貼り付けはTransaction単位で原子的」「MVPは全成功／全失敗」）。changes 内に1件でも stale／不正があれば Operation 全体を reject し、部分適用しない。
+  - **tombstone化された既知アンカーへの InsertRows**: `afterRowId` が既に DeleteRows で tombstone 済みの場合、**アンカーは論理表示順上の参照点として有効**（tombstone はスロット回収を遅延するだけで順序参照は残す）とし、その直後へ挿入する。アンカーが未知ID（一度も存在しない）の場合は reject。
+  - **削除済み行への再Delete**: DeleteRows の rowIds に tombstone 済みIDが含まれる場合は**冪等に無視**（該当IDは no-op、残りは適用）。全件が削除済みなら changeSet 空で成功（エラーにしない）。
+  - **`clientSequence` は `clientSessionId` 単位**で単調増加・検査する（同一ユーザーが複数タブ/接続を持つ場合、接続ごとに独立した列にする。§7.3 の `clientId` を接続＝セッション識別子として扱う）。
 - **適用関数は §7.6 決定論を厳守**: 時刻・乱数・DOM・ネットワーク非参照／同一入力→同一結果／`ApplyResult`（changeSet・inverseSeed・dirtyRegions・formulaInvalidations）返却／不正Operation（削除済み行へのSetCells等）は明示エラー。ID採番は適用関数の外（クライアントCommand側の `crypto.randomUUID()`）。
 - **文書ハッシュ**: 正準直列化（行順・セル内容・lastChangedRevision）＋純TSのFNV-1a 64bit（依存ゼロ・Node/ブラウザー共通。Node crypto に依存しない）。
 - **サーバーは §8.4 準拠**: revision単調付与・`operationId` 冪等（重複は二重適用せず同一ACKを再返却）・`baseRevision` 検証・セル `beforeRevision` 照合（staleは `operationRejected`＋現在値/現在revision返却＝§10.2）・`clientSequence` 検査。Roomはトランスポート非依存（メッセージin/outインターフェース）。
 - **クライアントは §7.7 の6手順**（pending逆順rollback→server Operation適用→own除去→残pending再検証→再適用→不成立はConflict Queueへ）。`nextExpectedRevision` で欠落検知→`requestCatchup`、期待値より小さいrevisionは重複として無視（§8.4）。再接続は §8.5（先にサーバー差分取得→未送信Operationを再検証・再送）。競合時のローカル入力は Conflict Queue にコピー可能な形で保持する（§10.1-1/6。IMEドラフト保全の完全実装はPoC-A側）。
-- **Presenceは §9 の最小**: 非永続・単調 `sequence`（古い更新は破棄）・`presenceSnapshot`／`presenceDelta`／`presenceRemoved`・切断時削除。共有範囲は**3種フル**（`UserPresence` のアクティブセル・選択範囲・編集中セルを素通しする最小実装。2026-07-11 ユーザー合意）。
+- **Presenceは §9 準拠・connection単位**（2026-07-11 ユーザー指摘で拡張）: 非永続・単調 `sequence`（古い更新は破棄）・`presenceSnapshot`／`presenceDelta`／`presenceRemoved`。
+  - **共有フィールド**: `activeCell`・`selectionRanges`・`editingCell`（§9.2 の3種）＋ `connectionId`・`userId`・`displayName`・`colorKey`（表示・識別用）。
+  - **管理単位は connection（`connectionId`）**: 同一 `userId` でも接続ごとに別 Presence として扱う。`colorKey` はサーバーが接続単位で割り当てる（§9.4 同色衝突回避）。
+  - **TTL削除**: heartbeat（§9.3 目安5秒）受信のたびに接続の有効期限を更新し、**TTL（目安15秒）を超えて heartbeat が途絶えた接続は `presenceRemoved` で削除**する。正常 close は即時削除、異常切断は TTL で削除（§9.3）。TTL判定は**注入クロック**で行う（テスト可能にする。§7.6 の時刻/乱数非参照は Operation 適用関数に課す制約で、サーバーの接続管理は対象外）。
 - **メッセージは §8.3 のPoCサブセット**（join／welcome／submitOperation／operationAck／operationRejected／operations／requestCatchup／presence系／heartbeat系）。フィールド定義・rejectコード等の詳細は `DD-003/protocol-subset.md` へ分離（50行超のため）。
 
 ### 起票時「要確認」3点の回答（2026-07-11 ユーザー合意で確定）
 
-1. **目視デモは含めない＝ヘッドレス検証のみ**（§18.3 合格条件はヘッドレスで判定可能。2ブラウザー同期の目視はPoC-B以降または製品Phase 2で扱う）。
-2. **PresenceのPoC範囲は3種フル**（アクティブセル・選択範囲・編集中セル＝§9.2 の共有3種を最小実装で素通し）。
+1. **2ブラウザーの最小デバッグデモを含める**（2026-07-11 ユーザー指摘で確定）。`apps/collaboration-server` が配信する最小HTML（依存なし・素のWS/DOM）で、2タブ間の SetCell 同期と Presence（他タブのアクティブセル/選択/編集中）を目視できるようにする。合格判定自体はヘッドレス試験で行い、デモは体感確認・デバッグ用（`apps/playground` には触れない）。
+2. **PresenceのPoC範囲は3種フル＋識別フィールド**（activeCell・selectionRanges・editingCell ＋ connectionId・userId・displayName・colorKey。connection単位管理・TTL削除。上記「Presenceは §9 準拠・connection単位」を参照）。
 3. **ランタイム依存の追加を承認**: `apps/collaboration-server` のみに hono / `@hono/node-server` / ws を追加（§3.6「アダプター層のみ許可」の範囲内。packages/* はゼロ依存維持）。
 
 ## 受け入れ基準
@@ -59,14 +67,14 @@
 - [ ] 📋 **各Phaseのタスク精査・詳細化**（受け入れ基準との対応・ファイルパス・変更内容の具体性・🔬の有無を確認）
 - [ ] 📐 **実装前詳細化トリガー判定**（各Phaseごとに本文へ明記。起票時暫定: Phase 1〜4 詳細化要〔新規パッケージ・3ファイル超・並行処理/状態遷移〕、Phase 5 はハーネス中心で不要見込み）
 - [ ] 🧪 **テスト設計（Red）**: §7.6/7.7・§8.4/8.5・§10.2/10.3・§18.3 合格条件からシナリオを洗い出し `doc/DD/DD-003/scenarios.md` に自然言語で作成（決定論・冪等・欠落catch-up・競合reject〔同一セルstale／削除行へのSetCells＝§10.3〕・rollback/replay境界〔own operation受信時のpending除去・reject後の残pending再適用〕・再接続・復元・Presence sequence）→ ユーザーレビュー・合意後にコード化
-- [ ] `doc/DD/DD-003/protocol-subset.md`（新規）: §8.3 メッセージのPoC採用分・Envelope必須フィールド・rejectコード・初期接続/catch-up/再接続手順を定義（scenarios と同時にレビュー）
+- [ ] `doc/DD/DD-003/protocol-subset.md`（新規）: §8.3 メッセージのPoC採用分・Envelope必須フィールド（`clientSequence` は `clientSessionId` 単位）・rejectコード・Presenceフィールド（activeCell/selectionRanges/editingCell/connectionId/userId/displayName/colorKey）・heartbeat/TTL・Operation境界仕様（SetCells原子性・tombstoneアンカーInsertRows・再Delete冪等）・初期接続/catch-up/再接続手順を定義（scenarios と同時にレビュー）
 - [ ] 🧑‍⚖️ **Codexレビュー要否判定**（起票時暫定: **必須**〔TDD対象＋並行処理・複雑な状態遷移＋外部I/F=WSプロトコル〕・effort: high〔xhighトリガー非該当。PoCでデータ移行・認可変更を含まない〕。実行は Phase 5 で全差分に1回）
 - [ ] 😈 **Devil's Advocate調査**（欠点・代替案・壊れやすいポイント。§7.6 決定論違反の混入経路〔Map反復順依存・Date.now・Math.random〕を重点確認）
 
 ### Phase 1: sheet-core 最小（TDD）
 - [ ] 📐 **実装前詳細化**（モジュール境界・公開シグネチャ・ApplyResult/ChangeSetの形を箇条書き→ユーザーレビュー後にコーディング）
 - [ ] **Red**: `packages/sheet-core/src/*.test.ts`（新規）へ scenarios の該当分（適用・逆操作seed・不正Operation・hash決定論）をコード化 → 全件失敗を確認
-- [ ] `packages/sheet-core/package.json`・`tsconfig.json`（新規）: `@spreadjs/sheet-core` ワークスペース追加（DD-001規約・ランタイム依存ゼロ・`@spreadjs/sheet-types` 参照）
+- [ ] `packages/sheet-core/package.json`・`tsconfig.json`（新規）: `@nanairo-sheet/sheet-core` ワークスペース追加（DD-001規約・ランタイム依存ゼロ・`@nanairo-sheet/sheet-types` 参照。スコープは D-003）
 - [ ] `packages/sheet-core/src/document.ts`（新規）: 最小文書モデル（単一シート・行Axis＝`rowOrder`＋`RowMeta{id, slot, lastChangedRevision}`・列は固定ColumnId列・CellStoreはMap二段の最小実装。§6.2/6.3 の完全形は対象外）
 - [ ] `packages/sheet-core/src/operations.ts`（新規）: SetCells／InsertRows／DeleteRows 型と Client/Server Envelope 型（§7.3〜7.5・ブランド型使用）
 - [ ] `packages/sheet-core/src/apply.ts`（新規）: 決定論的適用関数（§7.6・ApplyResult返却・不正Operationは明示エラー・ID生成をしない）
@@ -79,8 +87,9 @@
 - [ ] 📐 **実装前詳細化**（Sequencer/Roomの責務分割・メッセージin/outインターフェース→ユーザーレビュー）
 - [ ] **Red**: `packages/sheet-server-core/src/*.test.ts`（新規）へ冪等・stale reject・catch-up・スナップショット復元のシナリオをコード化 → 失敗確認
 - [ ] `packages/sheet-server-core/package.json`・`tsconfig.json`（新規）: ワークスペース追加（ランタイム依存ゼロ・sheet-types／sheet-core 参照。適用関数はクライアントと共有＝§5.3）
-- [ ] `packages/sheet-server-core/src/sequencer.ts`（新規）: revision単調付与・operationId冪等（既知IDは同一ACK再返却・二重適用しない）・baseRevision検証・beforeRevision照合（reject-overlap→rejectコード＋現在値/現在revision）・clientSequence検査
-- [ ] `packages/sheet-server-core/src/room.ts`（新規）: 権威文書＋Operationログ保持・join処理（lastAppliedRevision以降を返却）・requestCatchup応答・Presence中継（sequence比較・切断時Removed）— トランスポート非依存
+- [ ] `packages/sheet-server-core/src/sequencer.ts`（新規）: revision単調付与・operationId冪等（既知IDは同一ACK再返却・二重適用しない）・baseRevision検証・beforeRevision照合（reject-overlap→rejectコード＋現在値/現在revision）・**SetCells原子性**（1件でもstale/不正なら全体reject）・**clientSequence を clientSessionId 単位で検査**・**tombstoneアンカーInsertRows／再Delete冪等**の境界処理
+- [ ] `packages/sheet-server-core/src/room.ts`（新規）: 権威文書＋Operationログ保持・join処理（lastAppliedRevision以降を返却）・requestCatchup応答・**Presence中継（connection単位・sequence比較・heartbeat受信でTTL更新・TTL超過/切断で`presenceRemoved`。TTL判定は注入クロック）**— トランスポート非依存
+- [ ] `packages/sheet-server-core/src/presence.ts`（新規）: connection単位のPresenceレジストリ（activeCell/selectionRanges/editingCell/connectionId/userId/displayName/colorKey・colorKey割当・注入クロックでのTTL失効）
 - [ ] `packages/sheet-server-core/src/snapshot.ts`（新規）: snapshot＋OperationログのJSONエクスポート/インポート（再起動模擬用）
 - [ ] **Green→Refactor** ＋ 🔬 **機械検証**: `npm run test` / `typecheck` / `lint` → green
 - [ ] 😈 **DA批判レビュー**（冪等キャッシュとログの整合・catch-up境界のoff-by-one）
@@ -99,8 +108,10 @@
 - [ ] `apps/collaboration-server/package.json`: hono / `@hono/node-server` / ws を dependencies へ、`@types/node`・起動用ツール（tsx等）を devDependencies へ追加（要確認3の合意後。packages/* には追加しない）
 - [ ] `apps/collaboration-server/src/server.ts`（新規）: §8.2 初期接続（HTTP GET snapshot〔revision付き〕→ WS join → R+1以降を送信）＋ `protocol-subset.md` のメッセージを Room へ配線・`dev`（起動）script追加
 - [ ] `apps/collaboration-server/src/client-session/ws-transport.ts`（新規）: ws を使う実WSトランスポート実装（client-session へ注入）
-- [ ] 🔬 **機械検証**: `apps/collaboration-server/src/server.smoke.test.ts`（新規・vitest・ランダムポート）: サーバー起動→3クライアント接続→SetCells相互反映→全hash一致・Presence delta到達 → green
-- [ ] 😈 **DA批判レビュー**（切断イベントの取りこぼし・catch-up中送信順・テスト間のポート/プロセス後始末）
+- [ ] `apps/collaboration-server/public/demo.html`（新規）: **2ブラウザー最小デバッグデモ**（依存なしの素WS/DOM・グリッド簡易表示）。2タブで SetCell 同期と Presence（他タブのアクティブセル/選択/編集中を colorKey で色分け表示）を目視。`server.ts` で静的配信
+- [ ] 🔬 **機械検証**: `apps/collaboration-server/src/server.smoke.test.ts`（新規・vitest・ランダムポート）: サーバー起動→3クライアント接続→SetCells相互反映→全hash一致・Presence delta到達・heartbeat途絶でTTL `presenceRemoved` → green
+- [ ] 📸 **エビデンス**: 2タブでの SetCell 同期・Presence 表示のキャプチャ（`DD-003/` へ配置。Playwright MCP 利用可時。不可なら手動キャプチャ）
+- [ ] 😈 **DA批判レビュー**（切断イベントの取りこぼし・catch-up中送信順・テスト間のポート/プロセス後始末・デモHTMLが依存を持ち込んでいないか）
 
 ### Phase 5: 収束・契約・復元試験＋ADRドラフト＋Codexレビュー
 - [ ] `apps/collaboration-server/test/convergence.test.ts`(新規): **10,000件ランダムOperation収束試験** — 3〜10クライアント・SetCells/InsertRows/DeleteRows混合・シード付きPRNG・フォールト注入（重複/欠落/遅延/切断再接続）→ 全クライアント＋サーバーの文書hash一致・二重適用0件（失敗時はシードを出力し再現可能に）
@@ -119,14 +130,19 @@
 - DD作成（`doc/plan/phase0-dd-roadmap.md` ④「PoC-C 共同編集・Operation」に対応。同ロードマップの実DD列に DD-003 を記入）
 - 実装開始条件: DD-002（PoC-A）のコードコミット後（ロードマップ「順序と依存」。現在DD-002が進行中）
 - Codex CLI 利用可否チェック: 利用可（codex-cli 0.144.0-alpha.4）→ Codexレビュータスクを Phase 5 末尾に配置。起票時暫定判定: 必須（TDD対象＋並行処理・複雑な状態遷移＋外部I/F）・effort high
-- Playwright MCP: 画面を伴う実装Phaseなしのため対象外（要確認1で目視デモを含める決定をした場合のみ、実装Phase開始時に利用可否を確認する）
+- Playwright MCP: 2ブラウザー最小デバッグデモを含める決定（下記追加指摘）のため、Phase 4 実装時に利用可否を確認しエビデンス取得（不可なら手動キャプチャ）
 - 要確認: ブラウザー目視デモ（2ブラウザーSetCell同期＝§26相当）を含めるか、ヘッドレス検証のみか（決定事項 §要確認1）
 - 要確認: Presence のPoC範囲はアクティブセルのみか、選択・編集中セルまで含むか（同 §要確認2）
 - 要確認: apps/collaboration-server への hono / @hono/node-server / ws 追加の可否（同 §要確認3）
 
-### 2026-07-11（仕様確認ゲート通過）
-- ユーザー合意により仕様確定（dd-auto Step 2）。要確認3点の回答 — ①目視デモは含めない（ヘッドレス検証のみ）②Presenceは3種フル（アクティブセル・選択範囲・編集中セル）③collaboration-server への hono/@hono/node-server/ws 追加を承認
-- 実装（Opus）は DD-002 のコードコミット後に開始する
+### 2026-07-11（仕様確認ゲート通過 → 追加指摘で更新）
+- ユーザー合意により仕様確定（dd-auto Step 2）。実装（Opus）は DD-002 のコードコミット後に開始する
+- **要確認3点の最終回答（2026-07-11 追加指摘を反映）**:
+  - ① **2ブラウザーの最小デバッグデモを含める**（collaboration-server 配信の依存なし最小HTML。当初「ヘッドレスのみ」から変更）
+  - ② **Presenceは3種フル＋識別フィールド**（activeCell/selectionRanges/editingCell ＋ connectionId/userId/displayName/colorKey・connection単位管理・heartbeat TTL削除）
+  - ③ collaboration-server への hono/@hono/node-server/ws 追加を承認
+- **Operation境界仕様を明記**（追加指摘）: SetCells は全件適用/全件拒否の原子的Operation・tombstone化された既知アンカーへのInsertRows挙動・削除済み行への再Deleteは冪等無視・`clientSequence` は `clientSessionId` 単位
+- **スコープ改名**: 新規パッケージは `@nanairo-sheet/*`（`@nanairo-sheet/sheet-core`・`@nanairo-sheet/sheet-server-core`。decisions.md D-003）
 
 ---
 
