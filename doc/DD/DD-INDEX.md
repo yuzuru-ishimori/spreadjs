@@ -7,7 +7,7 @@
 | DD | 件名 | ステータス | 補足 |
 |----|------|-----------|------|
 | DD-007 | Phase0GoNoGo判定 | 検討中 | 要確認1〜4回答済み。外部レビュー第2回反映（証拠レベルA〜E・技術Go/Phase1前提の分離・ADR非自動Accepted・SDK Alpha完了条件案）。判定材料テンプレート先出し済み。着手条件=DD-002〜006全完了（現状: DD-002完了・DD-004完了・DD-005進行中〔Phase 1完了〕・DD-006 Phase 0事前精査済〔検討中〕） |
-| DD-006 | PoC-Dデータ表現・簡易数式 | 確認待ち | **Phase 1〜5 実装完了＋Codexレビュー反映（P1×6・P2×6 全対応）**。sheet-formula 74＋結合3テスト green・**AC1〜6/8 実測合格**（AC2 fanout-100 p95 1.09ms・メモリ全方式300MB内・AC5 replay O(N²)＝snapshot要・**固定ID数式評価をInsertRows/DeleteRows実文書で実証**）・AC9ページ build green。外部レビュー2回＋Codex反映済み。**残（確認待ち）: AC9ユーザー実機Chrome/Edge run のみ** |
+| DD-006 | PoC-Dデータ表現・簡易数式 | 完了 | **Phase 1〜5 実装＋Codexレビュー反映（P1×6・P2×6）＋AC9ブラウザ実機実測（Chrome 150・乖離なし）完了**。**AC1〜9 全実測合格**（AC2 fanout-100 p95 1.09ms／メモリ全方式300MB内／AC5 replay 100k=14分＝snapshot必須／固定ID数式評価を実文書で実証／AC9 Node比1.0〜1.2倍で乖離なし・§18.6メモリNo-Go非該当）。sheet-formula 74＋結合3テスト green。成果=CellStore用途別選択表・ADR-011拡充・ADR-022ドラフト・計測レポート。DD-007（Go/No-Go）判定材料が揃った |
 
 ## 保留・見送り
 

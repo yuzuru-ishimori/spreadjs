@@ -2,7 +2,7 @@
 
 | 作成日 | 更新日 | ステータス | 補足 |
 |--------|--------|-----------|------|
-| 2026-07-12 | 2026-07-12 | 確認待ち | **Phase 1〜5 実装完了＋Codexレビュー反映（P1×6・P2×6 全対応）**。sheet-formula 74＋結合3テスト green・**AC1〜6/8 実測合格**（AC2 fanout-100 p95 1.09ms・メモリ全方式300MB内・AC5 replay O(N²)＝snapshot要・**固定ID数式評価をInsertRows/DeleteRows実文書で実証**）・AC9ページ build green。外部レビュー2回＋Codex反映済み。**残（確認待ち）: AC9ユーザー実機Chrome/Edge run のみ** |
+| 2026-07-12 | 2026-07-12 | 完了 | **Phase 1〜5 実装＋Codexレビュー反映（P1×6・P2×6）＋AC9ブラウザ実機実測（Chrome 150・乖離なし）完了**。**AC1〜9 全実測合格**（AC2 fanout-100 p95 1.09ms／メモリ全方式300MB内／AC5 replay 100k=14分＝snapshot必須／固定ID数式評価を実文書で実証／AC9 Node比1.0〜1.2倍で乖離なし・§18.6メモリNo-Go非該当）。sheet-formula 74＋結合3テスト green。成果=CellStore用途別選択表・ADR-011拡充・ADR-022ドラフト・計測レポート。DD-007（Go/No-Go）判定材料が揃った |
 
 > アプローチ: 標準（計測中心のPoC）＋TDD（parser・固定IDバインド・依存グラフ・CellStore候補のDOM非依存純ロジック）
 
@@ -113,7 +113,7 @@
 - [x] 😈 **DA批判レビュー**（Operation分布の偏りでreplayが軽く出る・InsertRows多発時のAxis再構築コスト）→ **完了**（DA表 #13〜#14: replay の O(N²) は clone 由来で分布に依存しにくい・snapshot閾値は「Phase 1正式形式向け暫定推奨」に留める）
 
 ### Phase 5: ブラウザ最小確認・計測レポート・ADR-011拡充・ADR-022ドラフト・引き継ぎ・Codexレビュー
-- [x] `apps/pocd-browser-bench`（新規・最小静的ページ）: 採用候補（決定案）方式の500,000セルロード・代表操作（ランダム読書き・範囲走査）・メモリをChromeまたはEdgeで実測し、Node実測との乖離を確認（AC9。playground非依存・devサーバーはルート既存Vite・新規npm依存なし）→ **ページ実装済・`vite build` green**（chunked-rowslot/data-genをPoC-to-PoC importでバンドル）。**定量の最終確定はユーザー実機Chrome/Edge run**（`npm run dev --workspace apps/pocd-browser-bench`・`performance.memory`はChromium系のみ）
+- [x] `apps/pocd-browser-bench`（新規・最小静的ページ）: 採用候補（決定案）方式の500,000セルロード・代表操作（ランダム読書き・範囲走査）・メモリをChromeまたはEdgeで実測し、Node実測との乖離を確認（AC9。playground非依存・devサーバーはルート既存Vite・新規npm依存なし）→ **ページ実装済・`vite build` green**（chunked-rowslot/data-genをPoC-to-PoC importでバンドル）。**定量の最終確定はユーザー実機Chrome/Edge run**（`npm run dev --workspace apps/pocd-browser-bench`・`performance.memory`はChromium系のみ）→ **実機run完了（Chrome 150・2026-07-12）: Node比1.0〜1.2倍で乖離なし・500kセル完走・AC9合格**（詳細はレポート§AC9・下記ログ）
 - [x] 計測実施→ `doc/DD/DD-006/measurement-report.md`（新規・添付）: AC1〜5・8〜9の実測値・合否・機種情報・**結論表**（`bench-protocol.md` §6）・既知の制約・Phase 1引き継ぎ → **完了**（生JSON `DD-006/measurements/`。AC1/2/5 本計測・用途別選択表・Worker判断表・snapshot暫定を記載）
 - [x] `doc/adr/0011-row-slot-chunked-cell-store.md`（拡充）: **4分布**比較の実測を「結果」へ追記し決定案（**単一の勝者を強制せず用途別選択表を許容**）を記載 → **完了**（「DD-006 拡充」節・用途別選択表・Accepted化はDD-007〔要確認4〕）
 - [x] `doc/adr/0022-zero-runtime-dependency-core.md`（新規・ドラフト）: sheet-formula/sheet-core依存ゼロ実績を根拠に背景・選択肢・決定案・再検討条件。`doc/DOC-MAP.md` へADR行を追加 → **完了**（Draft・DD-005/006で実証・DOC-MAP追記）
@@ -149,6 +149,8 @@
 - **P1⑥ bench試行ローテーション非準拠**→ `bench-cellstore.ts` を**試行外側・方式内側の毎試行ローテーション**へ改修し AC1 を再計測（結論不変・chunked-rowslot 総合最良）。
 - **P2**: 空セル走査のL6計上（範囲を矩形セル数でtick）／数値変換を10進数のみ（`0x10`/`1e3`/空白は#VALUE!）／左辺エラー短絡／同順位を固定ID昇順／文字列リテラルのエラー表記は文字列（`SUM("#REF!",1)`=#VALUE!）／セルの非有限値を#VALUE!正規化。すべて回帰テスト追加。
 - 反映後: **sheet-formula 74テスト・結合3テスト green**。ステータスは確認待ち継続（残: AC9ユーザー実機run）。
+- **AC9 ブラウザ実機実測（ユーザー run・Chrome 150・2026-07-12）**: 採用候補 chunked-rowslot / 500,000セル / uniform-sparse。load 100ms（Node 96・1.04倍）・read 39ms（Node 33・1.17倍）・scan 2ms（Node 3.6・0.56倍＝Chromeが速い）・approxStore 16.7MB（Node一致）。**乖離判定（時間2倍超 or メモリ1.5倍超）該当なし**＝Node相対比較の方式選定は Chrome でも妥当。500kセルを Chrome で正常完走＝**§18.6メモリNo-Go 非該当**。`performance.memory` は Chrome 150 で本コンテキスト非公開（空）だが乖離判定に影響なし。→ **AC9 合格**。
+- **DD-006 完了**: AC1〜9 全実測合格・Codex反映（P1×6/P2×6）・外部レビュー2回反映。CellStore決定案＝用途別選択表（Accepted化はDD-007）。DD-007（Phase 0 Go/No-Go）の判定材料（PoC-D 合格・ADR-011拡充・ADR-022ドラフト・既知の制約・Phase 1引き継ぎ）が揃った。アーカイブは未実施（`/dd archive` はユーザー判断・DD-007 が参照するため当面 doc/DD/ に残す）。
 
 ---
 
