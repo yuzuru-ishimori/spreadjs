@@ -13,8 +13,8 @@ DD-002（IME・常駐textarea）・DD-004（Canvas仮想スクロール・Viewpo
 ## 背景・課題
 
 - **スコープの正典は `doc/plan/phase0-dd-roadmap.md` の「DD-005 の統合シナリオ」節**（10項目・着手条件・旧DD-006分割の経緯）。各PoCが個別に合格しても統合時に問題が出るため、DD-005 で一連のフローとして成立させる。
-- **着手条件: DD-002・DD-003・DD-004 完了**（データ表現・数式＝DD-006 は必須依存にしない）。現状 DD-004 は確認待ち（ユーザー実機確認 run 残）。
-- 統合対象の現状: IME＝`apps/playground/src/ime/`（resident-textarea・editor-state-machine・event-recorder。固定20×10の `src/grid` 上で受入済み）／Canvas＝`apps/playground/src/pocb/`（viewport=ViewportTransform・scroll-anchor・base/overlay-layer・chunk-store 等。50,000行×200列）／共同編集＝`packages/sheet-core`・`packages/sheet-server-core`＋`apps/collaboration-server/src/client-session/`（ClientSession・ClientTransport/TransportListener 抽象・ws/inprocess 分離済み）。**packages/sheet-collaboration は未存在**。
+- **着手条件: DD-002・DD-003・DD-004 完了**（データ表現・数式＝DD-006 は必須依存にしない）。DD-004 は実機確認 run で overall=pass → **完了・アーカイブ済み**（2026-07-12・`30b330d`/`a7ec5c0`）。着手前提（DD-003/004 アーカイブ・クリーンツリー）は充足。
+- 統合対象の現状: IME＝`apps/playground/src/ime/`（resident-textarea・editor-state-machine・event-recorder。固定20×10の `src/grid` 上で受入済み）／Canvas＝`apps/playground/src/pocb/`（viewport=ViewportTransform・scroll-anchor・base/overlay-layer・chunk-store 等。50,000行×200列）／共同編集＝`packages/sheet-core`・`packages/sheet-server-core`＋`apps/collaboration-server/src/client-session/`（ClientSession・ClientTransport/TransportListener 抽象・ws/inprocess 分離済み）。**packages/sheet-collaboration は Phase 1 で新設済み**（`@nanairo-sheet/sheet-collaboration`・ClientSession/transport抽象/message-codec を移設・外部ランタイム依存ゼロ・362テスト green・`bbd7f49`）。
 - **textarea 追従は DD-004 の ViewportTransform（§13.5）へ載せ替える**。DD-002 の固定20×10 `src/grid` は統合対象にしない。
 - **DD-002 の申し送り（DA #11）**: 実機受入は合格したが、確定Enterの発火順（順序A=isComposing:true のまま確定／順序B=compositionend 後）の実機観察が未記録 → 本DDの実機ゲートで正式回収する。
 - 本DDは playground（Canvas/IME）＋collaboration-server（共同編集）＋packages 境界を横断する **Phase 0 で最も衝突しやすいDD**。
@@ -56,6 +56,50 @@ DD-002（IME・常駐textarea）・DD-004（Canvas仮想スクロール・Viewpo
 9. スクロール中も常駐textareaが正しいセルへ追従する（ViewportTransform・§13.5）
 10. PresenceのactiveCell・selectionRanges・editingCellが正しく表示される
 
+## Phase 2/3 詳細設計・状態所有権（実装アドバイス 2026-07-12 反映・#10 設計ゲート）
+
+> 外部アドバイス `phase2-3-advice-20260712.md`（2026-07-12）を評価し **12点すべて採用**。最重要原則＝**「ClientSession だけを Document State の正本とし、Canvas・IME に第二・第三の文書状態を作らない」**。受け入れ基準・スコープは不変。**Phase 2 実装着手前の設計ゲート（アドバイス#10）としてユーザー確認する**。
+
+### 状態所有権（#1・第二/第三の正本を作らない）
+
+| 状態 | 所有者（唯一の正） | 更新契機 | 派生元 | 永続 | 同期対象 | 破棄・再構築 |
+|------|------------------|---------|--------|------|---------|-------------|
+| **Document State** | `ClientSession`（committed＋pending view） | サーバーOperation・ACK・reject・rollback/replay | サーバー全順序ログ（真の正はサーバー） | サーバー側で永続 | ○（Operationで同期） | クライアント側キャッシュは snapshot 再取得で再構築可 |
+| **Render State**（Axis・Canvas・描画キャッシュ） | document-view＋pocb 描画層 | Document State の dirty flag | **Document State のみ**（唯一の派生元） | × | ×（純ローカル） | ○ いつでも Document State から再構築可 |
+| **IME Draft**（未確定文字列・caret） | 常駐 textarea（ローカル） | ユーザー入力・IME composition | なし（ローカルが正） | × | **×（共有しない）** | 破棄は commit/cancel 時のみ。**Operation・rollback/replay・reject で上書き禁止**・未確定文字列を Document State へ入れない |
+| **Editing Target** | 統合コントローラ（**RowId＋ColumnId** で保持） | セル選択・commit・cancel | Document State（display は RowId から再解決） | × | activeCell は Presence で共有 | ○ 行挿入/削除後は固定IDから表示位置を再解決 |
+| **Presence** | PresenceStore（非永続・TTL） | 選択・編集・接続変化 | ローカル操作＋他者受信 | ×（TTL） | ○ **activeCell・selectionRanges・editingCell のみ**（textarea 文字列・caret は共有しない） | ○ 再接続で再構築 |
+
+### データフロー（#10・各辺の入出力/所有/同期/reject/再接続/RowId/dirty）
+
+```text
+snapshot / Server Operation
+  → ClientSession                （Document State を更新・唯一の正。ACK/reject/rollback/replay もここへ集約）
+  → DocumentView Adapter          （RowId/ColumnId で SheetDocument を読む派生 Adapter。dirty: cell / row-structure / viewport）
+  → Axis / Canvas                 （Render State。可視範囲のみ再描画。SetCells=セル dirty のみ／構造Op=Axis更新＋anchor補正）
+  → Resident Textarea             （IME Draft。位置のみ ViewportTransform で追従。value/selection/DOM親は不変）
+  → Commit Bridge                 （確定input→RowId生存確認→cell-level beforeRevision→SetCells 生成）
+  → ClientSession.submit          （楽観適用→pending）
+  → ACK / Reject                  （ACK=committed昇格／Reject=beforeRevision不一致）
+  → Canvas（Document State反映） / Conflict Queue（reject時 draft 保持）
+```
+
+- **同期/非同期**: サーバー往復（submit→ACK/reject）は非同期。DocumentView→Canvas は同期（dirty→次フレーム描画）。
+- **エラー/reject 経路**: reject は Document State を変えず（サーバー値が正）、ローカル draft を Conflict Queue へ退避（#7）。
+- **再接続経路**: browser-transport 切断→再接続→catch-up（DD-003 既存）→Document State 再収束→Render State は dirty 全再構築。
+- **RowId/ColumnId 維持**: 描画・Editing Target・Presence の editingCell はすべて RowId/ColumnId で保持し、display index は表示直前に Axis で解決（#4）。
+
+### 実装制約（Phase 2/3・DA/Codex 必須観点）
+
+- **#2 document-view は第二の CellStore にしない**: ClientSession 文書を読む Adapter または派生キャッシュに限定。独自 Operation 適用・別永続セル状態の保持は禁止。三重管理（ClientSession文書／Canvas独自文書／IME旧cell-store）禁止。キャッシュは常に ClientSession から再構築可を条件とする。
+- **#3 beforeRevision はセル単位**: 編集開始時に `targetCell.lastChangedRevision` を保持し `SetCells.changes[].beforeRevision` に使う（文書全体 revision ではない）。「別セルの更新だけでは同一セル競合にならない」ユニットテストを必須。※Phase 3 で protocol/セルモデルが per-cell revision を持つか検証（無ければ設計追加の要否をゲートへ戻す）。
+- **#4 構造Op後の位置再解決**: 行挿入後は display index を維持せず「editingRowId→更新後 Axis で display index 再解決→textarea 位置再算出」。削除判定は **index 範囲外でなく `editingRowId` の tombstone 化 / `displayRowOrder` からの消失** で行う。削除時は draft を Conflict Queue へ退避・無効RowIdへCommit禁止・黙って破棄しない・次選択は別ルール。
+- **#5 更新コスト分離**: SetCells＝対象セル差分更新＋dirty region invalidate＋可視セルのみ再描画。InsertRows/DeleteRows＝Axis更新/再構築＋scroll anchor補正＋editing RowId/Presence 再解決＋geometry invalidate。**通常 SetCells 受信で 50,000行 Axis・10万セルを全再構築しない**（構造Op時の Axis 全再構築は PoC 許容）。
+- **#6 初期 snapshot 経路の計測**（合否でなく記録・DD-007 既知制約＋Phase 1 初期ロード設計へ）: snapshot JSONサイズ／サーバー生成／HTTP転送／JSON parse／ClientSession初期化／Axis構築／初回Canvas描画／初回操作可能までの時間。
+- **#7 Commit 順序**: 最終input受信→textarea.value を確定draft取得→対象RowId/ColumnId生存確認→編集開始時 beforeRevision取得→SetCells生成→submit→ACK/reject→reject時 Conflict Queue。**compositionend だけで Commit しない**・最終input前の暫定値送信の回帰を防ぐ（DD-002 順序A/B 実機ゲートと連動）。
+- **#8 rollback/replay 中の IME 不変**: ClientSession rollback/replay・リモートOp適用・operationRejected の前後で、IME変換中は `textarea.value`／`selectionStart`／`selectionEnd`／DOM親／textarea instance／editing RowId／editing ColumnId／composition state が不変（DA・テスト必須）。Canvas・Document State は更新可。**IME draft へサーバー値を反映しない**。
+- **#9 競合表示の視認性**: A編集中にB確定値が来た時、Canvas のサーバー確定値・textarea の A の draft・競合インジケーターが**同時に識別可能**（textarea がセル全面を覆って競合表示を隠さない z-index/描画位置）。ユニットだけでなく headed 証跡を残す（Phase 4/実機ゲート）。
+
 ## 受け入れ基準
 
 | # | 基準（操作 → 期待結果） | 検証方法 |
@@ -76,7 +120,7 @@ DD-002（IME・常駐textarea）・DD-004（Canvas仮想スクロール・Viewpo
 ## タスク一覧
 
 ### Phase 0: 事前精査＋着手前提チェック
-- [ ] 📋 **着手前提チェック（実装前ワークフロー・ゲートでユーザー操作）**: ①DD-004 実機確認 run 完了→DD-004 完了化 ②DD-003・DD-004 アーカイブ済み ③並行セッション（DD-006/007）は本文修正のみ・実装並走なし ④クリーンな作業ツリーで開始
+- [x] 📋 **着手前提チェック（実装前ワークフロー・ゲートでユーザー操作）**: ①DD-004 実機確認 run 完了→DD-004 完了化 ②DD-003・DD-004 アーカイブ済み ③並行セッション（DD-006/007）は本文修正のみ・実装並走なし ④クリーンな作業ツリーで開始 → **2026-07-12 完了**（DD-004 実機run overall=pass→完了→DD-003/004 アーカイブ `a7ec5c0`→クリーンツリー確認。並行セッション DD-008 コミット後にクリーン化を確認）
 - [ ] 📋 **各Phaseのタスク精査・詳細化**（受け入れ基準1〜7と検証タスクの対応・ファイルパス・変更内容の具体性・各Phaseの🔬を確認）
 - [ ] 📐 **実装前詳細化トリガー判定**（起票時想定: Phase 1=要〔新規パッケージ・外部I/F移設〕／Phase 2=要〔新規モジュール群・文書ブリッジ〕／Phase 3=要〔IME×共同編集の状態遷移合成〕／Phase 4=要（軽）〔E2E設計〕／Phase 5=不要〔ユーザー手動中心〕。Phase 0 で確定し本文へ明記）
 - [ ] 🧪 **テスト設計**: 統合シナリオ10項目＋AC1〜4 を `DD-005/scenarios.md` に自然言語で作成（synthetic で自動化する範囲と実機でのみ判定できる範囲を明示）→ ユーザー合意後にコード化
@@ -152,7 +196,12 @@ DD-002（IME・常駐textarea）・DD-004（Canvas仮想スクロール・Viewpo
 - **🔬 機械検証（全 green）**: `npm run test`=**36 files / 362 tests**（移設前と**同数**＝件数一致・間引き0。移設4テストは `packages/sheet-collaboration/src/` から実行）／`npm run typecheck`（新パッケージ含む全 workspace・new pkg は types:[] で env-free 検査）／`npm run lint`／`npm run build`（playground）／`bash scripts/doc-check.sh`＝いずれもエラー0。`sheet-collaboration` の `dependencies` は空（外部ランタイム依存ゼロ）を確認。
 - **😈 DA 批判レビュー**: DA 表 #1〜#3（env-free ゲート失効→復旧・message-codec 移設判断・移設健全性〔循環なし/件数不変/依存ゼロ〕）。
 - **🧑‍⚖️ Codex レビュー（必須・xhigh）**: 依頼書 `DD-005/codex-review-phase1-request.md`→`bash scripts/codex-review.sh --uncommitted --effort xhigh`→結果 `DD-005/codex-review-phase1-result.md`。**挙動一致を Codex が確認**（「移設された実装・テスト9ファイルは旧HEADと完全一致し、import差し替えにも挙動変更はありません」）。**findings 1件 [P2] を対応**: 新パッケージの唯一 tsconfig が `*.test.ts` を含むため vitest→@types/node が混入し、実装ファイルの env-free 純度検査が実効を失う指摘。→ `packages/sheet-collaboration/tsconfig.core.json`（`include:src/**/*.ts`＋`exclude:*.test.ts`・types:[]）＋`typecheck:core` を新設して DD-003 の旧ゲートを復旧。probe（`process` 参照を実装ファイルへ一時挿入）で **main typecheck=exit0（素通り＝指摘の再現）／typecheck:core=exit2（検出）** を実測し、ゲート実効性を確認（probe は削除済み）。見送り findings 無し。
-- **スコープ・コミット**: 触れたのは `packages/sheet-collaboration/`（新規）・`apps/collaboration-server/`（import差替＋config）・本DD本文＋`DD-005/`（Codex 依頼/結果）・ルート `package-lock.json`（新ワークスペース登録の `npm install`）のみ。**コミットはしない**（オーケストレータが実施）。実装中、並行セッション由来の untracked `doc/DD/DD-006/*.md` を作業ツリーに一時観測（**本 Phase 1 の成果物ではない**。最終確認時は status から解消済み）。並行運用のため `git add -A` は避け、Phase 1 成果物のみを add することを推奨。**Phase 1 で停止・Phase 2 以降は未着手**。
+- **スコープ・コミット**: 触れたのは `packages/sheet-collaboration/`（新規）・`apps/collaboration-server/`（import差替＋config）・本DD本文＋`DD-005/`（Codex 依頼/結果）・ルート `package-lock.json`（新ワークスペース登録の `npm install`）のみ。**コミットはしない**（オーケストレータが実施）。実装中、並行セッション由来の untracked `doc/DD/DD-006/*.md` を作業ツリーに一時観測（**本 Phase 1 の成果物ではない**。最終確認時は status から解消済み）。並行運用のため `git add -A` は避け、Phase 1 成果物のみを add することを推奨。**Phase 1 で停止・Phase 2 以降は未着手**。→ Phase 1 は `bbd7f49` でコミット済み（27ファイル・移設9ファイルは git R100=byte-identical・独立再検証で 362 テスト green）。
+
+**Phase 2/3 実装アドバイス反映（2026-07-12・`phase2-3-advice-20260712.md`）**:
+- 外部アドバイス12点を評価し**全採用**（受け入れ基準・スコープ不変）。最重要＝**単一正本**（ClientSession=Document State の唯一の正・Canvas/IME に第二第三の文書を作らない）。
+- 反映先: 新設「Phase 2/3 詳細設計・状態所有権」節（#1状態所有権表／#2 document-view=Adapter限定／#5更新コスト分離／#10データフロー＝設計ゲート／#3 cell-level beforeRevision／#4 RowId再解決／#7 Commit順序／#8 rollback中IME不変／#9競合表示headed確認）。#6初期snapshot計測はPhase 2タスクへ・#11既知境界はNon-Goals再確認・#12本文同期（DD-004完了/sheet-collaboration存在/Phase 0前提チェック済）。
+- **#10 設計ゲート**: 「Phase 2/3 詳細設計・状態所有権」節をユーザー確認 → 所有権・データフローが一意と合意後に Phase 2 実装エージェントを再起動（アドバイス末尾「所有権とデータフローが一意なら以後は合意済みスコープ内として自動継続可」に従う）。停止した Phase 2 エージェント（書込前）は破棄コストゼロで停止済み。
 
 ---
 
