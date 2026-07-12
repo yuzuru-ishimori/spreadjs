@@ -2,7 +2,7 @@
 
 | 作成日 | 更新日 | ステータス | 補足 |
 |--------|--------|-----------|------|
-| 2026-07-12 | 2026-07-12 | 進行中 | 要確認1〜3確定（案A/Codex2回/初期約10万セル）。**Phase 1**（sheet-collaboration 抽出・Codex xhigh 済）＋**Phase 2**（統合ページ土台）＋**Phase 3**（IME×共同編集結線＝commit-bridge cell-level beforeRevision・ime-editing-session・integration-editor・Presence・#8不変/AC4退避）＋**Phase 4**（統合E2E・証跡・Codex xhigh 済）実装完了。**#3 protocol 検証＝cell-level 確定**（SetCellsChange.beforeRevision＋CellRecord.lastChangedRevision＋server validateSetCells がセル単位で照合）。test 434／**E2E 17**（DD-002 11＋統合 6・回帰0）green。統合シナリオ10項目＋AC1〜4 を synthetic composition＋実WS 2コンテキストで自動実証（証跡 `dd005-p4-e2e-*.png`・`integration-evidence.md`）。**残るは Phase 5（実機IMEゲート・ユーザー手動＝2環境トレース・確定Enter順序A/B）のみ**。headed 2タブ smoke（#9競合表示・変換中スクロール追従）は Phase 2/3 で主セッションが実行済み |
+| 2026-07-12 | 2026-07-12 | 完了 | 要確認1〜3確定（案A/Codex2回/初期約10万セル）。**Phase 1**（sheet-collaboration 抽出・Codex xhigh 済）＋**Phase 2**（統合ページ土台）＋**Phase 3**（IME×共同編集結線＝commit-bridge cell-level beforeRevision・ime-editing-session・integration-editor・Presence・#8不変/AC4退避）＋**Phase 4**（統合E2E・証跡・Codex xhigh 済）実装完了。**#3 protocol 検証＝cell-level 確定**（SetCellsChange.beforeRevision＋CellRecord.lastChangedRevision＋server validateSetCells がセル単位で照合）。test 434／**E2E 17**（DD-002 11＋統合 6・回帰0）green。統合シナリオ10項目＋AC1〜4 を synthetic composition＋実WS 2コンテキストで自動実証（証跡 `dd005-p4-e2e-*.png`・`integration-evidence.md`）。**Phase 5（実機IMEゲート）はユーザー判断で実機テストなしでクローズ**（2026-07-12・根拠は AC6/下記ログ）: IME正しさは DD-002 実機4環境＋E2E順序A/B両方＋Codex で担保済み・状態機械を無改変再利用。残余（新 integration-editor アダプタ×実IME候補ウィンドウ・順序A/Bの実機記録）は低リスクゆえ Phase 1 製品化＋DD-007 既知制約へ。headed 2タブ smoke（#9競合・スクロール追従）は Phase 2/3 で主セッション実行済み。**DD-005 完了** |
 
 > アプローチ: E2E駆動（統合シナリオ＝操作→結果の検証が中心）＋TDD（sheet-collaboration 抽出は DD-003 既存テストを green 維持する挙動保存リファクタ）＋標準（実機IMEゲート・証跡）
 
@@ -109,7 +109,7 @@ snapshot / Server Operation
 | 3 | **AC2 同一セル競合（Phase 0中核）**: Aが実IMEで変換開始→Bが同セルを更新・確定→AのCanvasにBの確定値が反映され textarea/draft/selection は不変→Aが確定→beforeRevision不一致でreject→Aの入力はConflict Queueへ・Bの値はDocument Stateに維持→全体hash一致 | Phase 4 E2E（synthetic）＋Phase 5 実機（実IME） |
 | 4 | **AC3 Canvas統合**: 変換中に縦横スクロール→textareaが同じRowId/ColumnIdのセルへ追従→値・selection・DOM親は不変→固定行列境界をまたいでも位置ずれなし | Phase 3 ユニット＋Phase 4 E2E＋Phase 5 実機 |
 | 5 | **AC4 構造変更**: ①A編集中にBが編集セルより上へ行挿入→Aは同じRowIdのセルを編集継続 ②A編集中にBが編集対象行を削除→textarea draftを破棄せずConflict Queueへ退避・無効セルへCommitしない | Phase 3 ユニット＋Phase 4 E2E |
-| 6 | **実IMEトレース**: 2環境（MS IME×Chrome・Google日本語入力×Chrome）で統合シナリオを実行し、指定記録列のトレースを `DD-005/traces/` に保存。確定Enter順序A/Bを判定・記録し、合成リファレンス（`doc/archived/DD/DD-002/traces/synthetic-reference/`）の前提が実機トレースと一致するか最終確認する | Phase 5 実機ゲート（ユーザー手動） |
+| 6 | **実IMEトレース（実機ゲート）→ ユーザー判断で実機テストなしでクローズ（2026-07-12）**: IME 正しさは DD-002 実機4環境（MS IME/Google×Chrome/Edge）で実証＋本DDが状態機械（editor-state-machine）を**無改変再利用**＋E2E `synthetic-composition` が確定Enter順序A/B の**両方**を検証済み＝**コードは両順序で成立**。統合ロジックは headed smoke＋E2E 17＋Codex xhigh で実証。**残余**（新 `integration-editor` アダプタ×実IME候補ウィンドウ・順序A/Bの実機記録）は低リスクゆえ **Phase 1 製品化で実施・DD-007 既知制約へ引き継ぐ** | DD-002 実機＋E2E 両順序＋Codex（実機トレースは Phase 1 へ委譲・根拠はログ） |
 | 7 | 案A採用時: 移設後も DD-003 由来の全テストが green（挙動保存リファクタの保証）・packages/* のランタイム依存ゼロ維持 | Phase 1 🔬機械検証 |
 
 ## 対象外（Non-Goals）
@@ -164,6 +164,8 @@ snapshot / Server Operation
 - [x] Codexレビュー指摘への対応、または見送り理由をログに記録 → 2026-07-12（下記ログ「Codex レビュー」節）
 
 ### Phase 5: 実機IMEゲート（ユーザー手動）★統合シナリオの最終判定
+
+> **2026-07-12 ユーザー判断: 実機テストなしで DD-005 をクローズ**。根拠: IME 正しさは DD-002 実機4環境で実証済み＋本DDは状態機械を無改変再利用＋E2E が確定Enter順序A/B の両方を検証（コードは両順序で成立）＋統合ロジックは headed smoke・E2E 17・Codex xhigh で実証。下記タスク（実機トレース採取・順序A/B の実機記録・実IME候補ウィンドウ確認・実機スクロール追従・AC4削除時の変換中断）は**新 `integration-editor` アダプタ固有の残余**として **Phase 1 製品化＋DD-007 既知制約へ引き継ぐ**（低リスク）。以下は Phase 1 の実施項目として保持。
 - [ ] `DD-005/manual-integration-test-guide.md`（新規）: 統合シナリオ10項目＋AC1〜3 の実機手順書（A/B 2クライアント操作・記録列・トレース保存手順）
 - [ ] ユーザー実機試験: **MS IME×Chrome・Google日本語入力×Chrome の2環境**で統合シナリオを実行（Edge は挙動差が観測された場合のみ追加）。トレースを `DD-005/traces/` へ保存
 - [ ] トレース分析: 記録列（keydown Enter／compositionend／beforeinput／input／keyup Enter／isComposing／状態機械state／textarea.value／RowId／ColumnId）で**確定Enter順序A/Bを判定・記録**し、合成リファレンスの前提と一致するか最終確認（不一致なら editor-state-machine へ正式に差し戻す＝DD-002 Phase 6 の教訓）
