@@ -7,7 +7,7 @@
 | DD | 件名 | ステータス | 補足 |
 |----|------|-----------|------|
 | DD-007 | Phase0GoNoGo判定 | 検討中 | 要確認1〜4回答済み。外部レビュー第2回反映（証拠レベルA〜E・技術Go/Phase1前提の分離・ADR非自動Accepted・SDK Alpha完了条件案）。判定材料テンプレート先出し済み。着手条件=DD-002〜006全完了（現状: DD-002完了・DD-004完了・DD-005進行中〔Phase 1完了〕・DD-006 Phase 0事前精査済〔検討中〕） |
-| DD-006 | PoC-Dデータ表現・簡易数式 | 検討中 | 要確認1〜5回答済み・外部レビュー6指摘反映。着手条件: DD-005（統合PoC）完了後 |
+| DD-006 | PoC-Dデータ表現・簡易数式 | 進行中 | DD-005完了→着手。**Phase 1（CellStore 4実装比較）実装済**（map/chunked-column/chunked-rowslot/columnar＋4分布data-gen＋bench-cellstore・等価性17テストgreen・全workspace回帰0）。外部レビュー2回反映済み。Phase 2以降（parser/依存グラフ/replay/レポート）未着手 |
 
 ## 保留・見送り
 

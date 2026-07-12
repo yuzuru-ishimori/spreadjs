@@ -2,7 +2,7 @@
 
 | 作成日 | 更新日 | ステータス | 補足 |
 |--------|--------|-----------|------|
-| 2026-07-12 | 2026-07-12 | 検討中 | 要確認1〜5回答済み・外部レビュー6指摘反映。着手条件: DD-005（統合PoC）完了後 |
+| 2026-07-12 | 2026-07-12 | 進行中 | DD-005完了→着手。**Phase 1（CellStore 4実装比較）実装済**（map/chunked-column/chunked-rowslot/columnar＋4分布data-gen＋bench-cellstore・等価性17テストgreen・全workspace回帰0）。外部レビュー2回反映済み。Phase 2以降（parser/依存グラフ/replay/レポート）未着手 |
 
 > アプローチ: 標準（計測中心のPoC）＋TDD（parser・固定IDバインド・依存グラフ・CellStore候補のDOM非依存純ロジック）
 
@@ -78,13 +78,13 @@
 - [x] 🧑‍⚖️ **Codexレビュー要否判定**（起票時暫定: **必須・effort high**〔TDD対象＋parser=入力検証＋新規パッケージ外部I/F〕。実行はPhase 5で全差分1回=DD-004と同運用）→ 完了(2026-07-12): 暫定判定を**確定**（必須・effort high）。実行はPhase 5・全差分1回
 - [x] 😈 **Devil's Advocate調査**（特に「Node計測がブラウザ実態と乖離する」「ベンチのデータ分布が実業務と乖離し方式選定を歪める」「CellReader抽象がPhase 1のsheet-core結合で漏れる」リスク）→ 完了(2026-07-12): 5件を「DA批判レビュー記録」へ記載
 
-### Phase 1: CellStore方式比較（疎/密×4実装・3カテゴリ）
-- [ ] 📐 **実装前詳細化**（候補ストアの共通インターフェイス・ベンチ項目・データ分布を本文/添付へ）
-- [ ] `apps/pocd-bench/src/stores/{map-store,chunked-column-store,chunked-rowslot-store,columnar-store}.ts`（新規）: 共通 `CellStoreCandidate` インターフェイスで4実装（①Map型＝単一Map／②チャンク型2実装＝§6.4列チャンクMap・DD-004行スロット移植／③列指向配列型）＋ユニットテスト（等価性: 同一操作列で4実装の読出結果一致）
-- [ ] `apps/pocd-bench/src/data-gen.ts`（新規）: シード付きPRNGで**4分布**（`uniform-sparse` 50,000×200非空500,000／`dense-block` 連続500,000／`top-left-cluster` 上部左集中／`column-typed` 列型偏り・`bench-protocol.md` §4）＋ストレッチ（2,000,000）を決定論生成。分布パラメータ（非空率・クラスタリング・型混在比）可変＋ユニットテスト（件数・再現性）
-- [ ] `apps/pocd-bench/src/bench-cellstore.ts`＋CLIエントリ（新規）: **`bench-protocol.md` 準拠**（ウォームアップ3・本計測10・中央値/p95/worst・GC明示・実行順ローテーション）で一括ロード・ランダム読書き（10万回）・範囲走査・メモリ実測→生JSON（§3スキーマ）/Markdown出力
-- [ ] 🔬 **機械検証**: `npm run test`/`typecheck`/`lint` green（既存workspace回帰0）＋ベンチCLI実行でJSON出力
-- [ ] 😈 **DA批判レビュー**（GC影響の排除・ウォームアップ・計測順序の偏り）
+### Phase 1: CellStore方式比較（疎/密×4実装・3カテゴリ）★実装済（2026-07-12）
+- [x] 📐 **実装前詳細化** → 完了: `CellStoreCandidate`（`cell-store.ts`）＝共通契約（get/set/bulkLoad/queryRange/nonEmptyCount/approxMemoryBytes）、ベンチ項目＝`bench-protocol.md`、データ分布＝`data-gen.ts` 4分布。既存 pocb（PRNG/行スロット）・sheet-collaboration（構成雛形）を再利用（apps間 import はせず再実装＝憲章§25）
+- [x] `apps/pocd-bench/src/stores/{map-store,chunked-column-store,chunked-rowslot-store,columnar-store}.ts`（新規）: 共通 `CellStoreCandidate` インターフェイスで4実装（①Map型＝単一Map／②チャンク型2実装＝§6.4列チャンクMap・DD-004行スロット移植／③列指向配列型＝密向け・数値列 Float64Array）＋ユニットテスト（等価性: 同一操作列で4実装の読出結果一致）→ **全4分布で等価性 green**（get/nonEmptyCount/queryRange 一致）
+- [x] `apps/pocd-bench/src/data-gen.ts`（新規）: シード付きPRNGで**4分布**（`uniform-sparse` 50,000×200非空500,000／`dense-block` 連続500,000／`top-left-cluster` 上部左集中／`column-typed` 列型偏り・`bench-protocol.md` §4）＋ストレッチ（2,000,000）を決定論生成。分布パラメータ（非空率・クラスタリング・型混在比）可変＋ユニットテスト（件数・再現性）→ **完了**（正準数値生成でcolumnar round-trip担保・決定論/件数/分布テスト green）
+- [x] `apps/pocd-bench/src/bench-cellstore.ts`＋CLIエントリ（新規）: **`bench-protocol.md` 準拠**（ウォームアップ3・本計測10・中央値/p95/worst・GC明示・実行順ローテーション）で一括ロード・ランダム読書き（10万回）・範囲走査・メモリ実測→生JSON（§3スキーマ）出力 → **完了**（`npm run bench:cellstore --workspace apps/pocd-bench`・`--expose-gc`・`meta.acRelevant` で合否/参考を区別。smoke確認済・500k本計測はPhase 5）
+- [x] 🔬 **機械検証**: `npm run test`/`typecheck`/`lint` green（既存workspace回帰0）＋ベンチCLI実行でJSON出力 → **完了**（test **455件green＝既存438＋新17・回帰0**／typecheck 全workspace green／lint green／bench CLI JSON出力確認）
+- [x] 😈 **DA批判レビュー**（GC影響の排除・ウォームアップ・計測順序の偏り）→ **完了**（DA表 #6〜#8: 計測ノイズ抑制の実装・メモリ概算の粒度・columnar数値列変換の等価性）
 
 ### Phase 2: formula parser・固定IDバインド（TDD）
 - [ ] **Red→Green**: `packages/sheet-formula/src/{tokenizer,parser,bind}.test.ts` へ scenarios.md をコード化→実装で green 化
@@ -133,6 +133,7 @@
 - スコープ増（②④⑥）への注記: 本DDはPhase 0最後の重量級PoCのため、実装中に肥大化の兆候（1レビューサイクル超過）が出た場合はreplay/snapshot計測（Phase 4）を別DDへ分割する
 - **Phase 0 事前精査を実施**（DD-005を別セッションで並行実施中の独立ドキュメント作業・`package-lock.json` 非更新で無干渉）: `DD-006/scenarios.md`・`DD-006/function-spec.md` を作成、実装前詳細化トリガー判定（Phase 1〜5全「要」）、Codexレビュー要否を確定（必須・effort high）、DA調査5件を記録。Phase 1以降（コード実装・ワークスペース追加）は**着手条件（DD-005完了）未達**かつ**lock衝突回避**のため未着手（DD-005完了後に着手）。本作業はコミットせず作業ツリーに残す（ユーザーレビュー用）
 - **外部レビュー第2回を受領・7指摘を doc-only で反映**（手動運用方針・詳細記録: `DD-006/chatgpt-review-20260712-2.md`）: ①ベンチ規約先行固定（`bench-protocol.md` 新設） ②CellStore用途別選択表を許容 ③データ分布4種 ④数式の意味論を function-spec §2.1/§2.2 へ明文化（非有限・負の0・ロケール不変） ⑤Worker導入条件を判断表として成果物化 ⑥snapshot閾値は暫定推奨に留める ⑦sheet-formula に env-free typecheck 追加。決定事項・AC1/AC5・Phase 1/2/3/5タスクへ還流。コード・workspace・lock は不変（実装はDD-005完了後）
+- **Phase 1（CellStore 4実装比較）実装**（DD-005完了→着手。ゲート確認で「現行計画で即着手」・プロセス密度レビューは Phase 0残り現状維持で無ブロック）: 新規ワークスペース `apps/pocd-bench`（Node計測CLI・製品昇格しない）を追加し `package-lock.json` を更新（並行DDなしのタイミングで実施＝DD本文の制約どおり）。`cell-store.ts`（共通契約）・4ストア（map／chunked-column〔§6.4列チャンク〕／chunked-rowslot〔DD-004移植〕／columnar〔密向け・数値列 Float64Array〕）・`data-gen.ts`（4分布・正準数値）・`bench-cellstore.ts`（bench-protocol準拠CLI）・等価性/data-genテストを実装。**test 455件green（既存438＋新17・回帰0）・typecheck/lint 全workspace green・bench CLI JSON出力確認**。PRNG/行スロットは pocb を再実装（apps間 import なし＝憲章§25）。既存 playground/packages/collaboration-server は無変更。ステータス 検討中→進行中。Phase 2以降（parser/固定IDバインド/依存グラフ/replay/レポート/ADR/Codex）未着手
 
 ---
 
@@ -151,3 +152,6 @@
 | 3 | 3 | **CellReader抽象の漏れ**。Phase 1のsheet-core正式結合で、範囲走査効率（非空のみ vs 全走査）・エラー値受け渡し・CellScalar型整合が漏れると再設計 | 中 | `integration-sheetcore`でCellReader経由の実アクセスを1本通し、非空走査・エラー透過・型対応の契約を検査 | 計測の妥当性 | §10結合試験でCellReader実アクセスを通し、インターフェイス契約（非空走査・エラー透過・型対応）をPhase 2で明文化（`function-spec.md` §6引き継ぎ） |
 | 4 | 0 | **既存環境の不介入とlock衝突**。ワークスペース3追加で`package-lock.json`が更新され並行DD（DD-005）と衝突しうる | 中 | 並行DD実施中に`npm install`→lock差分が両セッションで競合 | 既存環境の不介入 | ワークスペース追加は並行DDのないタイミングで実施（本文既記）。Phase 0ドキュメント作業はlock非更新で並行安全（本作業で遵守） |
 | 5 | 1 | **GC・ウォームアップの計測ノイズ**。一括ロード/読書きベンチがGCタイミング・ウォームアップ不足で歪む | 中 | 単一試行のみで計測 → 試行間で数十%ぶれることを確認 | 計測の妥当性 | 各ベンチにウォームアップ＋複数試行の中央値、`--expose-gc`で計測境界のGC明示、計測順序ローテーション（Phase 1詳細化でbench共通土台に実装） |
+| 6 | 1 | 計測ノイズ対策の実装確認（DA #5 の実装）。bench-cellstore が warmup/trials/GC明示/順序ローテーションを実装しているか | 中 | `bench-cellstore.ts` レビュー＋smoke実行 | 計測の妥当性 | 実装済（warmup 3・trials 10・中央値/p95/worst・各計測直前 `globalThis.gc()`＋`--expose-gc`・分布ごと実行順ローテーション・全raw保存）。残: `heapUsed` はストア外割当も含み粗い → 方式間比較は `approxMemoryBytes()` を主指標・heapUsed は補助（Phase 5レポートで並記） |
+| 7 | 1 | 既定 smoke 規模（5,000×50・非空20,000）で満足し 500k 本計測（AC1合否）を怠るリスク | 中 | 既定引数で bench 実行→合否規模でないことに気づかない | 計測の妥当性 | JSON `meta.acRelevant`（非空≥500,000 で true）で合否/参考を機械的に区別。`bench-protocol.md` §0/§5 に「500k本計測は Phase 5」明記。Phase 5 で 50,000×200・非空500,000 を CLI 引数で実施 |
+| 8 | 1 | columnar の数値列 Float64Array 化は「正準数値（String(Number(s))===s）」前提。data-gen が非正準数値を出すと round-trip 破綻＝等価性崩壊 | 中 | 非正準数値（"12.50" 等）を数値列に入れ get が "12.5" を返さないか | 正しさ（等価性） | data-gen は正準数値のみ生成（テスト `isCanonicalNumber` で検証）。非正準値 set 時は該当列を文字列列へ変換する経路を実装＋変異等価性テストで担保。4分布すべてで等価性 green |
