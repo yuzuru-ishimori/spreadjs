@@ -125,7 +125,8 @@ packages/
 
 | ドキュメント | 内容 |
 |------|------|
-| [doc/plan/…_development_plan_v1.md](doc/plan/nanairo_realtime_spreadsheet_development_plan_v1.md) | 開発計画・基本設計（正典。アーキテクチャ・ADR・プロトコル・IME・数式・性能・リスク） |
+| [doc/product/…_product_charter_v1.md](doc/product/nanairo_sheet_product_charter_v1.md) | 製品憲章・SDK戦略（**製品戦略層の最上位正典**。製品の目的・利用者・提供形態・非目標・成熟段階） |
+| [doc/plan/…_development_plan_v1.md](doc/plan/nanairo_realtime_spreadsheet_development_plan_v1.md) | 開発計画・基本設計（技術方式の正典。アーキテクチャ・ADR・プロトコル・IME・数式・性能・リスク） |
 | [doc/plan/…_concept_record_v1.md](doc/plan/nanairo_realtime_spreadsheet_concept_record_v1.md) | 構想記録（計画書の入力資料） |
 | [doc/DOC-MAP.md](doc/DOC-MAP.md) | doc/ 内の全ドキュメントの場所と目的 |
 | [AGENTS.md](AGENTS.md) | 開発フロー・コマンド・規約（AIエージェント／開発者共通の正本） |

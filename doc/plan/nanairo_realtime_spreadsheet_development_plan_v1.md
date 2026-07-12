@@ -7,6 +7,8 @@
 - 想定利用者：株式会社ナナイロ 開発・企画関係者
 - ステータス：Phase 0着手判断用
 
+> **位置付け（DD-008で明記）**: 製品戦略の上位文書は製品憲章（`doc/product/nanairo_sheet_product_charter_v1.md`）である。本書は**技術方式・アーキテクチャの正典**として、憲章が定める製品方針を技術へ展開する役割を担う。製品の目的・利用者・提供形態・非目標・成熟段階は憲章を、作業順序・DD依存・Go/No-Goは `doc/plan/phase0-dd-roadmap.md` を、現在の進捗は DD-INDEX と各DDを正とする。
+
 ---
 
 ## 0. エグゼクティブサマリー
@@ -410,8 +412,10 @@ sheet-types
 
 ### 5.3 公開APIの方向性
 
+> クラス名 `NanairoSheet` は仮称（憲章 P-02・公開クラス候補）。正式名称は Phase 1 最初の Facade DD で確定する。旧コード例の `SpreadJS` は商用製品との混同を避けるため `NanairoSheet` へ改めた（DD-008・decisions.md D-003）。
+
 ```ts
-const grid = new SpreadJS(container, {
+const sheet = new NanairoSheet(container, {
   locale: 'ja-JP',
   documentId,
   dataSource,
@@ -422,15 +426,15 @@ const grid = new SpreadJS(container, {
   },
 })
 
-grid.on('cell-commit', listener)
-grid.on('selection-change', listener)
-grid.on('conflict', listener)
-grid.on('connection-state-change', listener)
+sheet.on('cell-commit', listener)
+sheet.on('selection-change', listener)
+sheet.on('conflict', listener)
+sheet.on('connection-state-change', listener)
 
-grid.execute({ type: 'insertRows', at: anchor, count: 10 })
-grid.setReadOnly(false)
-grid.focus()
-grid.destroy()
+sheet.execute({ type: 'insertRows', at: anchor, count: 10 })
+sheet.setReadOnly(false)
+sheet.focus()
+sheet.destroy()
 ```
 
 公開APIは内部データ構造を露出せず、バージョン互換を維持できるCommandとイベントを中心にする。

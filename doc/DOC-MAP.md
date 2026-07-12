@@ -10,13 +10,25 @@
 | `doc/project-overview.md` | プロジェクトスコープ・環境・方針（未作成。最初に書くことを推奨） |
 | `README.md`（ルート） | 製品概要・アーキテクチャ・ロードマップ（開発者向けの入口） |
 
+## 製品戦略（最上位正典）
+
+| ファイル | 説明 |
+|---------|------|
+| `doc/product/nanairo_sheet_product_charter_v1.md` | 製品憲章・SDK戦略（**製品戦略層の最上位正典**。製品の目的・利用者・提供形態・非目標・成熟段階の正。技術方式は開発計画、DD作業管理はロードマップが担当） |
+
 ## 計画・構想
 
 | ファイル | 説明 |
 |---------|------|
-| `doc/plan/nanairo_realtime_spreadsheet_development_plan_v1.md` | 開発計画・基本設計（正典。アーキテクチャ・ADR・プロトコル・IME・数式・性能・リスク） |
-| `doc/plan/nanairo_realtime_spreadsheet_concept_record_v1.md` | 構想記録（計画書の入力資料） |
-| `doc/plan/phase0-dd-roadmap.md` | Phase 0のDDロードマップ（計画書§18/§26→DDの写像。dd-auto実行順と進捗対応表） |
+| `doc/plan/nanairo_realtime_spreadsheet_development_plan_v1.md` | 開発計画・基本設計（技術方式の正典。アーキテクチャ・ADR・プロトコル・IME・数式・性能・リスク。上位は製品憲章） |
+| `doc/plan/nanairo_realtime_spreadsheet_concept_record_v1.md` | 構想記録（計画書の入力資料＝歴史的記録。製品戦略の現在の正は製品憲章） |
+| `doc/plan/phase0-dd-roadmap.md` | Phase 0のDDロードマップ（DD作業管理上の最上位。計画書§18/§26→DDの写像。dd-auto実行順と進捗対応表） |
+
+## レビュー・分析資料（非正典）
+
+| ファイル | 説明 |
+|---------|------|
+| `doc/reviews/nanairo_sheet_product_strategy_package_v1.md` | 製品戦略・文書整合レビュー（製品憲章作成時の分析・レビュー資料。**非正典**・歴史的記録。製品戦略の正は製品憲章） |
 
 ## アーキテクチャ決定記録（ADR）
 
