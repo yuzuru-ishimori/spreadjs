@@ -1,7 +1,7 @@
 # ADR-0022: コアはゼロランタイム依存を原則とする
 
-- **Status**: Draft（DD-006/PoC-D で `sheet-formula` が外部ランタイム依存ゼロを実証して起票。Accepted 化は DD-007〔Phase 0 期限〕）
-- **関連**: 製品憲章 `doc/product/nanairo_sheet_product_charter_v1.md` §9.1（React以外からも利用）・§10.3（公開範囲）・§21（セキュリティ: 依存ライセンス/脆弱性をCIで検査）・§24（再検討条件）／計画書 §17.2（coreにDOM型を持ち込まない）／DD-005（`sheet-collaboration` 依存ゼロ）・DD-006（`sheet-formula` 依存ゼロ）
+- **Status**: Draft（DD-006/PoC-D で `formula` が外部ランタイム依存ゼロを実証して起票。Accepted 化は DD-007〔Phase 0 期限〕）
+- **関連**: 製品憲章 `doc/product/nanairo_sheet_product_charter_v1.md` §9.1（React以外からも利用）・§10.3（公開範囲）・§21（セキュリティ: 依存ライセンス/脆弱性をCIで検査）・§24（再検討条件）／計画書 §17.2（coreにDOM型を持ち込まない）／DD-005（`collab` 依存ゼロ）・DD-006（`formula` 依存ゼロ）
 
 ## 背景・課題
 
@@ -11,7 +11,7 @@
 
 | 選択肢 | 概要 | 長所 | 短所 |
 |--------|------|------|------|
-| **(A) ゼロランタイム依存（本決定案）** | `packages/*` の `dependencies` を空にし、内部型（sheet-types）のみに依存。DOM/Node は持ち込まず、時刻・ID・トランスポート・セル値アクセス・Axis は**注入抽象**（Clock/IdGenerator/Transport/CellReader/AxisView）で外から供給 | 環境非依存・cross-platform 同一 hash・脆弱性/ライセンス面が最小・テスト容易 | 便利ライブラリを使わず自作範囲が増える（R-17） |
+| **(A) ゼロランタイム依存（本決定案）** | `packages/*` の `dependencies` を空にし、内部型（types）のみに依存。DOM/Node は持ち込まず、時刻・ID・トランスポート・セル値アクセス・Axis は**注入抽象**（Clock/IdGenerator/Transport/CellReader/AxisView）で外から供給 | 環境非依存・cross-platform 同一 hash・脆弱性/ライセンス面が最小・テスト容易 | 便利ライブラリを使わず自作範囲が増える（R-17） |
 | (B) 便利ライブラリを許容 | lodash/date-fns 等を使う | 実装が速い | 依存増・環境依存混入・バンドル肥大 |
 | (C) 一部低レベル依存を ADR で個別許可 | 原則ゼロ＋例外を明示 | 現実的な折衷 | 例外管理コスト |
 
@@ -26,9 +26,9 @@
 
 ## 結果（実証・DD-005/DD-006）
 
-- `sheet-types`・`sheet-core`: ランタイム依存ゼロ（既存）。
-- `sheet-collaboration`（DD-005）: `dependencies:{}`・`typecheck:core` で env-free 回帰検証（probe で実効性確認）。
-- `sheet-formula`（DD-006）: `dependencies:{}`・`typecheck:core` green。tokenizer/parser/AST/limits/bind/dep-graph/evaluator/recalc を **DOM/Node 非参照**で実装し、セル値アクセスは `CellReader`、Axis は `AxisView` で注入。深いネスト（10万）・大量式・range 集計もゼロ依存で成立。
+- `types`・`core`: ランタイム依存ゼロ（既存）。
+- `collab`（DD-005）: `dependencies:{}`・`typecheck:core` で env-free 回帰検証（probe で実効性確認）。
+- `formula`（DD-006）: `dependencies:{}`・`typecheck:core` green。tokenizer/parser/AST/limits/bind/dep-graph/evaluator/recalc を **DOM/Node 非参照**で実装し、セル値アクセスは `CellReader`、Axis は `AxisView` で注入。深いネスト（10万）・大量式・range 集計もゼロ依存で成立。
 - 計測ツール（`apps/pocd-bench`）は Node API（process/v8/performance）を使うが、**製品パッケージではない**（`packages/*` の原則の対象外）。
 
 ## 再検討条件

@@ -127,6 +127,7 @@ Evidence Level: standard（5点圧縮証跡）
   - package 名: `@nanairo-sheet/{types,core,collab,server,formula}`（`sheet-` プレフィックスなし）＝ DD-011 boundary lint R1 判定名と一致。**論理名↔現行名マップ（移行期方式 §4.3）は不要**。
   - codec 移設パス: DD-011 本文（Phase 1 タスク・§決定）は既に最終名前提で記述済み（`packages/collab/src/message-codec.ts` → `packages/core/src/`）＝本DDの成果と一致。**DD-011 側の追加修正は不要**（確認済み）。
   - Facade 新設は最初から `@nanairo-sheet/grid`・`@nanairo-sheet/server-hono`（no-prefix・D-003/本DD命名体系と整合）。
+- **正典パッケージ名の整合（オーケストレータ実施・ユーザー決定 2026-07-13「現行構成の記述のみ」）**: rename により正典・ADR が旧名（`sheet-*`／`server-core`）と食い違ったため、**現行構成を記述する生きた文書のみ**新名へ整合した: 計画書 `nanairo_realtime_spreadsheet_development_plan_v1.md`（構成図・依存ルール・手順の全パッケージ名 `sheet-*`→`{types,core,collab,server,formula,server-hono,selection}`）・ADR-0022/0015/0008（現行参照 `sheet-core` 等）・製品憲章／戦略パッケージ（`@nanairo-sheet/server-core`→`@nanairo-sheet/server`）・`cg-ledger.md`（CG-2 行 `core`＋ADR-0011 は Codex 承認へ是正）。**過去実績記録は当時名のまま保全**（ADR-0005 の DD-003 当時テスト数・`phase0-dd-roadmap.md` の DD 完了記録・D-003 の元決定文＝帰結注記で新名を明示）。`doc/archived/` は不変。doc-check GREEN。
 
 ---
 

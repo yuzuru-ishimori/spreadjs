@@ -349,7 +349,7 @@ Goal 3以降では、次を対象候補とする。
 | `@nanairo-sheet/editor-ime` | 常駐textarea、IME、keyboard、clipboard | 内部中心 |
 | `@nanairo-sheet/formula` | parser、AST、依存関係、評価 | 上級利用候補 |
 | `@nanairo-sheet/collaboration` | pending queue、protocol、presence、reconnect | 上級利用候補 |
-| `@nanairo-sheet/server-core` | sequencer、room、validator、snapshot | 上級利用候補 |
+| `@nanairo-sheet/server` | sequencer、room、validator、snapshot | 上級利用候補 |
 | `@nanairo-sheet/testkit` | fixture、fuzzer、trace、SDKテスト支援 | 公開候補 |
 
 ### 10.2 利用者向け統合パッケージ候補
@@ -432,7 +432,7 @@ app.route('/api/sheets', createNanairoSheetRoutes({
 }))
 ```
 
-Honoは推奨Adapterであり、ブラウザーSDKやserver-coreの必須依存にはしない。
+Honoは推奨Adapterであり、ブラウザーSDKやserverの必須依存にはしない。
 
 ---
 
@@ -537,7 +537,7 @@ interface CollaborationTransport {
 ### 14.2 方針
 
 - PostgreSQLは推奨実装候補であり、コア契約ではない。
-- Honoは推奨Adapterであり、server-core契約ではない。
+- Honoは推奨Adapterであり、server契約ではない。
 - Snapshot、Operation、認証、認可、監査、Telemetryを分離する。
 - 単独グリッド利用では共同編集サーバーを不要にする。
 - 利用者独自のデータモデルを、内部CellStoreへ直接結合しない。
@@ -1115,7 +1115,7 @@ Phase 0は技術成立性を検証し、公開API安定化はPhase 1以降で行
   @nanairo-sheet/editor-ime
   @nanairo-sheet/formula
   @nanairo-sheet/collaboration
-  @nanairo-sheet/server-core
+  @nanairo-sheet/server
   @nanairo-sheet/testkit
 
 利用者向け候補

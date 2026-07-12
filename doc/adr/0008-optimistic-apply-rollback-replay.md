@@ -20,7 +20,7 @@
 **(A) 楽観適用＋rollback/replay**を採用する（Status: Proposed）。
 
 - クライアント（`ClientSession`）は committed / pending の二層と Conflict Queue を持ち、server op 到着で §7.7 の 6 手順（pending 逆順 rollback → server op 適用 → own 除去 → 残 pending 再検証 → 再適用 → 不成立は Conflict Queue）を実行する。
-- 再検証は**サーバーと同一の共有 `validateOperation`**（sheet-core）で行い、判定乖離を構造的に防ぐ。
+- 再検証は**サーバーと同一の共有 `validateOperation`**（core）で行い、判定乖離を構造的に防ぐ。
 - 前提条件（No-Go 判定材料）: rollback/replay が**入力遅延を恒常的に発生させない**こと。
 
 Go/No-Go の確定は Phase 0 ロードマップ⑥。
