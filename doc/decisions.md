@@ -38,7 +38,8 @@
 - **背景**: DD-001 では npm スコープを `@spreadjs/*` で暫定採用していたが、商用スプレッドシート製品「SpreadJS」（GrapeCity/MESCIUS）と名称が衝突し、依存・検索・公開時に混同を招くリスクがあった。
 - **決定**: 全ワークスペースの npm スコープを `@nanairo-sheet/*` に統一する（`@nanairo-sheet/sheet-types`・`@nanairo-sheet/playground`、以降 `@nanairo-sheet/sheet-core` 等も同様）。
 - **帰結**: 新規パッケージは `@nanairo-sheet/*` で作成する。リポジトリ名 `spreadjs` とプロジェクト通称は現状据え置き（必要になれば別途判断）。DD-001（`@spreadjs/*`）は覆され、本決定が正。
-- **元DD**: DD-001（暫定採用）→ ユーザー指摘により D-003 で変更（2026-07-11）
+  - **DD-011-1（2026-07-13）による更新**: 上記の例示名（`@nanairo-sheet/sheet-types`・`@nanairo-sheet/sheet-core` 等）は DD-011-1 で DD-009 論理名（`@nanairo-sheet/{types,core,collab,server,formula}`）へ rename 済み（冗長な `sheet-` プレフィックス除去＋ディレクトリ名 `packages/{types,core,…}` も統一）。**スコープ `@nanairo-sheet/*` に統一するという D-003 の決定自体は有効**（suffix のみ変更）。
+- **元DD**: DD-001（暫定採用）→ ユーザー指摘により D-003 で変更（2026-07-11）／DD-011-1 で suffix を論理名へ rename（2026-07-13）
 
 ## D-004: 文書体系は3層（製品憲章＝製品戦略の最上位正典）
 

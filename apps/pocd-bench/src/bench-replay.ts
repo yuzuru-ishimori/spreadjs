@@ -1,5 +1,5 @@
 // Operation replay 計測（DD-006 Phase 4・AC5・bench-protocol 準拠）。
-// sheet-core の applyOperation で 1,000〜100,000 点の所要時間・最終 hash・メモリを計測し、
+// core の applyOperation で 1,000〜100,000 点の所要時間・最終 hash・メモリを計測し、
 // snapshot 閾値（§16.3）の暫定推奨値の桁感を得る（正式 snapshot 形式は Phase 1・確定しない）。
 // あわせて素朴 JSON 化の serialize/parse 時間・サイズ・復元後 hash 一致を参考計測する。
 // 注: applyOperation は毎回全文書を clone する（immutable 契約）ため replay は O(N^2) 傾向。
@@ -19,9 +19,9 @@ import {
   type DocumentOperation,
   type RowMeta,
   type SheetDocument,
-} from '@nanairo-sheet/sheet-core';
-import type { ColumnId, RowId } from '@nanairo-sheet/sheet-types';
-import { DEFAULT_LIMITS, FormulaSheet, num, parse, type Expr } from '@nanairo-sheet/sheet-formula';
+} from '@nanairo-sheet/core';
+import type { ColumnId, RowId } from '@nanairo-sheet/types';
+import { DEFAULT_LIMITS, FormulaSheet, num, parse, type Expr } from '@nanairo-sheet/formula';
 import { generateOperations } from './op-gen';
 
 const round = (x: number): number => Number(x.toFixed(3));

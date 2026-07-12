@@ -15,9 +15,9 @@
 //   4. 編集開始時の beforeRevision を取得（= EditTarget.startRevision・編集開始で凍結）
 //   5. SetCells を生成（呼び出し側が ClientSession へ submit → ACK/reject）
 
-import { getCell } from '@nanairo-sheet/sheet-core';
-import type { CellScalar, SetCellsOperation, SheetDocument } from '@nanairo-sheet/sheet-core';
-import type { ColumnId, RowId } from '@nanairo-sheet/sheet-types';
+import { getCell } from '@nanairo-sheet/core';
+import type { CellScalar, SetCellsOperation, SheetDocument } from '@nanairo-sheet/core';
+import type { ColumnId, RowId } from '@nanairo-sheet/types';
 
 /** 編集対象（表示 index ではなく RowId/ColumnId で保持・#4）。startRevision は編集開始で凍結する（#3）。 */
 export interface EditTarget {

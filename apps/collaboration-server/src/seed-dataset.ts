@@ -4,18 +4,18 @@
 // この Operation ログを replay して committed 文書を構築する（= #6 初期 snapshot 経路の計測対象）。
 //
 // 決定性: 自己完結の PRNG（mulberry32）と固定シードで、同一設定から常に同一の (rowId,columnId,value) 集合を返す。
-// Node/ws/hono は参照しない純データ生成（sheet-core / sheet-types 型のみ）。server.ts が起動時に呼ぶ。
+// Node/ws/hono は参照しない純データ生成（core / types 型のみ）。server.ts が起動時に呼ぶ。
 
-import type { ClientOperationEnvelope, SetCellsChange } from '@nanairo-sheet/sheet-core';
+import type { ClientOperationEnvelope, SetCellsChange } from '@nanairo-sheet/core';
 import {
   createColumnId,
   createDocumentId,
   createOperationId,
   createRowId,
   createTransactionId,
-} from '@nanairo-sheet/sheet-types';
-import type { ColumnId } from '@nanairo-sheet/sheet-types';
-import type { Sequencer } from '@nanairo-sheet/sheet-server-core';
+} from '@nanairo-sheet/types';
+import type { ColumnId } from '@nanairo-sheet/types';
+import type { Sequencer } from '@nanairo-sheet/server';
 
 const PROTOCOL_VERSION = 1;
 const SEED_CLIENT_ID = 'system-seed';

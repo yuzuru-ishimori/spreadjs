@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { ClientSession, createCounterIdGenerator } from '@nanairo-sheet/sheet-collaboration';
-import type { PresenceUpdate, SessionConfig } from '@nanairo-sheet/sheet-collaboration';
+import { ClientSession, createCounterIdGenerator } from '@nanairo-sheet/collab';
+import type { PresenceUpdate, SessionConfig } from '@nanairo-sheet/collab';
 import {
   RecordingTransport,
   col,
@@ -13,10 +13,10 @@ import {
   serverEnvelope,
   setCells,
   str,
-} from '@nanairo-sheet/sheet-collaboration/test-support';
-import { applyOperation, createDocument, displayRowOrder, getCell } from '@nanairo-sheet/sheet-core';
-import type { DocumentOperation, ServerMessage, SetCellsOperation } from '@nanairo-sheet/sheet-core';
-import { createColumnId, createDocumentId } from '@nanairo-sheet/sheet-types';
+} from '@nanairo-sheet/collab/test-support';
+import { applyOperation, createDocument, displayRowOrder, getCell } from '@nanairo-sheet/core';
+import type { DocumentOperation, ServerMessage, SetCellsOperation } from '@nanairo-sheet/core';
+import { createColumnId, createDocumentId } from '@nanairo-sheet/types';
 
 import type { GridLayout } from '../grid/geometry';
 

@@ -18,25 +18,25 @@ import { cors } from 'hono/cors';
 import { WebSocket, WebSocketServer } from 'ws';
 import type { RawData } from 'ws';
 
-import { documentHash } from '@nanairo-sheet/sheet-core';
-import type { ClientMessage, ClientOperationEnvelope } from '@nanairo-sheet/sheet-core';
+import { documentHash } from '@nanairo-sheet/core';
+import type { ClientMessage, ClientOperationEnvelope } from '@nanairo-sheet/core';
 import {
   Room,
   Sequencer,
   deserializeSnapshot,
   freshSequencerState,
   serializeSnapshot,
-} from '@nanairo-sheet/sheet-server-core';
-import type { Clock, Outbound, OutboundTarget, SnapshotData } from '@nanairo-sheet/sheet-server-core';
+} from '@nanairo-sheet/server';
+import type { Clock, Outbound, OutboundTarget, SnapshotData } from '@nanairo-sheet/server';
 import {
   createColumnId,
   createDocumentId,
   createOperationId,
   createRowId,
   createTransactionId,
-} from '@nanairo-sheet/sheet-types';
-import type { RowId } from '@nanairo-sheet/sheet-types';
-import { decodeClientMessage } from '@nanairo-sheet/sheet-collaboration';
+} from '@nanairo-sheet/types';
+import type { RowId } from '@nanairo-sheet/types';
+import { decodeClientMessage } from '@nanairo-sheet/collab';
 
 import {
   DEFAULT_INTEGRATION_DATASET,

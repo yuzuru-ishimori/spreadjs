@@ -64,25 +64,25 @@ Excelインポート／エクスポート、ピボットテーブル、印刷、
 
 ## 想定モジュール構成（monorepo）
 
-コアは原則ランタイム依存ゼロ。フレームワーク依存はアダプター層に隔離します。以下は**目標構成**で、現状は `packages/sheet-types` と `apps/playground` のみ実在します（DD-001 で骨格を構築）。残りは各 PoC / Phase で追加します。
+コアは原則ランタイム依存ゼロ。フレームワーク依存はアダプター層に隔離します。以下は**目標構成**です。現状は `packages/{types,core,collab,server,formula}` と `apps/*`（playground ほか）が実在します（DD-001 で骨格を構築・以降の PoC / Phase で拡充）。残りは各 PoC / Phase で追加します。パッケージ名は `@nanairo-sheet/<論理名>`（`sheet-` プレフィックスなし。DD-009 §2・DD-011-1 で統一）。
 
 ```text
 packages/
-  sheet-types/               ブランド型・共通イベント・公開型
-  sheet-core/                文書モデル・Axis・CellStore・Command・Operation
-  sheet-selection/           選択・移動・範囲演算
-  sheet-formula/             parser・AST・依存グラフ・計算（client/server共有）
-  sheet-renderer-canvas/     Canvas描画・座標・ヒットテスト
-  sheet-editor-ime/          常駐textarea・IME・clipboard・keyboard
-  sheet-collaboration/       client queue・protocol・presence・reconnect
-  sheet-element/             Custom Element
-  sheet-react/               React wrapper（Reactはpeer dependency）
-  sheet-server-core/         sequencer・validator・room・snapshot
-  sheet-server-hono/         Hono HTTP／WebSocket adapter
-  sheet-testkit/             fixture・operation fuzzer・event recorder
+  types/                     ブランド型・共通イベント・公開型
+  core/                      文書モデル・Axis・CellStore・Command・Operation
+  selection/                 選択・移動・範囲演算
+  formula/                   parser・AST・依存グラフ・計算（client/server共有）
+  renderer-canvas/           Canvas描画・座標・ヒットテスト
+  editor-ime/                常駐textarea・IME・clipboard・keyboard
+  collab/                    client queue・protocol・presence・reconnect
+  element/                   Custom Element
+  react/                     React wrapper（Reactはpeer dependency）
+  server/                    sequencer・validator・room・snapshot
+  server-hono/               Hono HTTP／WebSocket adapter
+  testkit/                   fixture・operation fuzzer・event recorder
 ```
 
-依存規則の要点: `sheet-core` は Canvas/DOM/React/Hono を import しない。`sheet-formula` は UI を import しない。サーバーとクライアントは同じOperation型と適用関数を共有する。
+依存規則の要点: `core` は Canvas/DOM/React/Hono を import しない。`formula` は UI を import しない。サーバーとクライアントは同じOperation型と適用関数を共有する。
 
 ## 技術スタック
 

@@ -1,0 +1,17 @@
+{
+  // collab は共同編集クライアント（ClientSession・rollback/replay・Conflict Queue・トランスポート抽象・
+  // JSON境界codec）。core / server と同じく DOM/Node を持ち込まない（計画書 §17.2・ADR-022
+  // ランタイム依存ゼロ）。lib は ES2022 のみ、types:[] により @types/*（Node の crypto/timers 等）の暗黙取り込みも
+  // 止め、環境非依存を強制する（時刻・ID・トランスポートは全注入）。
+  // この tsconfig.json は *.test.ts も含めて型検査する（テストの型健全性）。ただし vitest import が
+  // @types/node を program へ持ち込むため、実装ファイルの env-free 純度は本ファイルだけでは保証しきれない
+  // （Codex [P2]）。実装ファイル（非テスト）のコア純度ゲートは tsconfig.core.json（*.test.ts 除外）が担い、
+  // DD-003 の旧 tsconfig.core.json の環境非依存検査をコードの新しい住処で引き継ぐ。
+  // 試験ハーネス inprocess-transport.ts は Room（server・同じく env-free）を import してよい。
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "types": []
+  },
+  "include": ["src/**/*.ts"]
+}

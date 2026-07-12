@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { createColumnId, createRowId } from '@nanairo-sheet/sheet-types';
-import type { ColumnId, RowId } from '@nanairo-sheet/sheet-types';
+import { createColumnId, createRowId } from '@nanairo-sheet/types';
+import type { ColumnId, RowId } from '@nanairo-sheet/types';
 
 import { createAxis } from '../pocb/axis';
 import { createViewportTransform } from '../pocb/viewport';

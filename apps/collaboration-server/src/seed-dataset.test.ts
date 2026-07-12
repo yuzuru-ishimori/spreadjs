@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { displayRowOrder, documentHash } from '@nanairo-sheet/sheet-core';
+import { displayRowOrder, documentHash } from '@nanairo-sheet/core';
 import {
   Sequencer,
   freshSequencerState,
   serializeSnapshot,
   verifySnapshotIntegrity,
-} from '@nanairo-sheet/sheet-server-core';
-import { createColumnId } from '@nanairo-sheet/sheet-types';
+} from '@nanairo-sheet/server';
+import { createColumnId } from '@nanairo-sheet/types';
 
 import {
   generateIntegrationCells,

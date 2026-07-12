@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { createRowId, type RowId } from '@nanairo-sheet/sheet-types';
+import { createRowId, type RowId } from '@nanairo-sheet/types';
 
 import { createAxis } from './axis';
 

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { applyOperation, createDocument } from '@nanairo-sheet/sheet-core';
-import type { DocumentOperation, SheetDocument } from '@nanairo-sheet/sheet-core';
-import { col, insertRows, num, row, setCells, str } from '@nanairo-sheet/sheet-collaboration/test-support';
+import { applyOperation, createDocument } from '@nanairo-sheet/core';
+import type { DocumentOperation, SheetDocument } from '@nanairo-sheet/core';
+import { col, insertRows, num, row, setCells, str } from '@nanairo-sheet/collab/test-support';
 
 import {
   DocumentView,

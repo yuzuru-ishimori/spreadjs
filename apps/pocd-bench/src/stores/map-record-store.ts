@@ -6,7 +6,7 @@
 
 import { type CellStoreCandidate } from '../cell-store';
 
-// 移行前 sheet-core の CellRecord と **同一のオブジェクト形状**（value=判別ユニオン{kind,value} と
+// 移行前 core の CellRecord と **同一のオブジェクト形状**（value=判別ユニオン{kind,value} と
 // lastChangedRevision の入れ子＝1 セルあたりオブジェクト 2 個）。heap 比較を等価にするため（DD-010 Codex[P2]）。
 interface Rec {
   value: { kind: 'string'; value: string };
@@ -19,7 +19,7 @@ function makeRec(value: string): Rec {
 
 // 引数なし（CellStoreFactory へは引数の少ない関数として代入可能）。map-record は次元設定を使わない。
 export function createMapRecordStore(): CellStoreCandidate {
-  // 二段 Map（行→(列→CellRecord)）。移行前 sheet-core の cells 表現（Map<RowId,Map<ColumnId,CellRecord>>）と同型。
+  // 二段 Map（行→(列→CellRecord)）。移行前 core の cells 表現（Map<RowId,Map<ColumnId,CellRecord>>）と同型。
   const rows = new Map<number, Map<number, Rec>>();
   let count = 0;
 

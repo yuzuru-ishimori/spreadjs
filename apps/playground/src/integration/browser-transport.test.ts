@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { ServerMessage } from '@nanairo-sheet/sheet-core';
-import type { TransportListener } from '@nanairo-sheet/sheet-collaboration';
+import type { ServerMessage } from '@nanairo-sheet/core';
+import type { TransportListener } from '@nanairo-sheet/collab';
 
 import {
   BrowserWebSocketTransport,

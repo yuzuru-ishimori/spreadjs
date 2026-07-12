@@ -6,7 +6,7 @@ import {
   createDocument,
   documentHash,
   type SheetDocument,
-} from '@nanairo-sheet/sheet-core';
+} from '@nanairo-sheet/core';
 import { generateOperations } from './op-gen';
 
 function replay(count: number, seed: number): { doc: SheetDocument; applied: number } {

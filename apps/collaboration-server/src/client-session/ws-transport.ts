@@ -2,7 +2,7 @@
 // join/submit/presence/heartbeat/requestCatchup を JSON でサーバーへ送り、サーバーメッセージを ClientSession へ配る。
 //
 // 【依存境界】このファイルは Node ws（client）を使う実 WS トランスポートで、collaboration-server 側に残す。
-// ClientSession コア（session/deps/inprocess-transport）は @nanairo-sheet/sheet-collaboration へ移設済みで、
+// ClientSession コア（session/deps/inprocess-transport）は @nanairo-sheet/collab へ移設済みで、
 // その依存ゼロ（Node/DOM 非参照）は同パッケージの tsconfig（types:[]）で回帰検証する（DD-005 Phase 1）。
 // heartbeat はトランスポートの責務にしない（session/デモ/smoke が sendHeartbeat を実タイマーで駆動）＝送受信・接続イベント・
 // 再接続のみを担う。時刻依存は再接続 setTimeout のみ（アダプター層ゆえ実タイマー可・後始末は close で解除）。
@@ -10,9 +10,9 @@
 import { WebSocket } from 'ws';
 import type { RawData } from 'ws';
 
-import type { ClientMessage } from '@nanairo-sheet/sheet-core';
-import { decodeServerMessage } from '@nanairo-sheet/sheet-collaboration';
-import type { ClientTransport, TransportListener } from '@nanairo-sheet/sheet-collaboration';
+import type { ClientMessage } from '@nanairo-sheet/core';
+import { decodeServerMessage } from '@nanairo-sheet/collab';
+import type { ClientTransport, TransportListener } from '@nanairo-sheet/collab';
 
 import { rawDataToString } from '../ws-frame';
 

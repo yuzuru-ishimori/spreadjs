@@ -1,6 +1,6 @@
 # ADR-0011: 行スロット＋チャンク化セルストア
 
-- **Status**: **Accepted**（2026-07-13）。DD-010 で RowId キー（slot 間接）へ移行し製品 CellStore として `packages/sheet-core` へ統合・CG-2 を解除し、実装・自動試験・性能再計測を反映済み。**ADR 転換＝External Review 対象だが、本件は Codex レビュー（xhigh・1回・findings 4件全対応）をもって承認とする**（ユーザー判断 2026-07-13＝ChatGPT ではなく Codex レビューで十分・DD-010 ログ参照）。AC6 の性能 baseline 解釈（真の従来製品表現＝二段 Map+CellRecord 比では改善）も本承認に含む。
+- **Status**: **Accepted**（2026-07-13）。DD-010 で RowId キー（slot 間接）へ移行し製品 CellStore として `packages/core` へ統合・CG-2 を解除し、実装・自動試験・性能再計測を反映済み。**ADR 転換＝External Review 対象だが、本件は Codex レビュー（xhigh・1回・findings 4件全対応）をもって承認とする**（ユーザー判断 2026-07-13＝ChatGPT ではなく Codex レビューで十分・DD-010 ログ参照）。AC6 の性能 baseline 解釈（真の従来製品表現＝二段 Map+CellRecord 比では改善）も本承認に含む。
   - 履歴: Draft（PoC-B/DD-004 起票）→ DD-006/PoC-D で4分布×4実装の本格比較を実測・反映（下記「DD-006 拡充」）→ DD-010 で RowId キー移行を実装・**Codex レビュー承認で Accepted 確定**（2026-07-13）。
 - **関連**: 計画書 §18.2（PoC-B）・§18.4（PoC-D）・§12（Canvas 描画）・§13（仮想スクロール）・§21（性能目標）／
   リスク R-03（データ密度でメモリ超過）／DD-004（PoC-B）／DD-006（PoC-D・本 ADR を拡充予定）
@@ -67,8 +67,8 @@
 
 ## DD-010 移行: index キー → RowId キー（slot 間接）＝製品 CellStore へ（CG-2 解除）
 
-**決定**: (A) 行スロット＋チャンク構造を **RowId キー（slot 間接方式）** へ移行し、`packages/sheet-core` の
-文書表現（`SheetDocument.cells`）の正本 CellStore として統合する（`packages/sheet-core/src/cell-store.ts`）。
+**決定**: (A) 行スロット＋チャンク構造を **RowId キー（slot 間接方式）** へ移行し、`packages/core` の
+文書表現（`SheetDocument.cells`）の正本 CellStore として統合する（`packages/core/src/cell-store.ts`）。
 
 - **slot 間接（A案）**: RowMeta.slot（§6.3・安定整数・単調採番・tombstone でも保持・回収なし）を**チャンクキー**に
   使う。RowId→slot は rowMeta、ColumnId→colIndex は columnOrder で解決（document.ts の純ヘルパーへ集約）。

@@ -10,10 +10,10 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { verifySnapshotIntegrity } from '@nanairo-sheet/sheet-server-core';
-import { createDocumentId } from '@nanairo-sheet/sheet-types';
-import { ClientSession, createCounterIdGenerator } from '@nanairo-sheet/sheet-collaboration';
-import { COLUMNS, col, row, setCells, str } from '@nanairo-sheet/sheet-collaboration/test-support';
+import { verifySnapshotIntegrity } from '@nanairo-sheet/server';
+import { createDocumentId } from '@nanairo-sheet/types';
+import { ClientSession, createCounterIdGenerator } from '@nanairo-sheet/collab';
+import { COLUMNS, col, row, setCells, str } from '@nanairo-sheet/collab/test-support';
 
 import { WsClientTransport } from '../src/client-session/ws-transport';
 import { startServer } from '../src/server';

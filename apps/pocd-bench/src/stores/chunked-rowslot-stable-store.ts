@@ -1,4 +1,4 @@
-// ②c 安定 slot キー CellStore（DD-010・CG-2）— 製品 sheet-core の CellStore を bench 契約へアダプト。
+// ②c 安定 slot キー CellStore（DD-010・CG-2）— 製品 core の CellStore を bench 契約へアダプト。
 // 目的: ADR-0011 の chunked-rowslot 構造を **RowId キー（slot 間接）** へ移行した製品 CellStore が、
 // 500k×4分布で chunked-rowslot（index キー・文字列格納）に対し許容内（範囲走査 +30%・メモリ +20%）で
 // あることを計測する（AC6）。row=slot・col=colIndex の恒等写像で bench の (row,col) を渡す＝構造は同一。
@@ -6,7 +6,7 @@
 // これにより「slot キー化のコスト（≒0・構造同一）」と「CellRecord 値モデルのコスト（既存の文書表現に内在）」
 // を分離して観察できる。
 
-import { createCellStore, type CellStore } from '@nanairo-sheet/sheet-core';
+import { createCellStore, type CellStore } from '@nanairo-sheet/core';
 
 import { type CellStoreCandidate, type CellStoreConfig } from '../cell-store';
 
@@ -56,7 +56,7 @@ export function createChunkedRowslotStableStore(config: CellStoreConfig): CellSt
     nonEmptyCount() {
       return store.nonEmptyCount();
     },
-    // sheet-core CellStore の内部概算（CellRecord/CellScalar オブジェクト込み・値文字も内部で計上）。
+    // core CellStore の内部概算（CellRecord/CellScalar オブジェクト込み・値文字も内部で計上）。
     approxMemoryBytes() {
       return store.approxMemoryBytes();
     },

@@ -6,9 +6,9 @@
 import type {
   ColumnId,
   RowId,
-} from '@nanairo-sheet/sheet-types';
-import { createColumnId, createRowId } from '@nanairo-sheet/sheet-types';
-import type { CellScalar, DocumentOperation } from '@nanairo-sheet/sheet-core';
+} from '@nanairo-sheet/types';
+import { createColumnId, createRowId } from '@nanairo-sheet/types';
+import type { CellScalar, DocumentOperation } from '@nanairo-sheet/core';
 import { createPrng, type Prng } from './prng';
 
 export interface GeneratedOps {

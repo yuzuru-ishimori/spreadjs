@@ -4,7 +4,7 @@
 // Presence は presence-sim、計測は harness/metrics が担い、ここは各モジュールをつなぐアダプタに徹する。
 //
 // 既存 src/grid|ime|sim|ui（DD-002 の実機受入環境）とは独立した別エントリ（poc-b.html）。
-import { createColumnId, createRowId, type ColumnId, type RowId } from '@nanairo-sheet/sheet-types';
+import { createColumnId, createRowId, type ColumnId, type RowId } from '@nanairo-sheet/types';
 
 import { createAxis, type Axis } from './axis';
 import { createBaseLayer, type FrameViewport } from './base-layer';

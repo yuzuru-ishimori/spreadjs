@@ -3,7 +3,7 @@
   // ベンチ本体は process.memoryUsage()/v8/performance を使うため types:["node"]。
   // tsconfig.base の DOM 無し方針は維持（lib は ES2022 のみ）。
   // CellStore 候補（src/stores/*）と data-gen は Node API を使わない純ロジックだが、
-  // 製品パッケージ（sheet-formula）ではないため env-free ゲート（tsconfig.core）は設けない。
+  // 製品パッケージ（formula）ではないため env-free ゲート（tsconfig.core）は設けない。
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "lib": ["ES2022"],

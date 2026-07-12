@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { createColumnId, createRowId, type ColumnId, type RowId } from '@nanairo-sheet/sheet-types';
+import { createColumnId, createRowId, type ColumnId, type RowId } from '@nanairo-sheet/types';
 
 import { createAxis } from './axis';
 import { captureAnchor, correctScroll } from './scroll-anchor';

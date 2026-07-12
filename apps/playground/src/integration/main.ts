@@ -10,11 +10,11 @@
 //
 // 【状態所有権】Document State=ClientSession のみ。Canvas/Axis は Render State。IME draft は常駐 textarea（ローカルが正）。
 
-import { createColumnId, createDocumentId, createRowId } from '@nanairo-sheet/sheet-types';
-import type { ColumnId, RowId } from '@nanairo-sheet/sheet-types';
-import { documentHash, getCell } from '@nanairo-sheet/sheet-core';
-import type { DeleteRowsOperation, InsertRowsOperation } from '@nanairo-sheet/sheet-core';
-import type { Clock, IdGenerator, PresenceUpdate } from '@nanairo-sheet/sheet-collaboration';
+import { createColumnId, createDocumentId, createRowId } from '@nanairo-sheet/types';
+import type { ColumnId, RowId } from '@nanairo-sheet/types';
+import { documentHash, getCell } from '@nanairo-sheet/core';
+import type { DeleteRowsOperation, InsertRowsOperation } from '@nanairo-sheet/core';
+import type { Clock, IdGenerator, PresenceUpdate } from '@nanairo-sheet/collab';
 
 import type { GridLayout } from '../grid/geometry';
 import { createBaseLayer, type FrameViewport } from '../pocb/base-layer';

@@ -6,12 +6,12 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { documentHash, getCell } from '@nanairo-sheet/sheet-core';
-import type { ClientOperationEnvelope } from '@nanairo-sheet/sheet-core';
-import { Room, Sequencer, createCounterIdGenerator as createConnIdGenerator, freshSequencerState } from '@nanairo-sheet/sheet-server-core';
-import { createDocumentId, createOperationId, createTransactionId } from '@nanairo-sheet/sheet-types';
-import { ClientSession, createCounterIdGenerator } from '@nanairo-sheet/sheet-collaboration';
-import { InProcessHub } from '@nanairo-sheet/sheet-collaboration/inprocess-transport';
+import { documentHash, getCell } from '@nanairo-sheet/core';
+import type { ClientOperationEnvelope } from '@nanairo-sheet/core';
+import { Room, Sequencer, createCounterIdGenerator as createConnIdGenerator, freshSequencerState } from '@nanairo-sheet/server';
+import { createDocumentId, createOperationId, createTransactionId } from '@nanairo-sheet/types';
+import { ClientSession, createCounterIdGenerator } from '@nanairo-sheet/collab';
+import { InProcessHub } from '@nanairo-sheet/collab/inprocess-transport';
 import {
   COLUMNS,
   RecordingTransport,
@@ -23,8 +23,8 @@ import {
   serverEnvelope,
   setCells,
   str,
-} from '@nanairo-sheet/sheet-collaboration/test-support';
-import type { ManualClock } from '@nanairo-sheet/sheet-collaboration/test-support';
+} from '@nanairo-sheet/collab/test-support';
+import type { ManualClock } from '@nanairo-sheet/collab/test-support';
 
 const DOCUMENT_ID = createDocumentId('contract-doc');
 

@@ -11,9 +11,9 @@
     "bench:replay": "node --expose-gc --import tsx src/bench-replay.ts"
   },
   "devDependencies": {
-    "@nanairo-sheet/sheet-core": "*",
-    "@nanairo-sheet/sheet-formula": "*",
-    "@nanairo-sheet/sheet-types": "*",
+    "@nanairo-sheet/core": "*",
+    "@nanairo-sheet/formula": "*",
+    "@nanairo-sheet/types": "*",
     "@types/node": "^22.10.5",
     "tsx": "^4.19.2"
   }

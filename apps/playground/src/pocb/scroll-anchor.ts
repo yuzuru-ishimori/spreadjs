@@ -2,7 +2,7 @@
 // スクロール域先頭の論理セル（rowId＋行内オフセット / columnId＋列内オフセット）を保持し、
 // 構造変更後に同じ ID を基準に scrollTop/Left を補正する。DOM 非依存の純粋計算。
 
-import type { ColumnId, RowId } from '@nanairo-sheet/sheet-types';
+import type { ColumnId, RowId } from '@nanairo-sheet/types';
 
 import type { Axis } from './axis';
 

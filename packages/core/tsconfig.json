@@ -1,0 +1,11 @@
+{
+  // core は文書モデル・適用・ハッシュのコア。types と同じく DOM/Node を持ち込まない
+  // （計画書 §17.2・ADR-022 ランタイム依存ゼロ）。lib は ES2022 のみ（BigInt/Map/String 反復子）で、
+  // types:[] により @types/* の暗黙取り込み（Node の crypto 等）も止め、環境非依存を強制する。
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "types": []
+  },
+  "include": ["src/**/*.ts"]
+}

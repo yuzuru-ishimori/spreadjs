@@ -19,13 +19,13 @@ import process from 'node:process';
 
 import { describe, expect, it } from 'vitest';
 
-import { displayRowOrder, documentHash, forEachCellInRow, getCell } from '@nanairo-sheet/sheet-core';
+import { displayRowOrder, documentHash, forEachCellInRow, getCell } from '@nanairo-sheet/core';
 import type {
   ClientMessage,
   ClientOperationEnvelope,
   DocumentOperation,
   SheetDocument,
-} from '@nanairo-sheet/sheet-core';
+} from '@nanairo-sheet/core';
 import {
   Room,
   Sequencer,
@@ -33,15 +33,15 @@ import {
   freshSequencerState,
   serializeSnapshot,
   verifySnapshotIntegrity,
-} from '@nanairo-sheet/sheet-server-core';
-import { createDocumentId, createOperationId, createRowId, createTransactionId } from '@nanairo-sheet/sheet-types';
-import type { ColumnId, RowId } from '@nanairo-sheet/sheet-types';
-import { ClientSession, createCounterIdGenerator } from '@nanairo-sheet/sheet-collaboration';
-import type { ClientTransport, TransportListener } from '@nanairo-sheet/sheet-collaboration';
-import { InProcessHub } from '@nanairo-sheet/sheet-collaboration/inprocess-transport';
-import type { FaultCounters, FaultProbabilities } from '@nanairo-sheet/sheet-collaboration/inprocess-transport';
-import { COLUMNS, createManualClock, num, setCells, str } from '@nanairo-sheet/sheet-collaboration/test-support';
-import type { ManualClock } from '@nanairo-sheet/sheet-collaboration/test-support';
+} from '@nanairo-sheet/server';
+import { createDocumentId, createOperationId, createRowId, createTransactionId } from '@nanairo-sheet/types';
+import type { ColumnId, RowId } from '@nanairo-sheet/types';
+import { ClientSession, createCounterIdGenerator } from '@nanairo-sheet/collab';
+import type { ClientTransport, TransportListener } from '@nanairo-sheet/collab';
+import { InProcessHub } from '@nanairo-sheet/collab/inprocess-transport';
+import type { FaultCounters, FaultProbabilities } from '@nanairo-sheet/collab/inprocess-transport';
+import { COLUMNS, createManualClock, num, setCells, str } from '@nanairo-sheet/collab/test-support';
+import type { ManualClock } from '@nanairo-sheet/collab/test-support';
 
 import { normalizeDocument } from './doc-compare';
 

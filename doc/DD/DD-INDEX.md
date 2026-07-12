@@ -6,6 +6,8 @@
 
 | DD | 件名 | ステータス | 補足 |
 |----|------|-----------|------|
+| DD-011 | 基盤実装 | 検討中 | 要確認①〜④回答済（2026-07-13）。前提=子DD DD-011-1（packageリネーム）完了後に着手 |
+| DD-011-1 | packageリネーム | 確認待ち | 実装完了（rename 5 package・66 renames＋import 全置換）・test 561/561・typecheck/lint/build green・Codex(medium) findings 0・旧名/旧dir 参照 0。DD-011 の前提確定 |
 
 ## 保留・見送り
 

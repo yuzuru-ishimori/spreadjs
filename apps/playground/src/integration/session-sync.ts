@@ -8,9 +8,9 @@
 // 次フレームの flush が可視範囲を読み直す。再接続時は catch-up で Document State が再収束するのに合わせ、
 // Render State を全再構築する（#10 再接続経路）。
 
-import { ClientSession } from '@nanairo-sheet/sheet-collaboration';
-import type { ClientTransport, SessionConfig, TransportListener } from '@nanairo-sheet/sheet-collaboration';
-import type { ServerMessage } from '@nanairo-sheet/sheet-core';
+import { ClientSession } from '@nanairo-sheet/collab';
+import type { ClientTransport, SessionConfig, TransportListener } from '@nanairo-sheet/collab';
+import type { ServerMessage } from '@nanairo-sheet/core';
 
 import { DocumentView } from './document-view';
 

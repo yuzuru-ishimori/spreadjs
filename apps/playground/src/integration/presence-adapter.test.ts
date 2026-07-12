@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import type { UserPresence } from '@nanairo-sheet/sheet-core';
-import { createColumnId, createRowId } from '@nanairo-sheet/sheet-types';
-import type { ColumnId, RowId } from '@nanairo-sheet/sheet-types';
+import type { UserPresence } from '@nanairo-sheet/core';
+import { createColumnId, createRowId } from '@nanairo-sheet/types';
+import type { ColumnId, RowId } from '@nanairo-sheet/types';
 
 import { colorKeyToIndex, toPresenceUsers, type PresenceIndexResolver } from './presence-adapter';
 

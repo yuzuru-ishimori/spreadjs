@@ -6,8 +6,8 @@
 // - RowId/ColumnId が現在の可視 Axis に無い（別スクロール位置・別ページ）他者は描画しない（index<0 を除外）。
 // - selectionRanges は先頭 range を index へ解決（解決できなければ activeCell 単独セル）。
 
-import type { UserPresence } from '@nanairo-sheet/sheet-core';
-import type { ColumnId, RowId } from '@nanairo-sheet/sheet-types';
+import type { UserPresence } from '@nanairo-sheet/core';
+import type { ColumnId, RowId } from '@nanairo-sheet/types';
 
 import type { PresenceUser } from '../pocb/presence-sim';
 

@@ -5,8 +5,8 @@
 // プレーン構造へ正規化する。hash とは独立の導出のため、`expect(a).toEqual(b)` で構造差を厳密に検出できる
 // （収束 assert の独立性＝hash と同じ関数から導出しない・DA 重点）。Map 反復順・localeCompare 非依存。
 
-import { getCell } from '@nanairo-sheet/sheet-core';
-import type { CellScalar, SheetDocument } from '@nanairo-sheet/sheet-core';
+import { getCell } from '@nanairo-sheet/core';
+import type { CellScalar, SheetDocument } from '@nanairo-sheet/core';
 
 export interface NormalizedRowMeta {
   id: string;

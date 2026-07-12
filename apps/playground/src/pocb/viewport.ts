@@ -10,7 +10,7 @@
 //   - スクロール列の viewport X = headerWidth + colAxis.offsetOf(c) - scrollLeft
 //     （固定列は scrollLeft=0 と同じ式。offsetOf(frozenColCount) が固定幅）。行も同様。
 
-import type { ColumnId, RowId } from '@nanairo-sheet/sheet-types';
+import type { ColumnId, RowId } from '@nanairo-sheet/types';
 
 import type { Axis } from './axis';
 

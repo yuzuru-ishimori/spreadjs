@@ -6,7 +6,7 @@
 // Phase 3 の範囲は「20×10 グリッド + 常駐 textarea + 編集状態機械（確定 Enter 抑止・
 // pendingNavigation・MarkConflictOnly）+ 生イベント recorder」。activeCell の所有権は
 // 状態機械へ一本化した（DA #2）ため、main は editor.getActiveCell() を読むだけ。
-import { createDocumentId, type DocumentId } from '@nanairo-sheet/sheet-types';
+import { createDocumentId, type DocumentId } from '@nanairo-sheet/types';
 
 import { createCellStore } from './grid/cell-store';
 import { createGridView } from './grid/grid-view';
@@ -33,7 +33,7 @@ if (panelRoot === null) {
   throw new Error('#trace-panel のパネル要素が見つかりません');
 }
 
-// sheet-types のブランド型を 1 箇所使い、workspace 参照が機能することを示す。
+// types のブランド型を 1 箇所使い、workspace 参照が機能することを示す。
 const documentId: DocumentId = createDocumentId('playground-poc-a');
 canvas.dataset.documentId = documentId;
 

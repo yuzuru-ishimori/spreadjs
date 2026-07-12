@@ -17,9 +17,9 @@
 //   - InsertRows/DeleteRows → `row-structure` dirty。flush で rowAxis を displayRowOrder から再構築
 //     （構造Op時の Axis 全再構築は PoC 許容）。scroll anchor 補正は DOM を持つ呼び出し側（main）が行う。
 
-import { displayRowOrder, getCell, slotOf } from '@nanairo-sheet/sheet-core';
-import type { CellScalar, DocumentOperation, SheetDocument } from '@nanairo-sheet/sheet-core';
-import type { ColumnId, RowId } from '@nanairo-sheet/sheet-types';
+import { displayRowOrder, getCell, slotOf } from '@nanairo-sheet/core';
+import type { CellScalar, DocumentOperation, SheetDocument } from '@nanairo-sheet/core';
+import type { ColumnId, RowId } from '@nanairo-sheet/types';
 
 import { createAxis, type Axis } from '../pocb/axis';
 import type { ChunkStore, RangeVisitor } from '../pocb/chunk-store';

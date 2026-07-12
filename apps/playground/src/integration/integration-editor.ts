@@ -23,9 +23,9 @@ import {
   type ImeEditingSession,
 } from './ime-editing-session';
 
-import type { PresenceUpdate } from '@nanairo-sheet/sheet-collaboration';
-import type { SetCellsOperation } from '@nanairo-sheet/sheet-core';
-import type { OperationId } from '@nanairo-sheet/sheet-types';
+import type { PresenceUpdate } from '@nanairo-sheet/collab';
+import type { SetCellsOperation } from '@nanairo-sheet/core';
+import type { OperationId } from '@nanairo-sheet/types';
 
 const CELL_FONT = '13px system-ui, sans-serif';
 const EDITING_BACKGROUND = '#ffffff';

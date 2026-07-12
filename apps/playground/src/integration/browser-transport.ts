@@ -4,15 +4,15 @@
 // 自動再接続し、同一 clientId で再 join → welcome/operations 差分 → pending 再送（§8.5・ClientSession が担う）。
 //
 // 【依存境界】このファイルは browser の WebSocket（DOM）を使う実 WS トランスポートで apps/playground に置く。
-// ClientSession コアは @nanairo-sheet/sheet-collaboration（Node/DOM 非依存）。sheet-collaboration の本体バレルは
+// ClientSession コアは @nanairo-sheet/collab（Node/DOM 非依存）。collab の本体バレルは
 // server-core 非依存ゆえブラウザーバンドルに安全に含められる（DD-005 Phase 1）。
 //
 // 【テスト容易性】native WebSocket と setTimeout を直接掴まず、SocketFactory / TransportTimer を注入で受ける
 // （既定は本ファイル内の DOM 実装）。これにより再接続の状態遷移・outbox flush・decode drop を DOM/WS なしの
 // node 環境でユニットテストできる（browser-transport.test.ts）。
-import { decodeServerMessage } from '@nanairo-sheet/sheet-collaboration';
-import type { ClientTransport, TransportListener } from '@nanairo-sheet/sheet-collaboration';
-import type { ClientMessage } from '@nanairo-sheet/sheet-core';
+import { decodeServerMessage } from '@nanairo-sheet/collab';
+import type { ClientTransport, TransportListener } from '@nanairo-sheet/collab';
+import type { ClientMessage } from '@nanairo-sheet/core';
 
 // WebSocket.readyState（HTML 仕様の数値定数。DOM 非依存に固定値で持つ）。
 const SOCKET_CONNECTING = 0;

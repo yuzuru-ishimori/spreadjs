@@ -1,5 +1,5 @@
-// Phase 3: sheet-core 実文書との結合試験（AC3/4 の実文書版・scenarios.md §10）。
-// sheet-core は「読み取り＋applyOperation」のみ利用（既存 package 無変更）。sheet-formula の
+// Phase 3: core 実文書との結合試験（AC3/4 の実文書版・scenarios.md §10）。
+// core は「読み取り＋applyOperation」のみ利用（既存 package 無変更）。formula の
 // 固定IDバインド（BoundCellReference）が、実 InsertRows/DeleteRows でも A1表示変化・評価値維持・
 // 参照先削除で #REF! を満たすことを裏取りする。
 
@@ -10,14 +10,14 @@ import {
   displayRowOrder,
   getCell,
   type SheetDocument,
-} from '@nanairo-sheet/sheet-core';
+} from '@nanairo-sheet/core';
 import {
   createColumnId,
   createRowId,
   createSheetId,
   type ColumnId,
   type RowId,
-} from '@nanairo-sheet/sheet-types';
+} from '@nanairo-sheet/types';
 import {
   bindCellRef,
   bindExpr,
@@ -34,11 +34,11 @@ import {
   type BoundCellReference,
   type CellReader,
   type CellValue,
-} from '@nanairo-sheet/sheet-formula';
+} from '@nanairo-sheet/formula';
 
 const sheetId = createSheetId('s0');
 
-/** sheet-core 文書の displayRowOrder / columnOrder から AxisView を作る（読み取り専用アダプタ）。 */
+/** core 文書の displayRowOrder / columnOrder から AxisView を作る（読み取り専用アダプタ）。 */
 function axisOf(doc: SheetDocument): AxisView {
   return createArrayAxisView(displayRowOrder(doc), doc.columnOrder);
 }
@@ -64,7 +64,7 @@ function setup(): { doc: SheetDocument; rows: RowId[]; cols: ColumnId[] } {
   return { doc, rows, cols };
 }
 
-describe('sheet-core 結合: 固定ID参照の維持（AC3）', () => {
+describe('core 結合: 固定ID参照の維持（AC3）', () => {
   it('参照行の手前に行挿入 → A1表示はA2へ・束縛セルの評価値は不変', () => {
     const { doc, rows } = setup();
     // A1（index row0,col0）を束縛 → rowId r0。
@@ -87,7 +87,7 @@ describe('sheet-core 結合: 固定ID参照の維持（AC3）', () => {
   });
 });
 
-describe('sheet-core 結合: 参照先削除で #REF!（AC4）', () => {
+describe('core 結合: 参照先削除で #REF!（AC4）', () => {
   it('参照先の行を削除 → 束縛参照は #REF!', () => {
     const { doc, rows } = setup();
     const bound = bindCellRef({ col: 0, row: 0, colAbs: false, rowAbs: false }, axisOf(doc), sheetId);
@@ -101,7 +101,7 @@ describe('sheet-core 結合: 参照先削除で #REF!（AC4）', () => {
   });
 });
 
-/** sheet-core 文書を index ベースで読む CellReader（displayRowOrder/columnOrder 経由）。 */
+/** core 文書を index ベースで読む CellReader（displayRowOrder/columnOrder 経由）。 */
 function readerOf(doc: SheetDocument, axis: AxisView): CellReader {
   const readAt = (row: number, col: number): CellValue => {
     const rowId = axis.rowIdAt(row);
@@ -125,7 +125,7 @@ function readerOf(doc: SheetDocument, axis: AxisView): CellReader {
   };
 }
 
-describe('sheet-core 結合: 数式評価が固定IDで維持（AC3/4・評価統合・Codex P1）', () => {
+describe('core 結合: 数式評価が固定IDで維持（AC3/4・評価統合・Codex P1）', () => {
   it('=A1*2 を bind → 行挿入後も評価値20を維持／参照行削除で #REF!', () => {
     const { doc, rows } = setup(); // A1(r0,c0)=10
     const p = parse('=A1*2');

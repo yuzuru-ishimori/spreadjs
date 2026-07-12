@@ -1,0 +1,1 @@
+The implementation changes are mechanical renames, TypeScript typechecking passes, all five package directories are tracked as renames, and npm reports a consistent dependency tree without stale package names. The test command could not run because the read-only environment prevented Vitest from writing its temporary config, not because of a patch defect.

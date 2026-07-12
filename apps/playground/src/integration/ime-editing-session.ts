@@ -33,9 +33,9 @@ import {
   type EditTarget,
 } from './commit-bridge';
 
-import type { PresenceUpdate } from '@nanairo-sheet/sheet-collaboration';
-import type { CellAddressById, SelectionById, SetCellsOperation, SheetDocument } from '@nanairo-sheet/sheet-core';
-import type { ColumnId, OperationId, RowId } from '@nanairo-sheet/sheet-types';
+import type { PresenceUpdate } from '@nanairo-sheet/collab';
+import type { CellAddressById, SelectionById, SetCellsOperation, SheetDocument } from '@nanairo-sheet/core';
+import type { ColumnId, OperationId, RowId } from '@nanairo-sheet/types';
 
 /** textarea への出力口（本番は実 textarea をラップ・テストは fake）。value/selection は composition 中は書かない（I-3）。 */
 export interface TextareaPort {

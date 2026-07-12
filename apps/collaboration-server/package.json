@@ -15,10 +15,10 @@
     "ws": "^8.18.0"
   },
   "devDependencies": {
-    "@nanairo-sheet/sheet-collaboration": "*",
-    "@nanairo-sheet/sheet-core": "*",
-    "@nanairo-sheet/sheet-server-core": "*",
-    "@nanairo-sheet/sheet-types": "*",
+    "@nanairo-sheet/collab": "*",
+    "@nanairo-sheet/core": "*",
+    "@nanairo-sheet/server": "*",
+    "@nanairo-sheet/types": "*",
     "@types/node": "^22.10.5",
     "@types/ws": "^8.5.13",
     "tsx": "^4.19.2"

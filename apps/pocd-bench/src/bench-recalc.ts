@@ -11,8 +11,8 @@ import {
   parse,
   type Expr,
   type RangeStrategy,
-} from '@nanairo-sheet/sheet-formula';
-import { num, type CellValue } from '@nanairo-sheet/sheet-formula';
+} from '@nanairo-sheet/formula';
+import { num, type CellValue } from '@nanairo-sheet/formula';
 import { createPrng } from './prng';
 
 const COLS = 200;
