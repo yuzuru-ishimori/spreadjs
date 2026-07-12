@@ -2,7 +2,7 @@
 
 | 作成日 | 更新日 | ステータス | 補足 |
 |--------|--------|-----------|------|
-| 2026-07-11 | 2026-07-12 | 確認待ち | 実装＋headed計測完了・AC1〜5合格（p95 16.8ms/再描画0.39ms/選択15.3ms/メモリ17KB/s/anchor維持）。ユーザー実機での確認run待ち |
+| 2026-07-11 | 2026-07-12 | 完了 | 実装＋headed計測＋**実機確認run（2026-07-12・実Chrome・overall pass）**でAC1〜5合格（p95 16.8ms/再描画0.33ms/選択16.9ms/メモリ−79KB/s・純減/anchor維持）。measurement-report.md「実機確認run」節・pocb-measurement-realrun-20260712.json 参照 |
 
 > アプローチ: 標準（計測中心のPoC）＋TDD（Axis・ViewportTransform・scroll anchorのDOM非依存座標ロジック）
 
