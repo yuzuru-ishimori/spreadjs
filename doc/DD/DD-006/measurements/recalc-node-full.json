@@ -1,0 +1,71 @@
+{
+  "meta": {
+    "runtime": "node",
+    "runtimeVersion": "v22.20.0",
+    "host": {
+      "os": "Windows_NT 10.0.26200",
+      "cpu": "AMD Ryzen 7 PRO 8840HS w/ Radeon 780M Graphics "
+    },
+    "warmup": 3,
+    "trials": 15,
+    "full": true,
+    "gcExposed": true
+  },
+  "ac2Judgment": {
+    "p95": 1.0905,
+    "worst": 1.0905,
+    "pass": true
+  },
+  "scenarios": [
+    {
+      "scenario": "fanout-100",
+      "formulasAffected": 100,
+      "median": 0.6127,
+      "p95": 1.0905,
+      "worst": 1.0905,
+      "acRelevant": true
+    },
+    {
+      "scenario": "fanout-1000",
+      "formulasAffected": 1000,
+      "median": 3.7428,
+      "p95": 5.9473,
+      "worst": 5.9473,
+      "acRelevant": false
+    },
+    {
+      "scenario": "fanout-10000",
+      "formulasAffected": 10000,
+      "median": 29.5196,
+      "p95": 76.2497,
+      "worst": 76.2497,
+      "acRelevant": false
+    },
+    {
+      "scenario": "range-sum-10000",
+      "formulasAffected": 1,
+      "median": 0.9187,
+      "p95": 1.1606,
+      "worst": 1.1606,
+      "acRelevant": false
+    },
+    {
+      "scenario": "chain-10000",
+      "formulasAffected": 9999,
+      "median": 29.5814,
+      "p95": 35.8423,
+      "worst": 35.8423,
+      "acRelevant": false
+    }
+  ],
+  "strategyComparison": {
+    "expand": {
+      "buildMs": 18.349,
+      "updateMs": 0.3516
+    },
+    "interval": {
+      "buildMs": 14.1583,
+      "updateMs": 0.3152
+    }
+  }
+}

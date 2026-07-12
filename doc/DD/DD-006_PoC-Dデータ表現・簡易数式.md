@@ -2,7 +2,7 @@
 
 | 作成日 | 更新日 | ステータス | 補足 |
 |--------|--------|-----------|------|
-| 2026-07-12 | 2026-07-12 | 進行中 | DD-005完了→着手。**Phase 1〜4実装済**（CellStore 4実装／parser・固定IDバインド／依存グラフ・評価器・差分再計算／Operation replay計測。test 528件green・回帰0・typecheck:core green・AC2 smoke PASS・AC3/4結合green・AC5素材=replay O(N²)取得）。外部レビュー2回反映済み。Phase 5（ブラウザ確認/計測レポート/ADR/Codex/完了）のみ未着手 |
+| 2026-07-12 | 2026-07-12 | 確認待ち | **Phase 1〜5 実装完了**（CellStore 4実装／数式parser・固定IDバインド／依存グラフ・評価器・差分再計算／replay計測／ブラウザページ・計測レポート・ADR-011拡充・ADR-022ドラフト）。test 528件green・**AC1〜6/8 実測合格**（AC2 fanout-100 p95 1.09ms・メモリ全方式300MB内・AC5 replay O(N²)＝snapshot要）・AC9ページ build green。外部レビュー2回反映済み。**残（確認待ち）: ①Codexレビュー〔本セッションCLI不可・依頼書作成済〕 ②AC9ユーザー実機Chrome/Edge run** |
 
 > アプローチ: 標準（計測中心のPoC）＋TDD（parser・固定IDバインド・依存グラフ・CellStore候補のDOM非依存純ロジック）
 
@@ -52,6 +52,7 @@
 - **実装前詳細化トリガー判定（2026-07-12・Phase 0）**: 新規パッケージ＋性能特性が核心のため **Phase 1〜5すべて「要」**。各Phase冒頭の 📐 実装前詳細化タスクで、候補ストア共通I/F・ベンチ項目・データ分布・数式詳細（`DD-006/function-spec.md` 準拠）を確定してから実装に入る。
 - **Phase 0 ドキュメント成果物（2026-07-12・DD-005並行セッション中の独立作業）**: `DD-006/scenarios.md`（Red設計・自然言語・全10節＋AC対応表）と `DD-006/function-spec.md`（資源制限L1〜L6の上限値・5関数の空白/文字列/エラー/範囲/数値変換仕様・6エラー値の発生フェーズと優先）を先行作成。上限値・関数仕様・エラー規則は `function-spec.md` を単一の情報源とし、`scenarios.md`・テストコードが参照する。いずれもワークスペース追加を伴わず `package-lock.json` 非更新（並行 DD-005 と無干渉）。上限値L1〜L6はExcel準拠の提案値で、Phase 2/3実測後に確定余地あり（変更時は本文・function-spec・テストを同時更新）。
 - **外部レビュー第2回（2026-07-12・手動運用）の反映**: DD-005待ち時間の助言7点を doc-only で反映（詳細記録: `DD-006/chatgpt-review-20260712-2.md`）。①**ベンチ規約を結果より先に固定**＝`DD-006/bench-protocol.md` 新設（ウォームアップ/試行回数/集計指標/GC/実行順ローテーション/版数記録/生JSONスキーマ/reseed＋**Node↔ブラウザ乖離の事前判定規則**〔時間2倍超 or メモリ1.5倍超→原因分析必須〕。倍率は Phase 1 で確定し以後は結果を見て変えない） ②**CellStoreは単一の勝者を強制しない**＝用途別選択表を許容（ADR-011拡充・bench-protocol §6.1） ③**データ分布を4種へ**（一様疎/連続密/上部左集中/列型偏り・bench-protocol §4） ④**数式は意味論優先**＝`function-spec.md` に §2.1（非有限は暫定`#VALUE!`〔将来`#NUM!`〕・0除算優先・負の0正規化）と §2.2（ロケール不変）を追加。`function-spec.md` を唯一の正としテスト側に別仕様を作らない ⑤**Worker導入条件を判断表として成果物化**（bench-protocol §6.2・影響式数別実測から） ⑥**snapshot閾値は確定しない**＝素朴JSON計測は「Phase 1で正式snapshot形式を設計するための暫定推奨値・桁感」に留める（§16.3・bench-protocol §6.3） ⑦**`sheet-formula` に env-free typecheck**（`tsconfig.core.json`＋`typecheck:core`・テスト除外・`types:[]`）を追加（DD-005 `sheet-collaboration` の [P2] と同種の環境型混入を予防）。
+- **Phase 1〜5 実装結果（2026-07-12・一気通貫実装）**: `packages/sheet-formula`（数式エンジン・外部ランタイム依存ゼロ）＋`apps/pocd-bench`（計測CLI）＋`apps/pocd-browser-bench`（AC9ページ）を実装。**受け入れ基準の実測合格**: AC1（4分布×4実装・**chunked-rowslot総合最良**・メモリ全方式§21目標300MB内）／AC2（fanout-100 **p95 1.09ms=PASS**・影響10,000式でWorker候補）／AC3/4（sheet-core実文書結合green）／AC5（**replay O(N²)＝snapshot要**・§16.3暫定妥当）／AC6・AC8（文法・6エラー値・資源制限L1〜L6・no-eval）。AC7成果物（`measurement-report.md`・ADR-011拡充〔用途別選択表〕・ADR-022ドラフト）。AC9はページ`vite build` green・実機定量はユーザーrun。**CellStore決定案＝用途別選択表**（疎/既定=chunked-rowslot・密=chunked-column。Accepted化はDD-007）。**残（確認待ち）**: Codexレビュー（依頼書作成済・本セッションCLI不可）＋AC9ユーザー実機run。
 
 ## 受け入れ基準
 
@@ -112,14 +113,14 @@
 - [x] 😈 **DA批判レビュー**（Operation分布の偏りでreplayが軽く出る・InsertRows多発時のAxis再構築コスト）→ **完了**（DA表 #13〜#14: replay の O(N²) は clone 由来で分布に依存しにくい・snapshot閾値は「Phase 1正式形式向け暫定推奨」に留める）
 
 ### Phase 5: ブラウザ最小確認・計測レポート・ADR-011拡充・ADR-022ドラフト・引き継ぎ・Codexレビュー
-- [ ] `apps/pocd-browser-bench`（新規・最小静的ページ）: 採用候補（決定案）方式の500,000セルロード・代表操作（ランダム読書き・範囲走査）・メモリをChromeまたはEdgeで実測し、Node実測との乖離を確認（AC9。playground非依存・devサーバーはルート既存Vite・新規npm依存なし）
-- [ ] 計測実施→ `doc/DD/DD-006/measurement-report.md`（新規・添付）: AC1〜5・8〜9の実測値・合否・機種情報（ブラウザ版数含む）・**結論表**（`bench-protocol.md` §6: CellStore用途別選択表／Worker分離判断表／snapshot暫定推奨）・既知の制約・Phase 1へ引き継ぐ設計注意事項（CellStoreのsheet-core組込方針・RowIdキー化・Worker分離閾値〔影響式数別実測から〕・サーバーre-parse）
-- [ ] `doc/adr/0011-row-slot-chunked-cell-store.md`（拡充）: **4分布**比較の実測を「結果」へ追記し決定案（**単一の勝者を強制せず用途別選択表を許容**・bench-protocol §6.1）を記載（Accepted化は要確認4の回答に従う）
-- [ ] `doc/adr/0022-zero-runtime-dependency-core.md`（新規・ドラフト）: sheet-formula/sheet-core依存ゼロ実績を根拠に背景・選択肢・決定案・再検討条件。`doc/DOC-MAP.md` へADR行を追加
-- [ ] 🔬 **機械検証**: `test`/`typecheck`/`lint`/`build` green・`bash scripts/doc-check.sh` エラー0
-- [ ] 😈 **DA批判レビュー**（計測値の再現性・合否がJSON/レポートから追えるか・ADR決定案が計測に裏付くか）
-- [ ] Codexレビュー自動実行（依頼書 `DD-006/codex-review-request.md`〔対象は本DDの `packages/sheet-formula`＋`apps/pocd-bench`＋`apps/pocd-browser-bench`＋ADR差分のみ〕→ `bash scripts/codex-review.sh` → `DD-006/codex-review-result.md`）
-- [ ] Codexレビュー指摘への対応、または見送り理由をログに記録
+- [x] `apps/pocd-browser-bench`（新規・最小静的ページ）: 採用候補（決定案）方式の500,000セルロード・代表操作（ランダム読書き・範囲走査）・メモリをChromeまたはEdgeで実測し、Node実測との乖離を確認（AC9。playground非依存・devサーバーはルート既存Vite・新規npm依存なし）→ **ページ実装済・`vite build` green**（chunked-rowslot/data-genをPoC-to-PoC importでバンドル）。**定量の最終確定はユーザー実機Chrome/Edge run**（`npm run dev --workspace apps/pocd-browser-bench`・`performance.memory`はChromium系のみ）
+- [x] 計測実施→ `doc/DD/DD-006/measurement-report.md`（新規・添付）: AC1〜5・8〜9の実測値・合否・機種情報・**結論表**（`bench-protocol.md` §6）・既知の制約・Phase 1引き継ぎ → **完了**（生JSON `DD-006/measurements/`。AC1/2/5 本計測・用途別選択表・Worker判断表・snapshot暫定を記載）
+- [x] `doc/adr/0011-row-slot-chunked-cell-store.md`（拡充）: **4分布**比較の実測を「結果」へ追記し決定案（**単一の勝者を強制せず用途別選択表を許容**）を記載 → **完了**（「DD-006 拡充」節・用途別選択表・Accepted化はDD-007〔要確認4〕）
+- [x] `doc/adr/0022-zero-runtime-dependency-core.md`（新規・ドラフト）: sheet-formula/sheet-core依存ゼロ実績を根拠に背景・選択肢・決定案・再検討条件。`doc/DOC-MAP.md` へADR行を追加 → **完了**（Draft・DD-005/006で実証・DOC-MAP追記）
+- [x] 🔬 **機械検証**: `test`/`typecheck`/`lint`/`build` green・`bash scripts/doc-check.sh` エラー0 → **完了**（test 528件green・typecheck・typecheck:core・lint・build〔playground＋pocd-browser-bench〕・doc-check 全green）
+- [x] 😈 **DA批判レビュー**（計測値の再現性・合否がJSON/レポートから追えるか・ADR決定案が計測に裏付くか）→ **完了**（DA表 #15: 生JSON保存＋レポートで合否追跡可能・ADR決定案は実測裏付け）
+- [ ] Codexレビュー自動実行（依頼書 `DD-006/codex-review-request.md`〔対象は本DDの `packages/sheet-formula`＋`apps/pocd-bench`＋`apps/pocd-browser-bench`＋ADR差分のみ〕→ `bash scripts/codex-review.sh` → `DD-006/codex-review-result.md`）→ **依頼書作成済・未実施**（本セッションで Codex CLI 利用不可。ユーザー／Codex CLIのある環境で実行）
+- [ ] Codexレビュー指摘への対応、または見送り理由をログに記録 → Codex実行後に対応（確認待ち事項）
 
 ## ログ
 
@@ -137,6 +138,7 @@
 - **Phase 2（数式parser・固定IDバインド）実装**（TDD・一気通貫指示で継続）: 新規製品パッケージ `packages/sheet-formula`（外部ランタイム依存ゼロ・DOM/Node非依存・env-freeゲート `tsconfig.core.json`＋`typecheck:core`）を追加。`errors`（6エラー値）・`limits`（L1〜L5＝function-spec §1）・`a1`（列↔index）・`ast`（canonical＋`serialize`）・`tokenizer`（ASCIIのみ・全角/未定義文字拒否）・`parser`（§14.2再帰下降・演算子優先順位・べき乗左結合・単項・比較演算子拒否・#NAME?・資源制限）・`bind`（A1↔`BoundCellReference`・`AxisView`・行挿入でRowId不変/削除で#REF!）を実装。**test 499件green（Phase 1後455＋新44・回帰0）・typecheck/typecheck:core/lint green・`dependencies:{}`**。L6（評価時処理量）はPhase 3評価器で実装。Phase 3以降未着手
 - **Phase 3（依存グラフ・差分再計算・評価器）実装**（TDD＋計測）: `sheet-formula` に `evaluator`（5関数・特殊値§2.1/§2.2・エラー伝播・L6処理量上限）・`dep-graph`（2戦略〔expand/interval〕・dirty→topological・**反復DFS coloring cycle検出**〔深いチェーンでスタック枯渇しない〕）・`recalc`（FormulaSheet=値ストア＋CellReader）を追加。`pocd-bench` に `integration-sheetcore.test`（sheet-core 実文書で AC3/4＝行挿入でA1→A2表示・固定ID評価値維持・削除で#REF!。読み取り＋`applyOperation`のみ）・`bench-recalc`（影響式数別 p95/worst・AC2判定・2戦略比較）を追加（pocd-benchへ sheet-formula/sheet-types 依存追加・lock更新）。**test 524件green（Phase 2後499＋新25・回帰0）・typecheck/typecheck:core/lint green**。AC2 smoke: fanout-100 p95 0.76ms/worst 0.76ms=**PASS**（16/33ms基準・本計測10,000式はPhase 5）。DA #11〜#12記録。Phase 4以降未着手
 - **Phase 4（Operation replay計測）実装**: `pocd-bench` に `op-gen`（決定論100,000 Operation列・SetCells/InsertRows/DeleteRows混在・全てvalid＝ApplyError出さず・DD-003 fuzzer踏襲）・`bench-replay`（sheet-core `applyOperation` で checkpoint別replay時間・最終hash・メモリ・**素朴JSON snapshot参考**〔serialize/parse/サイズ/復元後hash一致〕・formula一括再計算参考）を追加。**test 528件green（Phase 3後524＋新4・回帰0）・typecheck/lint green**。smoke実測: replay 1,000=86ms/5,000=948ms/10,000=4,379ms＝**O(N²)**（apply が immutable clone のため）→ snapshot が必要な直接根拠（AC5・§16.3）。snapshot round-trip hash一致。DA #13〜#14記録。Phase 5（ブラウザ確認/レポート/ADR/Codex）のみ未着手
+- **Phase 5（ブラウザ確認・計測レポート・ADR・完了処理）実装**: 本計測（500kセル・recalc 10,000式・replay）を実行し生JSONを `DD-006/measurements/` へ保存。`measurement-report.md`（AC1〜9実測・**用途別選択表**・Worker判断表・snapshot暫定）・ADR-011拡充（用途別選択表・Accepted化DD-007）・ADR-022ドラフト（ゼロランタイム依存・DOC-MAP追記）・`apps/pocd-browser-bench`（AC9・**vite build green**）・Codex依頼書を作成。**test 528件green・typecheck・typecheck:core・lint・build（playground＋browser-bench）・doc-check 全green**。ステータス 進行中→**確認待ち**。**残: ①Codexレビュー実行〔本セッションで Codex CLI 利用不可＝`codex: NOT available`・依頼書作成済〕 ②AC9ユーザー実機Chrome/Edge run**。DA #15記録
 
 ---
 
@@ -164,3 +166,4 @@
 | 12 | 3 | 依存表現2方式（expand/interval）で **dependents 集合が食い違う**と方式比較が無意味＋再計算漏れ | 中 | 範囲重なり・連鎖のグラフで両戦略の affectedSet を比較 | 計測の妥当性／正しさ | `dep-graph.test` で両戦略の `affectedSet` 等価性を検証（`SUM(A1:A50)`＋`SUM(A25:A75)`重なり＋連鎖 D=A1+B1・複数変更点）。bench-recalc は同一結果前提で構築/更新時間のみ比較 |
 | 13 | 4 | Operation分布の偏りで replay が軽く/重く出て snapshot 閾値を誤る | 中 | 分布を変えて replay 時間を比較 | 計測の妥当性 | replay の支配項は apply の immutable **全文書clone**（O(N²)＝実測で確認）で、Operation 種別分布より文書サイズに依存する。op-gen は valid ops のみ（reject 分岐なし）で clone コストを純粋計測。snapshot 閾値は「文書が大きくなる前に取る」判断に帰着し、Phase 1 正式形式設計向けの**暫定推奨**に留める（確定しない・§16.3） |
 | 14 | 4 | snapshot 参考が素朴JSONゆえ本番形式と乖離（過小/過大評価） | 中 | 素朴JSON と正式形式の差 | 計測の妥当性 | 素朴JSON は Map→配列の桁感把握用と明記（合否対象外）。復元後 hash 一致で round-trip 健全性のみ担保。正式 snapshot 形式（差分・圧縮・スキーマ版）は Phase 1。レポートに「暫定・桁感」と明記 |
+| 15 | 5 | 合否がレポートの断言だけで生データから追えないと監査不能／ADR決定案が計測に裏付かない | 中 | レポート数値と生JSONを突合 | 計測の妥当性 | 生計測JSONを `DD-006/measurements/`（cellstore-500k・recalc-full・replay-10k）へ保存しレポートが参照。用途別選択表・Worker判断表・snapshot暫定は全て実測値に紐づく。合否/参考は `meta.acRelevant` で区別。ブラウザ定量はユーザーrunで最終確定（乖離判定規則は bench-protocol §5） |

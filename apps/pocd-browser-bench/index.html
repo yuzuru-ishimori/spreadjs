@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DD-006 AC9: CellStore ブラウザ最小確認（chunked-rowslot）</title>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 24px; max-width: 900px; }
+      h1 { font-size: 1.2rem; }
+      pre { background: #0b1021; color: #d6e2ff; padding: 16px; border-radius: 8px; overflow-x: auto; }
+      .note { color: #555; font-size: 0.9rem; }
+      button { font-size: 1rem; padding: 8px 16px; }
+    </style>
+  </head>
+  <body>
+    <h1>DD-006 AC9: 採用候補 CellStore（chunked-rowslot）ブラウザ最小確認</h1>
+    <p class="note">
+      500,000 非空セル（一様疎・50,000行×200列）を chunked-rowslot にロードし、ランダム読書き・範囲走査・
+      <code>performance.memory</code> を計測します。Node 実測（<code>measurement-report.md</code> §AC1）との乖離を確認するためのページです。
+      <br />※ 定量の最終確定は Chrome / Edge の実機で実施してください（<code>performance.memory</code> は Chromium 系のみ）。
+    </p>
+    <button id="run">計測を実行</button>
+    <pre id="out">「計測を実行」を押すと結果を表示します。</pre>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

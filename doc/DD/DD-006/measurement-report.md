@@ -1,0 +1,157 @@
+# DD-006 計測レポート（PoC-D データ表現・簡易数式）
+
+> 成果物（ロードマップ「DD化の原則」3）。AC1〜9 の実測値・合否・既知の制約・Phase 1 引き継ぎ・結論表を集約する。
+> 生計測 JSON: `DD-006/measurements/`（`cellstore-node-500k.json`・`recalc-node-full.json`・`replay-node-10k.json`）。
+> 計測手続きは `bench-protocol.md`、数式仕様は `function-spec.md`、検証シナリオは `scenarios.md`。
+
+## 計測環境
+
+| 項目 | 値 |
+|------|-----|
+| 参照端末 | 本機（DD-004 と同一・Windows_NT 10.0.26200） |
+| CPU | AMD Ryzen 7 PRO 8840HS w/ Radeon 780M |
+| 主評価ランタイム | Node.js v22.20.0（V8・`--expose-gc`。要確認3） |
+| ブラウザ確認 | Chrome/Edge（`apps/pocd-browser-bench`・AC9。**定量の最終確定はユーザー実機run**） |
+| データ規模 | 50,000行×200列・非空500,000セル／数式10,000式 |
+
+---
+
+## AC1: CellStore方式比較（4分布×4実装・3カテゴリ）
+
+500,000非空・warmup 2/trials 5。中央値（ms）。approxMB=方式別概算メモリ（主指標）、heapMB=`process.heapUsed`（補助・粗い）。
+
+### uniform-sparse（一様疎）
+| 方式 | load | read | write | scan | approxMB |
+|------|-----:|-----:|------:|-----:|---------:|
+| chunked-rowslot | 116 | 46 | 78 | **8.8** | **16.7** |
+| chunked-column | 202 | 78 | 94 | 38 | 90 |
+| columnar | 210 | **31** | 46 | 21 | 88 |
+| map（基準線） | 252 | 37 | 104 | **175** | 32 |
+
+### dense-block（連続密）
+| 方式 | load | read | write | scan | approxMB |
+|------|-----:|-----:|------:|-----:|---------:|
+| chunked-column | **42** | 27 | 62 | 22 | **12.5** |
+| chunked-rowslot | 41 | 36 | 78 | **7.6** | 16.3 |
+| columnar | 95 | **22** | **32** | 18 | 88 |
+| map | 146 | 42 | 81 | 137 | 32 |
+
+### top-left-cluster（業務集中）／column-typed（列型偏り）
+- top-left-cluster: chunked-rowslot が最良（mem 16.7MB・scan 8.3ms）。map は scan 128ms。
+- column-typed: chunked-rowslot が最小メモリ（16MB）。columnar は read 速いが**write 192ms**（数値列→文字列列の変換コスト）。
+
+**判定（AC1 合格）**: 4分布×4実装で生成・読書き・範囲走査・メモリの実測表が**分布別に**出力され、カテゴリ別優劣と決定案（用途別選択表・下記）を ADR-011 へ記載できる。**メモリは全方式で §21 目標300MB未満**（heap 最大約138MB）＝**§18.6 No-Go「ブラウザーメモリ上限超過」は Node 実測では非該当**（ブラウザ最終確認は AC9）。
+
+---
+
+## AC2: 差分再計算（影響式数別・10,000式）
+
+warmup 3/trials 15。**合否対象＝影響100式以下**（通常入力）: p95 16ms未満・worst 33ms未満。
+
+| シナリオ | median(ms) | p95(ms) | worst(ms) | 区分 |
+|----------|-----------:|--------:|----------:|------|
+| **fanout-100** | 0.61 | **1.09** | **1.09** | **合否対象 → PASS** |
+| fanout-1000 | 3.74 | 5.95 | 5.95 | 素材 |
+| fanout-10000 | 29.5 | 76.2 | 76.2 | 素材（>33ms） |
+| range-sum-10000 | 0.92 | 1.16 | 1.16 | 素材（interval優位） |
+| chain-10000 | 29.6 | 35.8 | 35.8 | 素材（>33ms） |
+
+依存表現2方式: interval index が expand より僅かに速い（build 14.2ms vs 18.3ms・update 0.32ms vs 0.35ms）。
+
+**判定（AC2 合格）**: 影響100式以下で p95 1.09ms・worst 1.09ms＝**16/33ms基準を大きくクリア（PASS）**。
+
+---
+
+## AC3/AC4: 固定ID参照（sheet-core 実文書結合）
+
+`integration-sheetcore.test.ts`（sheet-core は読み取り＋`applyOperation` のみ・`displayRowOrder`/`columnOrder` から読み取り専用 AxisView アダプタ）:
+- **AC3**: A1(r0,c0)=10 を束縛 → 実 `InsertRows`（先頭へ1行）→ **A1表示はA2へ・束縛セルの評価値は10のまま維持**（固定ID参照維持）。
+- **AC4**: 実 `DeleteRows`([r0]) → 束縛参照が **`#REF!`**・`displayRowOrder` から r0 消失。
+
+**判定（AC3/4 合格）**: モック `AxisView` のユニット（bind.test）＋sheet-core 実文書結合の双方で green。
+
+---
+
+## AC5: Operation replay 計測
+
+100,000 Operation列（op-gen・全て valid）を sheet-core `applyOperation` で replay。checkpoint別累積時間（ms）:
+
+| ops | 累積(ms) |
+|----:|---------:|
+| 1,000 | 109 |
+| 5,000 | 1,012 |
+| 10,000 | 3,514 |
+
+**replay は O(N²)**（5倍ops→約9倍・10倍ops→約32倍時間）。原因は sheet-core `applyOperation` の **immutable 契約（毎回全文書 clone）**。50,000/100,000点は O(N²) ゆえ本機で分単位（50k≈90秒・100k≈6分の桁）となり、**snapshot 無しの長大 replay は非現実的**であることを実証。
+
+snapshot 参考（素朴JSON化・合否対象外・桁感）: 文書1,905行で JSON 666KB・serialize 3.4ms・parse 4.6ms・**復元後 hash 一致**（round-trip 健全）。formula 一括再計算参考: 1,000式 26ms。
+
+**判定（AC5 合格）**: 1,000〜10,000点の所要時間・最終 hash（決定論）・メモリ・snapshot 参考を計測し、snapshot 閾値の**暫定推奨**（下記）を報告できる。
+
+---
+
+## AC6/AC8: 文法評価・資源制限
+
+- **AC6**: tokenizer/parser/evaluator は `eval`/`Function` 不使用（lint `no-eval`・実装インタプリタ）。§14.2文法・5関数・6エラー値・特殊値（非有限→#VALUE!・0除算優先・負の0正規化）・ロケール不変を44+13テストで green。
+- **AC8**: 資源制限 L1〜L6（`function-spec.md` §1）を境界/超過で検証。**深さ100,000のネストでもスタック枯渇せずエラー値**（反復DFSの再計算順も深いチェーンで安全）。範囲L5超過→#REF!、その他→#ERROR!。
+
+---
+
+## AC9: ブラウザ最小確認（採用候補）
+
+`apps/pocd-browser-bench`（playground非依存の最小静的ページ・ルート既存Vite・新規npm依存なし）で採用候補 **chunked-rowslot** の 500,000セル ロード・ランダム読書き・範囲走査・`performance.memory` を Chrome/Edge で実測する。
+
+**状態**: ページ実装済み・**`vite build` green**（chunked-rowslot/data-gen を PoC-to-PoC import でバンドル・8モジュール）。起動と計測動作、および**Node実測との乖離判定（時間2倍超 or メモリ1.5倍超）を含む定量の最終確定は、ユーザーの実機Chrome/Edge run で行う**（`npm run dev --workspace apps/pocd-browser-bench` → 「計測を実行」。`performance.memory` は Chromium系のみ。DD-004 実機確認 run と同運用）。§18.6 No-Go「ブラウザーメモリ上限超過」の直接確認のため必須。
+
+---
+
+## 結論表（bench-protocol §6）
+
+### CellStore 用途別選択表（ADR-011 拡充の決定案）
+
+**単一の勝者を強制しない**。
+
+| 用途・条件 | 推奨方式 | 根拠（実測） |
+|------------|----------|--------------|
+| 疎な業務表（既定の業務入力） | **chunked-rowslot** | 疎メモリ最小16.7MB・範囲走査8ms・全分布で安定 |
+| 高密度数値領域 | **chunked-column** | 密メモリ最小12.5MB・load 42ms |
+| 初期 MVP の既定 | **chunked-rowslot** | 総合最良・DD-004実績・RowIdキー化しやすい |
+| 参考: read 特化 | columnar | read 最速だが密割当でメモリ高（88MB）・列型変換で write 遅 |
+| 使わない | map（基準線） | 範囲走査が O(非空)＝128〜175ms で仮想スクロール不適 |
+| 再検討条件 | 非空率・列型の均一度・範囲走査頻度・密ブロック比率 | 密比率が高い実データが判明したら column/hybrid を再評価 |
+
+### Worker 分離判断表（§14.5 素材・合否対象外）
+
+| 影響式数・条件 | 方針 | 実測根拠 |
+|----------------|------|----------|
+| ≤ 100（通常入力） | メインスレッド同期 | p95 1.09ms（合否 PASS） |
+| ~ 1,000 | メインスレッド同期で可 | p95 5.95ms |
+| ~ 10,000（全式ファンアウト） | **Worker 候補** | worst 76ms（>33ms フレーム予算） |
+| 深い依存チェーン ~10,000 | **分割実行 or Worker 候補** | worst 35.8ms（>33ms） |
+| 巨大範囲参照 SUM | interval index 必須 | range-sum p95 1.16ms（interval 優位） |
+
+**暫定 Worker 閾値 N**: 影響式数が**数千（暫定 2,000〜3,000）**を超えて1フレーム33msに迫る領域。実データのファンアウト分布で Phase 1 に再計測して確定。
+
+### snapshot 閾値（§16.3・確定しない）
+
+- replay は O(N²)（immutable clone 由来）。**文書が大きくなる前に snapshot を取る**判断に帰着。
+- §16.3 の暫定「1,000〜5,000 Operation」は妥当な出発点。素朴JSON化の桁感（666KB/serialize3.4ms/parse4.6ms）は正式形式より軽い方に振れうる。
+- **本DDでは確定しない**。正式 snapshot 形式（差分・圧縮・スキーマ版・formulaEngineVersion）の設計と閾値確定は **Phase 1**。
+
+---
+
+## 既知の制約
+
+- 指数表記（`1e3`）は MVP 未対応 → #ERROR!（scenarios §1）。`#NUM!` 未導入で非有限は暫定 #VALUE!（§2.1・Phase 1で追加検討）。
+- `$` 絶対参照は構文保持のみ（rebind 適用はフィルとともに Phase 1）。
+- columnar の数値列 Float64Array 化は「正準数値」前提（data-gen が保証）。実データの数値表現次第で文字列列へ倒れる。
+- 2,000,000 ストレッチは本レポートでは未実施（参考値・合否対象外）。ブラウザ定量は AC9 のユーザー run で確定。
+- replay の O(N²) は sheet-core apply の immutable 契約由来（PoC の apply をそのまま利用）。
+
+## Phase 1 引き継ぎ
+
+- **CellStore の sheet-core 組込**: chunked-rowslot を既定に、**index キー→RowId キー**へ（DD-004 DA #3 の簡略化解消）。密領域は chunked-column を選べる用途別選択（ADR-011 決定案）。
+- **Worker 分離閾値**: 影響式数 数千で Worker 候補（実データ分布で再計測）。
+- **snapshot 正式形式**: 差分・圧縮・スキーマ版・formulaEngineVersion。閾値は replay O(N²) を踏まえ「文書肥大前」。
+- **数式**: `#NUM!`・比較演算子・IF・丸め・日付・フィル rebind・サーバー re-parse/validate（§14.6）。
+- **env-free 純度**: `sheet-formula` は `typecheck:core` で維持（Node/DOM 型混入を回帰検出）。

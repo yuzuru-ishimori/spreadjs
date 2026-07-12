@@ -1,0 +1,10 @@
+{
+  // pocd-browser-bench はブラウザ最小確認ページ（DD-006 AC9・製品昇格しない）。
+  // ブラウザ実行のため DOM lib を含める（tsconfig.base は DOM 無しなので lib をここで上書き）。
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": []
+  },
+  "include": ["src/**/*.ts"]
+}

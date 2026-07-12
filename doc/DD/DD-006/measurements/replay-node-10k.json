@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "runtime": "node",
+    "runtimeVersion": "v22.20.0",
+    "count": 10000,
+    "initialRows": 500,
+    "cols": 10,
+    "full": false,
+    "gcExposed": true,
+    "note": "applyOperation は immutable（毎回全文書 clone）ゆえ replay は O(N^2) 傾向。snapshot が必要な根拠。"
+  },
+  "replay": {
+    "checkpoints": [
+      {
+        "ops": 1000,
+        "cumulativeMs": 109.422
+      },
+      {
+        "ops": 5000,
+        "cumulativeMs": 1012.216
+      },
+      {
+        "ops": 10000,
+        "cumulativeMs": 3513.848
+      }
+    ],
+    "finalHash": "c68e2d59ca526b73",
+    "documentRows": 1905,
+    "serializedLength": 138738,
+    "memoryBytes": {
+      "rss": 132206592,
+      "heapUsed": 38996280
+    }
+  },
+  "snapshotReference": {
+    "jsonBytes": 665890,
+    "serializeMs": 3.402,
+    "parseMs": 4.579,
+    "restoredHeapDeltaBytes": 3575968,
+    "hashMatches": true
+  },
+  "formulaReference": {
+    "formulaCells": 1000,
+    "recalcMs": 26.159
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "@nanairo-sheet/pocd-browser-bench",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "採用候補 CellStore（chunked-rowslot）の最小ブラウザ確認ページ（DD-006 AC9）。playground 非依存・製品昇格しない。500,000セルのロード・読書き・範囲走査・performance.memory を Chrome/Edge で実測し Node 実測との乖離を確認する。",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "vite": "^6.4.3"
+  }
+}

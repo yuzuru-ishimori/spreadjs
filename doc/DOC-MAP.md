@@ -37,6 +37,7 @@
 | `doc/adr/0005-server-ordered-operation-log.md` | サーバー主導型全順序Operationログ（PoC-C/DD-003で検証・Status: Proposed） |
 | `doc/adr/0008-optimistic-apply-rollback-replay.md` | 楽観適用＋rollback/replay（PoC-C/DD-003で検証・Status: Proposed） |
 | `doc/adr/0011-row-slot-chunked-cell-store.md` | 行スロット＋チャンク化セルストア（PoC-B/DD-004で起票・Status: Draft・DD-006で拡充） |
+| `doc/adr/0022-zero-runtime-dependency-core.md` | コアはゼロランタイム依存を原則（DD-005/006で実証・Status: Draft・Accepted化はDD-007） |
 
 ## プロセス・開発規約
 

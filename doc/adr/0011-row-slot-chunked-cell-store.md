@@ -1,6 +1,6 @@
 # ADR-0011: 行スロット＋チャンク化セルストア
 
-- **Status**: Draft（PoC-B/DD-004 で起票。CellStore 方式の本格比較＝疎/密は DD-006/PoC-D で拡充し確定）
+- **Status**: Draft（PoC-B/DD-004 で起票。**DD-006/PoC-D で4分布×4実装の本格比較を実測・反映済み**＝下記「DD-006 拡充」。Accepted 化は DD-007〔要確認4〕）
 - **関連**: 計画書 §18.2（PoC-B）・§18.4（PoC-D）・§12（Canvas 描画）・§13（仮想スクロール）・§21（性能目標）／
   リスク R-03（データ密度でメモリ超過）／DD-004（PoC-B）／DD-006（PoC-D・本 ADR を拡充予定）
 
@@ -42,6 +42,27 @@
   内容混在を実証）。生成時間・実メモリ（usedJSHeapSize）の実測値は `DD-004/measurement-report.md`（主セッションが headed で記入）。
 - **既知の簡略化**: 本ストアは **index キー**。行挿入/削除は Axis（RowId）側のみ再採番し、セルデータは index 位置に留まる。
   RowId 追従の CellStore は Phase 1（DD-006 の方式比較を受けて）で実装する。
+
+## DD-006（PoC-D）拡充: 4分布×4実装の実測と用途別選択
+
+500,000非空・4分布（uniform-sparse/dense-block/top-left-cluster/column-typed）×4実装をNode計測（生JSON `doc/DD/DD-006/measurements/cellstore-node-500k.json`・詳細 `doc/DD/DD-006/measurement-report.md` §AC1）。要点:
+
+- **(A) 行スロット＋チャンク（chunked-rowslot）が総合最良**: 範囲走査8ms（map の 128〜175ms に対し圧倒）・疎メモリ最小（16.7MB）・全分布で安定。
+- **(C) 列指向（columnar）**: read 最速だが**密割当でメモリ高（88MB）**・列型変換で write 遅（192ms）。
+- **列チャンク（chunked-column）は密ブロックで最小メモリ（12.5MB）・load最速（42ms）** ＝高密度数値領域に有利。
+- **(B) 単一Map は範囲走査 O(非空)** で仮想スクロール不適（基準線）。
+- メモリは全方式で §21 目標300MB未満（heap 最大約138MB）＝R-03/§18.6「メモリ上限超過」は Node 実測で非該当（ブラウザ確認は DD-006 AC9）。
+
+### 決定案（用途別選択・単一の勝者を強制しない）
+
+| 用途・条件 | 推奨方式 |
+|------------|----------|
+| 疎な業務表・初期MVP既定 | **(A) chunked-rowslot** |
+| 高密度数値領域 | **(C′) chunked-column** |
+| read 特化（参考） | columnar |
+| 再検討条件 | 非空率・列型の均一度・範囲走査頻度・密ブロック比率 |
+
+**Phase 1 方針**: (A) を既定とし、**index キー→RowId キー**へ移行（DD-004 の簡略化解消・共同編集の InsertRows/DeleteRows と整合）。密領域は用途別に (C′) を選べる拡張点を残す。Accepted 化は DD-007 の Go 判定で行う（要確認4）。
 
 ## 再検討条件
 
