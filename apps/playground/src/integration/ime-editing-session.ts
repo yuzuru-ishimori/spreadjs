@@ -136,9 +136,12 @@ export function createImeEditingSession(config: ImeEditingSessionConfig): ImeEdi
   }
 
   function buildPresenceUpdate(): PresenceUpdate {
+    // 編集中は editingTarget（RowId 安定）を activeCell/selection の源にする。他クライアントが構造Op（行挿入等）を
+    // 起こして表示 index がずれても、他者へ publish する activeCell は正しい編集セルを指す（#4・Codex P1 の presence 部）。
+    // 非編集時は状態機械の activeCell（表示 index）を RowId/ColumnId へ解決する。
     const active = machine.getActiveCell();
-    const activeRowId = doc.rowIdAt(active.row);
-    const activeColId = doc.colIdAt(active.col);
+    const activeRowId = editingTarget !== null ? editingTarget.rowId : doc.rowIdAt(active.row);
+    const activeColId = editingTarget !== null ? editingTarget.columnId : doc.colIdAt(active.col);
     const activeCell: CellAddressById | undefined =
       activeRowId !== undefined && activeColId !== undefined
         ? { rowId: activeRowId, columnId: activeColId }
@@ -177,9 +180,22 @@ export function createImeEditingSession(config: ImeEditingSessionConfig): ImeEdi
     return editingTarget !== null && isEditTargetStale(doc.getCommittedDocument(), editingTarget);
   }
 
+  /** 表示 index のセルから EditTarget を作る（BeginEdit を経ない Commit 用・beforeRevision は現行を凍結）。 */
+  function resolveTargetFromCell(cell: CellPosition): EditTarget | null {
+    const rowId = doc.rowIdAt(cell.row);
+    const columnId = doc.colIdAt(cell.col);
+    if (rowId === undefined || columnId === undefined) {
+      return null;
+    }
+    return { rowId, columnId, startRevision: captureEditStartRevision(doc.getCommittedDocument(), rowId, columnId) };
+  }
+
   /** #7 Commit: 生存確認 → beforeRevision（凍結済み）→ SetCells → submit。削除済みは退避（#4）。 */
-  function performCommit(draftText: string): void {
-    const target = editingTarget;
+  function performCommit(draftText: string, effectCell: CellPosition): void {
+    // 通常は編集開始（BeginEdit）で凍結した editingTarget を使う。ただし Navigation の Delete（S-A4）は
+    // BeginEdit を経ずに Commit（空クリア）を出すため editingTarget が無い → effect.cell から対象を解決する
+    // （無効セルなら submit しない）。これが無いと Delete が no-op になる（Codex P2）。
+    const target = editingTarget ?? resolveTargetFromCell(effectCell);
     if (target === null) {
       return;
     }
@@ -232,7 +248,8 @@ export function createImeEditingSession(config: ImeEditingSessionConfig): ImeEdi
       }
       case 'Commit':
         // 値の正は最終 input 後の draft（I-1）。compositionend だけで Commit しない（状態機械が担保・#7）。
-        performCommit(effect.value);
+        // effect.cell は BeginEdit を経ない Navigation Delete の対象解決に使う（editingTarget 優先）。
+        performCommit(effect.value, effect.cell);
         break;
       case 'Move':
       case 'MoveTo':

@@ -10,8 +10,10 @@
 //
 // 【状態所有権】Document State=ClientSession のみ。Canvas/Axis は Render State。IME draft は常駐 textarea（ローカルが正）。
 
-import { createColumnId, createDocumentId } from '@nanairo-sheet/sheet-types';
-import type { ColumnId } from '@nanairo-sheet/sheet-types';
+import { createColumnId, createDocumentId, createRowId } from '@nanairo-sheet/sheet-types';
+import type { ColumnId, RowId } from '@nanairo-sheet/sheet-types';
+import { documentHash, getCell } from '@nanairo-sheet/sheet-core';
+import type { DeleteRowsOperation, InsertRowsOperation } from '@nanairo-sheet/sheet-core';
 import type { Clock, IdGenerator, PresenceUpdate } from '@nanairo-sheet/sheet-collaboration';
 
 import type { GridLayout } from '../grid/geometry';
@@ -23,6 +25,7 @@ import { singleCell, type CellRange } from '../pocb/selection';
 import { createViewportTransform, type ViewportTransform } from '../pocb/viewport';
 
 import { BrowserWebSocketTransport } from './browser-transport';
+import { cellScalarToDisplay } from './document-view';
 import type { PlacementConfig } from './editor-placement';
 import type { EditingDocumentPort } from './ime-editing-session';
 import { createIntegrationEditor, type IntegrationEditor } from './integration-editor';
@@ -458,3 +461,142 @@ window.setInterval(() => {
 void boot().catch((error: unknown) => {
   statusEl.textContent = `起動失敗: ${error instanceof Error ? error.message : String(error)}`;
 });
+
+// ---- E2E / 手動テスト用フック（DD-005 Phase 4）---------------------------------
+// 【重要・挙動不変】このフックは Document State（ClientSession）／IME draft／描画のいずれの挙動も変えない。
+//   - 観測系（*Count/committedCell/editingTarget 等）は sync/editor の現在値を読むだけ（副作用ゼロ）。
+//   - submitInsertRowsAfter/submitDeleteRow は **本番の ClientSession.submitLocalOperation** をそのまま呼ぶ。
+//     統合ページの PoC UI に「行挿入/削除」ボタンが無いため、AC4（行挿入で編集継続・行削除で draft 退避）を
+//     E2E/実機で駆動するための最小アフォーダンス。結果（RowId 再解決・退避）は本番コードが生成し捏造しない。
+// synthetic composition と同じく、これは実 IME・実 UI 操作の「代替」であって成立の捏造ではない（§20.5）。
+interface IntegrationCellRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+interface IntegrationCellAddress {
+  rowId: string;
+  columnId: string;
+}
+interface IntegrationSelectionRange {
+  startRowId: string;
+  startColumnId: string;
+  endRowId: string;
+  endColumnId: string;
+}
+interface IntegrationPresenceView {
+  displayName: string;
+  activeCell: IntegrationCellAddress | null;
+  editingCell: IntegrationCellAddress | null;
+  selectionRanges: IntegrationSelectionRange[];
+}
+export interface IntegrationTestApi {
+  ready(): boolean;
+  online(): boolean;
+  rowCount(): number;
+  committedRevision(): number;
+  committedHash(): string;
+  pendingCount(): number;
+  conflictCount(): number;
+  divertedCount(): number;
+  knownPresenceCount(): number;
+  presences(): IntegrationPresenceView[];
+  isConflicting(): boolean;
+  isComposing(): boolean;
+  draft(): string;
+  activeCell(): { row: number; col: number };
+  editingTarget(): IntegrationCellAddress | null;
+  rowIdAt(index: number): string | undefined;
+  colIdAt(index: number): string | undefined;
+  rowIndexOf(rowId: string): number;
+  /** 表示 index のセル矩形（クリック座標算出用・読み取り専用の本番 transform を使う）。 */
+  cellRectAt(row: number, col: number): IntegrationCellRect | null;
+  /** committed（サーバー確定）セルの表示文字列。AC1/AC2 の収束・反映確認に使う。 */
+  committedCell(rowId: string, columnId: string): string;
+  /** committed+pending（view）セルの表示文字列。 */
+  displayCell(rowId: string, columnId: string): string;
+  /** AC4: 行挿入（本番 submitLocalOperation 経由）。 */
+  submitInsertRowsAfter(afterRowId: string | null, newRowId: string): void;
+  /** AC4: 行削除（本番 submitLocalOperation 経由）。 */
+  submitDeleteRow(rowId: string): void;
+}
+
+declare global {
+  interface Window {
+    __integrationTestApi?: IntegrationTestApi;
+  }
+}
+
+function toAddress(cell: { rowId: RowId; columnId: ColumnId } | undefined): IntegrationCellAddress | null {
+  return cell === undefined ? null : { rowId: String(cell.rowId), columnId: String(cell.columnId) };
+}
+
+window.__integrationTestApi = {
+  ready: () => sync !== undefined && firstDataDrawn && sync.view.rowAxis.count() > 1,
+  online: () => sync?.session.isOnline ?? false,
+  rowCount: () => sync?.view.rowAxis.count() ?? 0,
+  committedRevision: () => sync?.session.committedDocument.revision ?? 0,
+  committedHash: () => (sync === undefined ? '' : documentHash(sync.session.committedDocument)),
+  pendingCount: () => sync?.session.pendingCount ?? 0,
+  conflictCount: () => sync?.session.conflictQueue.length ?? 0,
+  divertedCount: () => editor?.session.divertedDrafts().length ?? 0,
+  knownPresenceCount: () => sync?.session.knownPresences().length ?? 0,
+  presences: () =>
+    (sync?.session.knownPresences() ?? []).map((p) => ({
+      displayName: p.displayName,
+      activeCell: toAddress(p.activeCell),
+      editingCell: toAddress(p.editingCell),
+      selectionRanges: p.selectionRanges.map((r) => ({
+        startRowId: String(r.startRowId),
+        startColumnId: String(r.startColumnId),
+        endRowId: String(r.endRowId),
+        endColumnId: String(r.endColumnId),
+      })),
+    })),
+  isConflicting: () => editor?.session.isConflicting() ?? false,
+  isComposing: () => editor?.session.isComposing() ?? false,
+  draft: () => editor?.session.getDraft() ?? '',
+  activeCell: () => editor?.session.getActiveCell() ?? { row: 0, col: 0 },
+  editingTarget: () => {
+    const t = editor?.session.getEditingTarget() ?? null;
+    return t === null ? null : { rowId: String(t.rowId), columnId: String(t.columnId) };
+  },
+  rowIdAt: (index) => {
+    const id = sync?.view.rowIdAt(index);
+    return id === undefined ? undefined : String(id);
+  },
+  colIdAt: (index) => {
+    const id = sync?.view.columnIdAt(index);
+    return id === undefined ? undefined : String(id);
+  },
+  rowIndexOf: (rowId) => sync?.view.rowIndexOf(createRowId(rowId)) ?? -1,
+  cellRectAt: (row, col) => currentTransform()?.cellRect(row, col) ?? null,
+  committedCell: (rowId, columnId) => {
+    if (sync === undefined) {
+      return '';
+    }
+    const record = getCell(sync.session.committedDocument, createRowId(rowId), createColumnId(columnId));
+    return record === undefined ? '' : cellScalarToDisplay(record.value);
+  },
+  displayCell: (rowId, columnId) =>
+    sync === undefined ? '' : sync.view.cellDisplay(createRowId(rowId), createColumnId(columnId)),
+  submitInsertRowsAfter: (afterRowId, newRowId) => {
+    if (sync === undefined) {
+      return;
+    }
+    const op: InsertRowsOperation = {
+      type: 'insertRows',
+      afterRowId: afterRowId === null ? null : createRowId(afterRowId),
+      rows: [{ rowId: createRowId(newRowId) }],
+    };
+    sync.session.submitLocalOperation(op);
+  },
+  submitDeleteRow: (rowId) => {
+    if (sync === undefined) {
+      return;
+    }
+    const op: DeleteRowsOperation = { type: 'deleteRows', rowIds: [createRowId(rowId)] };
+    sync.session.submitLocalOperation(op);
+  },
+};

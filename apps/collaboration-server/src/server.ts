@@ -374,20 +374,51 @@ function isMainModule(): boolean {
   return entry !== undefined && import.meta.url === pathToFileURL(entry).href;
 }
 
+/** env の数値（未指定・不正は undefined）。E2E 起動用のシード規模調整に使う（DD-005 Phase 4）。 */
+function numEnv(name: string): number | undefined {
+  const raw = process.env[name];
+  if (raw === undefined) {
+    return undefined;
+  }
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : undefined;
+}
+
+/**
+ * `--integration` 起動時のシード規模を決める（DD-005 Phase 4・E2E 起動用の最小追加）。
+ * env（SEED_ROWS / SEED_COLS / SEED_NONEMPTY）が無ければ既定規模（true＝50,000行×200列×非空100,000）。
+ * E2E は行数（50,000）を保ったまま非空セル数だけ絞って初期 replay を軽くする（挙動・公開API は不変）。
+ */
+function integrationDatasetFromEnv(): IntegrationDatasetConfig | boolean {
+  const rows = numEnv('SEED_ROWS');
+  const cols = numEnv('SEED_COLS');
+  const nonEmpty = numEnv('SEED_NONEMPTY');
+  if (rows === undefined && cols === undefined && nonEmpty === undefined) {
+    return true; // 既定規模（dev:integration の通常起動）
+  }
+  return {
+    ...DEFAULT_INTEGRATION_DATASET,
+    ...(rows !== undefined ? { rows } : {}),
+    ...(cols !== undefined ? { cols } : {}),
+    ...(nonEmpty !== undefined ? { nonEmpty } : {}),
+  };
+}
+
 if (isMainModule()) {
   const envPort = process.env.PORT;
   const port = envPort === undefined ? DEFAULT_PORT : Number(envPort);
   // DD-005 統合PoC のシード投入は `--integration` フラグ or `SEED_DATASET=integration` で有効化する。
-  const integrationDataset =
+  const integrationEnabled =
     process.argv.includes('--integration') || process.env.SEED_DATASET === 'integration';
+  const integrationDataset = integrationEnabled ? integrationDatasetFromEnv() : false;
   startServer({ port, integrationDataset })
     .then((running) => {
       process.stdout.write(
         `collaboration-server listening on ${running.url} (documentId=${running.documentId})\n`,
       );
-      if (integrationDataset) {
+      if (integrationEnabled) {
         process.stdout.write(
-          `DD-005 integration dataset seeded (50,000 rows x 200 cols). WS: ws://${running.url.replace(/^https?:\/\//, '')}/ws\n`,
+          `DD-005 integration dataset seeded (rows/cols/nonEmpty overridable via SEED_ROWS/SEED_COLS/SEED_NONEMPTY). WS: ws://${running.url.replace(/^https?:\/\//, '')}/ws\n`,
         );
       } else {
         process.stdout.write(

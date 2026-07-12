@@ -2,7 +2,7 @@
 
 | 作成日 | 更新日 | ステータス | 補足 |
 |--------|--------|-----------|------|
-| 2026-07-12 | 2026-07-12 | 進行中 | 要確認1〜3確定（案A/Codex2回/初期約10万セル）。**Phase 1**（sheet-collaboration 抽出・Codex xhigh 済）＋**Phase 2**（統合ページ土台）＋**Phase 3**（IME×共同編集結線＝commit-bridge cell-level beforeRevision・ime-editing-session・integration-editor・Presence・#8不変/AC4退避）実装完了。**#3 protocol 検証＝cell-level 確定**（SetCellsChange.beforeRevision＋CellRecord.lastChangedRevision＋server validateSetCells がセル単位で照合）。test 434/E2E 11 green・回帰0。**Phase 4（統合E2E・Codex）以降は未着手・Codex は Phase 4**。headed 2タブ smoke（#9競合表示・変換中スクロール追従）は主セッションが実行 |
+| 2026-07-12 | 2026-07-12 | 進行中 | 要確認1〜3確定（案A/Codex2回/初期約10万セル）。**Phase 1**（sheet-collaboration 抽出・Codex xhigh 済）＋**Phase 2**（統合ページ土台）＋**Phase 3**（IME×共同編集結線＝commit-bridge cell-level beforeRevision・ime-editing-session・integration-editor・Presence・#8不変/AC4退避）＋**Phase 4**（統合E2E・証跡・Codex xhigh 済）実装完了。**#3 protocol 検証＝cell-level 確定**（SetCellsChange.beforeRevision＋CellRecord.lastChangedRevision＋server validateSetCells がセル単位で照合）。test 434／**E2E 17**（DD-002 11＋統合 6・回帰0）green。統合シナリオ10項目＋AC1〜4 を synthetic composition＋実WS 2コンテキストで自動実証（証跡 `dd005-p4-e2e-*.png`・`integration-evidence.md`）。**残るは Phase 5（実機IMEゲート・ユーザー手動＝2環境トレース・確定Enter順序A/B）のみ**。headed 2タブ smoke（#9競合表示・変換中スクロール追従）は Phase 2/3 で主セッションが実行済み |
 
 > アプローチ: E2E駆動（統合シナリオ＝操作→結果の検証が中心）＋TDD（sheet-collaboration 抽出は DD-003 既存テストを green 維持する挙動保存リファクタ）＋標準（実機IMEゲート・証跡）
 
@@ -155,13 +155,13 @@ snapshot / Server Operation
 - [x] 😈 **DA批判レビュー**（§11.9 全7項目の再確認・編集開始 revision の取り違え・rollback/replay 中の textarea 不変・#9 z-index/被覆・#7 暫定値送信の回帰）→ 2026-07-12 実施（DA 表 #10〜#14）
 
 ### Phase 4: 統合E2E・証跡・Codexレビュー
-- [ ] `apps/playground/e2e/integration-scenario.spec.ts`（新規）: 統合シナリオ10項目＋AC1〜4 の自動分（synthetic composition＋実WSサーバー起動・2クライアント。実IMEの代替でない旨をコメント明記）
-- [ ] `DD-005/integration-evidence.md`（新規）: シナリオ項目別の成立記録（対応テスト名・トレース・📸参照）
-- [ ] 📸 **エビデンス**: 競合状態（A編集中×B確定値反映・インジケーター）・Presence 表示・スクロール追従のキャプチャ（`DD-005/` 配置）
-- [ ] 🔬 **機械検証**: `npm run test`／`test:e2e`／`typecheck`／`lint`／`build`／`bash scripts/doc-check.sh` → 全 green
-- [ ] 😈 **DA批判レビュー**（E2Eが「テストのための実装」に依存していないか・証跡から第三者が成立を追えるか）
-- [ ] Codexレビュー自動実行（統合差分。依頼書→`bash scripts/codex-review.sh --effort xhigh`→`DD-005/codex-review-result.md`）
-- [ ] Codexレビュー指摘への対応、または見送り理由をログに記録
+- [x] `apps/playground/e2e/integration-scenario.spec.ts`（新規）: 統合シナリオ10項目＋AC1〜4 の自動分（synthetic composition＋実WSサーバー起動・2クライアント。実IMEの代替でない旨をコメント明記）→ 2026-07-12 完了（6 テスト＝AC1/AC2/AC3/AC4-a/AC4-b/Presence・`e2e/integration-helpers.ts` 新規。実 WS（8799・integration seed）＋Vite の 2 webServer・Alice/Bob 2 コンテキスト・synthetic composition）
+- [x] `DD-005/integration-evidence.md`（新規）: シナリオ項目別の成立記録（対応テスト名・トレース・📸参照）→ 2026-07-12 完了（10項目×AC1〜4 の対応表・Phase 3 headed 参照・**Phase 5 実機残項目**・既知制約〔Presence 再描画契機・AC4削除時の実IME中断〕）
+- [x] 📸 **エビデンス**: 競合状態（A編集中×B確定値反映・インジケーター）・Presence 表示・スクロール追従のキャプチャ（`DD-005/` 配置）→ 2026-07-12 完了（`dd005-p4-e2e-{ac1-bob-synced,ac2-alice-conflict,ac3-scroll-follow,ac4-insert-continue,ac4-delete-divert,presence}.png` 6枚・赤枠強調。既存 dd005-*.png と命名衝突なし）
+- [x] 🔬 **機械検証**: `npm run test`／`test:e2e`／`typecheck`／`lint`／`build`／`bash scripts/doc-check.sh` → 全 green → 2026-07-12 **全 green**（test 45 files/434・**test:e2e 17 passed**〔DD-002 の 11＋統合 6・DD-002 回帰 0〕・typecheck 全 workspace・lint・build〔integration 39.93KB〕・doc-check）
+- [x] 😈 **DA批判レビュー**（E2Eが「テストのための実装」に依存していないか・証跡から第三者が成立を追えるか）→ 2026-07-12 実施（DA 表 #15〜#17）
+- [x] Codexレビュー自動実行（統合差分。依頼書→`bash scripts/codex-review.sh --effort xhigh`→`DD-005/codex-review-result.md`）→ 2026-07-12 実行（xhigh・依頼書 `DD-005/codex-review-request.md`・差分範囲 dc0d014→作業ツリー＝Phase 2/3/4）
+- [x] Codexレビュー指摘への対応、または見送り理由をログに記録 → 2026-07-12（下記ログ「Codex レビュー」節）
 
 ### Phase 5: 実機IMEゲート（ユーザー手動）★統合シナリオの最終判定
 - [ ] `DD-005/manual-integration-test-guide.md`（新規）: 統合シナリオ10項目＋AC1〜3 の実機手順書（A/B 2クライアント操作・記録列・トレース保存手順）
@@ -248,6 +248,25 @@ snapshot / Server Operation
 - **AC4 構造変更**: (i) Alice 編集中に Bob が上へ行挿入→Alice の textarea が同一 RowId へ追従（index 再解決）。(ii) Alice 編集中に Bob が編集対象行を削除→Alice の textarea が退避（readout「退避draft」+1・無効セルへ Commit されない）。
 - **実IME との区別**: 合成 composition で代替できるのは「状態遷移・追従・#9 レイアウト」まで。**実 IME の候補ウィンドウ・確定 Enter 順序A/B の実機観察は Phase 5 実機ゲート**（Playwright では実 IME を通せない・§11.8/§20.5）。証跡は `DD-005/` へ 📸（Phase 4 で integration-evidence.md に整理）。
 
+**Phase 4 実装（統合E2E・証跡・Codexレビュー・2026-07-12）**:
+- **E2E 構成**: `apps/playground/e2e/integration-scenario.spec.ts`（新規・6 テスト）＋`e2e/integration-helpers.ts`（新規）。Playwright webServer を **2 本**（Vite 5199／実 WS `dev:integration` 8799＝integration seed）に拡張（`playwright.config.ts`）。**2 ブラウザーコンテキスト**（Alice/Bob＝別ユーザー）が同一 WS 文書へ join し ClientSession 単一正本→Canvas/IME の本番配線で相互反映。IME は **synthetic composition**（`.int-cell-editor` へ compositionstart/update/end を dispatch）。操作は実 pointerdown（selectCell）・実 Enter・実スクロールを通し、状態検証は `window.__integrationTestApi`（main.ts の **読み取り専用観測**＋AC4 構造Op投入＝本番 `submitLocalOperation` 呼び出しのみ）で行う。**実 IME でない旨を spec/helper コメント・命名・evidence に明示**（候補ウィンドウ・順序 A/B は Phase 5）。
+- **カバー**: AC1（通常入力同期・A/B hash 一致）／AC2（同一セル競合＝A 変換中→B 確定→A の committed=B・draft/isComposing/editingTarget 不変・#9 badge・A 確定で reject→Conflict Queue→収束）／AC3（変換中スクロールで同一 RowId/ColumnId 追従・値/selection 不変）／AC4-a（行挿入で編集継続・RowId 追従）／AC4-b（行削除で draft 退避・無効 RowId へ Commit しない）／Presence（activeCell/selectionRanges/editingCell が B へ届く）。統合シナリオ 10 項目→AC の対応は `integration-evidence.md`。
+- **E2E 用の最小追加**: `server.ts` の `isMainModule` 起動ブロックに `SEED_ROWS/COLS/NONEMPTY` の env override（既定挙動不変・`startServer`/公開API 不変）。E2E は **行数 50,000 を保持し非空 3,000** に絞り初期 replay を軽量化（`playwright.config.ts` の `SEED_NONEMPTY=3000`）。データ密度検証は DD-004/006 担当。
+- **🔬 機械検証（全 green・回帰0）**: `test`=**45 files/438 tests**（Phase 3 の 434 から +4〔session-sync +2・ime-editing-session +2〕）／`test:e2e`=**17 passed**（DD-002 の 11＋統合 6・**DD-002 回帰 0**）／`typecheck`／`lint`／`build`（integration 39.93KB）／`doc-check`。
+- **📸 証跡**: `dd005-p4-e2e-{ac1-bob-synced,ac2-alice-conflict,ac3-scroll-follow,ac4-insert-continue,ac4-delete-divert,presence}.png`（赤枠強調・既存 dd005-*.png と命名衝突なし）。
+- **😈 DA 批判レビュー**: DA 表 #15〜#18（E2E が「テストのための実装」に依存しないか〔読み取り観測＋本番 submit・捏造なし〕／証跡の第三者追跡性／Presence 再描画契機〔→Codex で修正〕／共有 WS サーバーのテスト間状態累積への堅牢性）。
+- **🧑‍⚖️ Codex レビュー（必須・xhigh・2回目＝統合差分）**: 依頼書 `DD-005/codex-review-request.md`→`bash scripts/codex-review.sh --base dc0d014 --effort xhigh`（差分 dc0d014→作業ツリー＝Phase 2/3/4）→結果 `DD-005/codex-review-result.md`。下記「Codex レビュー」節。
+- **スコープ・コミット**: 触れたのは `apps/playground/e2e/`（新規 2）・`playwright.config.ts`・`src/integration/{main,session-sync,ime-editing-session}.ts`（フック追加＋Codex 修正）・各 `.test.ts`・`apps/collaboration-server/src/server.ts`（E2E 起動 env）・本DD本文＋`DD-005/`（依頼書/結果/evidence/スクショ）。**`src/{grid,ime,pocb}`・`index.html`・`poc-b.html`・`packages/*` は無改変**（凍結維持・DD-002 E2E 回帰 0 で実証）。**コミットしない**（主セッションが実施）。**Phase 4 で停止・Phase 5（実機IMEゲート）は未着手**。
+
+**Codex レビュー（Phase 2/3/4 統合差分・xhigh・2026-07-12）**:
+- **findings 5 件（P1×3・P2×2）。4 件修正・1 件（P1）一部修正＋残を既知制約化**。挙動一致・状態所有権(#1〜#9)・単一正本の観点で有用な指摘。修正はすべて **触ってよい範囲**（`src/integration/`・E2E）に収め、`src/ime` の凍結は維持。
+  - **[P1] reject 後の Canvas 無効化**（session-sync.ts）→ **修正**: observer が `operationRejected` で `view.markCellDirty()`。rejected な楽観 draft が Canvas に残らず committed へ描き直す（単一正本＝Render は Document State を追う・#1/#2）。ユニット追加。
+  - **[P1] presence-only メッセージで overlay 再描画**（session-sync.ts）→ **修正**: `presenceSnapshot/Delta/Removed` で `view.markViewportDirty()`。アイドル受信側でも他者カーソル/名前タグが即時反映（シナリオ10）。ユニット追加＋E2E Presence が**手動 nudge なし**で overlay 表示＝実証（DA #17 解消）。
+  - **[P2] Navigation Delete の no-op**（ime-editing-session.ts）→ **修正**: BeginEdit を経ない `Commit`（Navigation の Delete＝空クリア）を `effect.cell` から対象解決し submit。ユニット追加。
+  - **[P2] Presence E2E の selectionRanges 未検証**（integration-scenario.spec.ts）→ **修正**: フックに `selectionRanges` を追加し assert（単一セル＝start==end の 1 レンジ）。
+  - **[P1] 行挿入後の active-cell rebase**（ime-editing-session.ts）→ **一部修正＋残を既知制約化**: **他者へ publish する presence の activeCell/selection を editingTarget（RowId）由来に修正**（同時実行の構造Op でも正しい編集セルを指す・#4）。Commit 先も editingTarget.rowId で正しい。**残**: ローカル選択ハイライトと Enter 移動先が凍結中の状態機械 `activeCell`（表示 index）由来でシフト分ずれる。完全修正は状態機械へ activeCell 再ベース API が要り **src/ime は本 Phase 凍結対象（DA #10）＝見送り**。中核 AC（Commit 先・draft 保持・RowId 追従・presence）は不変。**Phase 1 の共同編集 DD／DD-007 既知制約へ引き継ぎ**（`integration-evidence.md` 既知制約に記録）。
+- 修正後の再検証: `test` 438／`test:e2e` 17／typecheck／lint／build／doc-check 全 green（回帰0）。見送りは上記 P1 の残 1 点のみ（理由：src/ime 凍結・スコープ外・中核 AC 不変）。
+
 ---
 
 ## DA批判レビュー記録
@@ -274,3 +293,7 @@ snapshot / Server Operation
 | 12 | 3 | **編集開始 revision の取り違え**: beforeRevision を **Commit 時**に取ると、編集中に B が確定した後の値（新 revision）を beforeRevision にしてしまい server が競合を検知できず**サイレント上書き**（AC2 破綻） | 高 | もし resolveCommit が `getCell(...).lastChangedRevision` を Commit 時に読むと、B 確定後は current==before で reject されない | 編集開始 revision の凍結 | **startRevision を BeginEdit で committed から取得し EditTarget に凍結**（以後サーバー更新で変えない・#8 テストで before=2 が B の rev3 後も 2 のまま assert）。commit-bridge テストで「文書全体 revision を使う誤実装は stale」対比を server validateOperation に対して確認 |
 | 13 | 3 | **#9 競合表示の被覆**: textarea がセル全面を覆うと、Canvas のサーバー確定値が隠れて「A の draft・サーバー値・競合」を同時識別できない（overlay Canvas は textarea より下で被覆される） | 中 | overlay に競合枠を描いても textarea(z10) が覆う | #9 z-index/被覆 | 競合 badge を **textarea より上（z-index 12）** の DOM 要素にし、セル上端の外側（y-16px）へ配置＋他者確定値を表示。textarea には赤枠。**headed で同時識別を証跡**（主セッション・下記手順）。ユニットは `isEditTargetStale`（#9 検知）を検証 |
 | 14 | 3 | **AC4 削除時の composition 中断（既知境界）**: 編集対象行が変換中に削除されると draft を退避し状態機械を作り直すが、ブラウザー IME の候補ウィンドウは JS から確実に取消せず、直後の compositionend/input が新状態機械（Navigation）へ届きうる | 低 | 実 IME で変換中に他者削除（Phase 5 実機） | 実行時境界（ブラウザー IME 状態の非制御性） | draft は `divertedDrafts` へ**非破棄で退避**し無効 RowId へ Commit しないことは保証（ユニット済）。変換中断の実挙動は **Phase 5 実機ゲート**で観察（synthetic では制御可）。DD-007 引き継ぎ候補に記録 |
+| 15 | 4 | **E2E が「テストのための実装」に依存していないか（§20.5）**: 統合ページは Canvas 描画で DOM から値が読めず、また PoC UI に行挿入/削除ボタンが無い。E2E 用に何らかのフックが要るが、これが**成立を捏造**したり synthetic を実 IME 成立と誤表示すると PoC の意味が失われる | 中 | —（設計判断・成立主張の正しさ） | 申告のみクローズ／捏造の防止（DD-002 Phase 6 教訓） | `window.__integrationTestApi` は **読み取り専用の観測**（committed/hash/pending/conflict/presence/editingTarget）と、AC4 の構造Op投入（`submitInsertRowsAfter`/`submitDeleteRow`＝**本番 `ClientSession.submitLocalOperation` を呼ぶだけ**）に限定。RowId 再解決・draft 退避・reject・収束は**本番コードが生成**し捏造しない。操作は実 pointerdown/実 Enter/実スクロールを通す。synthetic composition は「実 IME の代替でない」旨を spec/helper のコメント・evidence・命名で明示（候補ウィンドウ・確定 Enter 順序 A/B は Phase 5）。フックは挙動不変（typecheck/lint/test/build/doc-check・DD-002 E2E 回帰 0 で確認） |
+| 16 | 4 | **証跡から第三者が成立を追えるか**: Canvas 上の値はスクショで読めても機械的に検証できない。第三者が「成立した」と判断できる証跡か | 中 | —（証跡の十分性） | 証跡の自己完結性 | #9 badge・textarea draft・status（revision/行数/pending/conflicts/退避draft/他者）・Presence 名前タグは **DOM 要素**として赤枠強調で撮影＝人が値を読める。hash 一致・reject→Conflict Queue・RowId 追従は E2E の assert（`committedHash` A==B・`conflictCount+1`・`rowIndexOf` 増減）で機械検証し、`integration-evidence.md` に**テスト名・assert・スクショ**を項目別対応表で残す |
+| 17 | 4 | **Presence 単独では Canvas を再描画しない**: overlay は Document State の dirty か scroll 等の描画契機でのみ再描画される。他者 Presence（activeCell/editingCell）変化のみでは名前タグ更新が次の描画契機まで遅延する | 低→**解消** | B がアイドルのまま A が選択セルを変えると、B の overlay 名前タグが scroll 等まで動かない | 描画契機の欠落（実行時） | **Codex P1 として修正済み**: `session-sync` の observer が `presenceSnapshot/Delta/Removed` で `view.markViewportDirty()` を立て、他者カーソル/名前タグを即時再描画する（ユニット `presenceDelta 受信で viewport dirty`）。E2E Presence テストは**手動 nudge なし**で overlay を表示（`dd005-p4-e2e-presence.png`）＝修正の実証。当初の 1px スクロール回避策は撤去 |
+| 18 | 4 | **共有 WS サーバーのテスト間状態累積**: E2E は 1 つの WS ドキュメントを 6 テストで共有し、AC1/AC2 は committed を書き換え・AC4 は行を挿入/削除する。絶対 index/rowId をハードコードするとテスト順・再実行で壊れる | 中 | AC4-a が先頭に 1 行挿入すると後続テストの display index が全て +1 ずれる／再実行で前回の編集セルが非空のまま | テストの決定性・順序非依存 | 全テストは**表示 index → RowId/ColumnId をその場で解決**し、**値をユニーク化**（`uniq()`）して before→after の**差分**を assert（絶対値やセルの空を前提にしない）。競合/挿入/削除の対象は live ID で指定。`fullyParallel:false`＋`workers:1`＋各テスト後に context を close。累積があっても堅牢（17 passed で実証） |

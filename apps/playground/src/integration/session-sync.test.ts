@@ -146,6 +146,42 @@ describe('createSessionSync（ClientSession=正本・DocumentView=派生）', ()
     expect(sync.view.rowAxis).toBe(axis);
   });
 
+  it('operationRejected 受信で cell dirty を立てる（rejected draft を Canvas に残さない・Codex P1）', () => {
+    const inner = new RecordingTransport();
+    const sync = createSessionSync({ innerTransport: inner, sessionConfig: baseSessionConfig(), rowHeight: 20, colWidth: 60 });
+    sync.start();
+    inner.receive(welcome(1));
+    inner.receive(operationsMessage([serverEnvelope({ revision: 1, operationId: 'op-ins', operation: insertRows(null, ['r0', 'r1']) })]));
+    sync.view.flush(); // 初期構造の dirty を消費
+    expect(sync.view.isDirty()).toBe(false);
+
+    // ローカル SetCells を楽観 submit（pending）→ サーバーが stale で reject。
+    const opId = sync.session.submitLocalOperation(
+      setCells([{ rowId: row('r0'), columnId: col('col-0'), beforeRevision: 0, value: str('A') }]),
+    );
+    sync.view.flush(); // submit 自体は session-sync 経由の dirty を立てない（main の onChange 側）
+    inner.receive({ type: 'operationRejected', operationId: opId, code: 'stale-cell-revision' });
+
+    const result = sync.view.flush();
+    expect(result.dirty.cell).toBe(true); // reject で viewDocument が committed へ戻る → 可視範囲を描き直す
+  });
+
+  it('presenceDelta 受信で viewport dirty を立てる（overlay 再描画契機・シナリオ10/Codex P1）', () => {
+    const inner = new RecordingTransport();
+    const sync = createSessionSync({ innerTransport: inner, sessionConfig: baseSessionConfig(), rowHeight: 20, colWidth: 60 });
+    sync.start();
+    inner.receive(welcome(1));
+    sync.view.flush();
+    expect(sync.view.isDirty()).toBe(false);
+
+    inner.receive({
+      type: 'presenceDelta',
+      presence: { connectionId: 'conn-b', colorKey: '1', sequence: 1, userId: 'user-b', displayName: 'B', selectionRanges: [] },
+    });
+    const result = sync.view.flush();
+    expect(result.dirty.viewport).toBe(true); // 他者カーソル/名前タグの出現で overlay を描き直す
+  });
+
   it('再接続で Render State を全再構築する（#10 再接続経路）', () => {
     const inner = new RecordingTransport();
     const sync = createSessionSync({ innerTransport: inner, sessionConfig: baseSessionConfig(), rowHeight: 20, colWidth: 60 });

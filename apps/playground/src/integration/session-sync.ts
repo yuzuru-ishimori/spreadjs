@@ -102,14 +102,28 @@ export function createSessionSync(config: SessionSyncConfig): SessionSync {
   let sawDisconnect = false;
   observing.setObserver({
     onServerMessage(message) {
-      if (message.type === 'operations') {
-        // session は適用済み。種別だけ見て dirty を立てる（cell/row-structure）。
-        for (const envelope of message.operations) {
-          view.noteOperation(envelope.operation);
-        }
-        config.onOperations?.();
+      // session は適用済み。種別ごとに Render State の dirty を立てる（Render は常に Document State を追う・#1/#2）。
+      switch (message.type) {
+        case 'operations':
+          for (const envelope of message.operations) {
+            view.noteOperation(envelope.operation);
+          }
+          config.onOperations?.();
+          break;
+        case 'operationRejected':
+          // reject で楽観 pending がロールバックされ viewDocument が committed へ戻る（描画値が変わりうる）。
+          // セル dirty を立てて可視範囲を描き直す。さもないと自分の rejected draft が Canvas に残る（Codex P1）。
+          view.markCellDirty();
+          break;
+        case 'presenceSnapshot':
+        case 'presenceDelta':
+        case 'presenceRemoved':
+          // 他者 Presence の出現/移動/消滅は overlay-layer の再描画契機。dirty を立てないと、受信側がアイドルの間
+          // 他者カーソル/名前タグが次の viewport/文書更新まで反映されない（シナリオ10・Codex P1）。
+          view.markViewportDirty();
+          break;
+        // welcome/operationAck/heartbeatAck は Render 更新契機ではない（ack は値不変で pending→committed の昇格のみ）。
       }
-      // welcome/ack/reject/presence は Render 更新契機ではない（reject は Conflict Queue＝Phase 3 で扱う）。
     },
     onConnected() {
       config.onConnected?.();
