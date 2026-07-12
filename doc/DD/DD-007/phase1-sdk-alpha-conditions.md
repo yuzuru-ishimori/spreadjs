@@ -67,13 +67,13 @@ apps/
 - **技術Go（DD-007 §7・決定事項に記録）**: 製品化開発を継続してよいか、という成立性判断のみ。
 - **Phase 1開始時の前提条件（DD-007 が別途記録・値は Go 後に記入）**: 下記は箇条書きの空欄リスト。Go 判定後に DD-007 が埋める。
 
-  - 採用 CellStore: （DD-007 が Go 後に記入）
-  - 対応ブラウザー（Tier 1 の確定範囲）: （DD-007 が Go 後に記入）
-  - 残存する IME リスク: （DD-007 が Go 後に記入）
-  - 共同編集の既知制約（引き継ぐもの）: （DD-007 が Go 後に記入）
-  - SDK Alpha の公開境界（Facade/公開 export の範囲）: （DD-007 が Go 後に記入）
-  - Accepted 化する ADR（ADR-005/008/011/022 の帰結）: （DD-007 が Go 後に記入）
-  - Phase 1 で最初に解消する技術負債: （DD-007 が Go 後に記入。例: `go-nogo-package.md` §5 の既知制約）
+  - 採用 CellStore: **chunked-rowslot（既定）**＋高密度領域は chunked-column（用途別選択・ADR-011 決定案）。Phase 1 で **index→RowId キーへ移行**（DD-007 CG-2）。
+  - 対応ブラウザー（Tier 1 の確定範囲）: **Windows Chrome / Edge**（macOS・Firefox は対象外。DD-007 CG-4・憲章 §27 P-08）。
+  - 残存する IME リスク: **実機の確定Enter順序A/B・先頭文字欠落・候補ウィンドウ挙動が未裏取り**（実機トレース未採取）。新 `integration-editor` アダプタ×実IME を Phase 1 で検証（DD-007 CG-1・R-01 残存）。
+  - 共同編集の既知制約（引き継ぐもの）: client→server 方向（submitOperation 欠落）の完全な seq 再整列が未実装（D27/D34・CG-5）／構造Op中の active-cell rebase 残／認証・認可は §8.7 スコープ外。
+  - SDK Alpha の公開境界（Facade/公開 export の範囲）: 利用側は **Facade パッケージ（`grid`／`react`／`server-hono` 等）の公開 export のみ**。内部パッケージ（`core`/`selection`/CellStore/Canvas 実装）は非露出（本ファイル §2・§3・憲章 §12.2）。正式な公開クラス名（P-02 `NanairoSheet` 候補）は Phase 1 最初の Facade DD で確定。
+  - Accepted 化する ADR（ADR-005/008/011/022 の帰結）: 4本ともドラフト実在。**ADR-005/008=Proposed、ADR-011/022=Draft**。Accepted 化（状態欄更新）は DD-007 Phase 2 の範囲（要確認4）。ADR-011 は「index→RowId キー移行」を条件に Accepted 候補、ADR-008 は「実RTT UX 未直接測定」を再検討条件へ明記。
+  - Phase 1 で最初に解消する技術負債: `go-nogo-package.md` §5 の既知制約（**CellStore index→RowId キー**〔CG-2〕・**snapshot 正式形式**〔CG-3〕・**実機IME検証**〔CG-1〕・精密ブラウザーヒープ計測〔CG-6〕）。
 
 > これらの前提条件は「機能の完了条件」ではなく「Phase 1 を始めてよい前提」である。§2 の完了条件（DDのゴール）とは別レイヤーとして扱う。
 
