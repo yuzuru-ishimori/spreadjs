@@ -25,7 +25,8 @@
 
 ## Phase 0 DD一覧（技術リスク別）
 
-> DD番号は作成順＝実装順。**DD-001〜007 は採番・起票済み**（DD-001〜004 完了・アーカイブ、DD-005 実装中、DD-006/007 起票済み）。状態列は作業管理用の目安で、**現在状態の正は `DD-INDEX.md`／各DDヘッダ**。
+> **🏁 Phase 0 完了（2026-07-12）**: DD-001〜007 すべて完了。DD-007 で Go/No-Go を **条件付きGo**（CG-1〜6 を解除条件）と判定し、Phase 1 正式バックログ（`doc/plan/phase1-dd-roadmap.md`＝Stage 1 SDK Alpha）を確定。全PoC DD（DD-001〜007）はアーカイブ済み（`doc/archived/DD/`）。**次は Phase 1（基盤判断DD → 単一利用者IME → … → Stage 1移行判定）**。
+> DD番号は作成順＝実装順。状態列は作業管理用の目安で、**現在状態の正は `DD-INDEX.md`／各DDヘッダ**。
 
 | DD | 題 | 内容（計画書対応） | 主な成果物・レビュー対象 | 状態 |
 |----|----|-------------------|------------------------|------|
@@ -34,8 +35,8 @@
 | DD-003 | 共同編集・Operation収束 | `sheet-core`/`sheet-server-core`最小＋WS同期＋楽観適用rollback/replay＋Presence(3種+識別・TTL)＋2ブラウザーデバッグデモ（§18.3・§7・§8・§9） | ランダムOperation収束（hash一致）、ADR-005/008ドラフト | ✅完了（アーカイブ） |
 | DD-004 | Canvas描画・仮想スクロール | 50,000行×200列、可変行高・列幅、固定行列、Presence overlay 20人、高DPI（§18.2・§12・§13） | fps・メモリ計測、scroll anchor検証、ADR-011ドラフト | ✅完了（アーカイブ・実機run overall=pass） |
 | DD-005 | 統合PoC（IME・Canvas・共同編集） | DD-002 のIME＋DD-004 のCanvas描画＋DD-003 の共同編集クライアントを**一つのセル編集フロー**として結線し、下記の統合シナリオを実装・検証。textarea追従の ViewportTransform 統合（§13.5）を含む（§18.1〜18.3・§11） | 統合シナリオ成立の証跡（イベントトレース・試験証跡） | ✅完了（Phase 1〜4・Phase 5は実機なしでクローズ〔根拠記録〕） |
-| DD-006 | データ表現・簡易数式 | CellStore方式比較、500k非空セル計測、formula parser最小＋固定ID参照＋依存グラフ、replay計測（§18.4・§6・§14） | 計測レポート、ADR-011/022ドラフト | 検討中（起票済み・着手=DD-005完了後） |
-| DD-007 | Phase 0 Go/No-Go判定・Phase 1正式バックログ | 各PoC結果・ADR・性能SLO（§21）・既知の制約を集約し、Go／条件付きGo／No-Go を判定。Goの場合 Phase 1 正式バックログを確定 | 判定一式＋Phase 1バックログ | 検討中（起票済み・着手=DD-002〜006完了後） |
+| DD-006 | データ表現・簡易数式 | CellStore方式比較、500k非空セル計測、formula parser最小＋固定ID参照＋依存グラフ、replay計測（§18.4・§6・§14） | 計測レポート、ADR-011/022ドラフト | ✅完了（AC1〜9合格・アーカイブ） |
+| DD-007 | Phase 0 Go/No-Go判定・Phase 1正式バックログ | 各PoC結果・ADR・性能SLO（§21）・既知の制約を集約し、Go／条件付きGo／No-Go を判定。Goの場合 Phase 1 正式バックログを確定 | 判定一式＋Phase 1バックログ | ✅完了（条件付きGo・Phase 1バックログ確定・アーカイブ） |
 
 ### DD-005 の統合シナリオ（Phase 0 Go の必須条件）
 
@@ -78,7 +79,7 @@
 
 Phase 0 Go 後、技術モジュールではなく**利用者が完了できる操作単位**でDDを作る（各DDが Canvas・IME・共同編集・数式・Undo を縦に貫く）。
 
-> **Phase 1 の実体計画は `doc/plan/phase1-dd-roadmap.md`（Stage 1 社内SDK Alpha までの縦切り計画）を正本とする**。DD-007 の **条件付きGo 判定（2026-07-12）** で採択済み（採択記録＝`doc/DD/DD-007/phase1-backlog.md`・条件 CG-1〜6 の担当DD対応を含む）。ただし phase1-dd-roadmap.md は草案で、ChatGPTレビュー反映後に正式版へ昇格する。以下は方針の要約。
+> **Phase 1 の実体計画は `doc/plan/phase1-dd-roadmap.md`（Stage 1 社内SDK Alpha までの縦切り計画・正式版）を正本とする**。DD-007 の **条件付きGo 判定（2026-07-12）＋ChatGPTレビュー（要修正）反映**で確定（採択記録＝`doc/archived/DD/DD-007/phase1-backlog.md`・条件 CG-1〜6 の担当DD対応を含む）。以下は方針の要約。
 
 **最初のDDは「日本語でセルを連続入力し、確定値が共同編集で保存される」を製品パッケージとして完成させる**（2026-07-12 ユーザー確定）。以降の例:
 

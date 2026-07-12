@@ -1,6 +1,6 @@
 # Stage 1 SDK Alpha DDロードマップ（Delivery Phase A・旧「Phase 1 DDロードマップ」）＝**正式版**
 
-> **本ファイルは正式版**（2026-07-12・DD-007 条件付きGo判定＋ChatGPTレビュー〔要修正〕反映で草案から昇格）。採択記録＝`doc/DD/DD-007/phase1-backlog.md`。
+> **本ファイルは正式版**（2026-07-12・DD-007 条件付きGo判定＋ChatGPTレビュー〔要修正〕反映で草案から昇格）。採択記録＝`doc/archived/DD/DD-007/phase1-backlog.md`。
 >
 > **用語（ChatGPTレビュー §3.3 の指摘）**: 「**計画書Phase**」（`nanairo_realtime_spreadsheet_development_plan_v1.md` §19 の Phase 1/2/3＝**何を作るかの技術コンテンツの区切り**）と、「**Delivery Phase A**」（＝本ロードマップ＝**Stage 1 社内SDK Alpha までのデリバリー単位**）は別軸。本文では常に修飾して書く。Stage 1 Alpha は計画書 §19 Phase 1 の中核＋Phase 2 の最小部分を Alpha 品質で含む（＝技術フェーズ Phase 1 の完了とは別）。
 >
@@ -58,7 +58,7 @@
 
 ## 2. 密度レジーム
 
-> 「Phase 1以降を一律に薄く」ではなく「**通常DDは薄く・不可逆/データ損失/外部契約に関わるDDだけ高密度へ戻す**」。密度は波形（Phase 0:高 → Delivery Phase A:中〈但し高リスクDDは高〉 → …）。出典: `doc/DD/DD-007/chatgpt-review-20260712-3.md`（密度相談）。
+> 「Phase 1以降を一律に薄く」ではなく「**通常DDは薄く・不可逆/データ損失/外部契約に関わるDDだけ高密度へ戻す**」。密度は波形（Phase 0:高 → Delivery Phase A:中〈但し高リスクDDは高〉 → …）。出典: `doc/archived/DD/DD-007/chatgpt-review-20260712-3.md`（密度相談）。
 
 ### 2.1 各DDに Risk Class を必須付与（DDヘッダ項目）
 
@@ -199,11 +199,11 @@ Evidence Level: full / standard / minimal
 
 ### Codexレビュー第1回（2026-07-12・effort=high）
 
-依頼書・結果: `doc/DD/DD-007/phase1-roadmap-review-20260712/codex-review-request.md`・`codex-review-result.md`。9指摘（P1×5・P2×4）全件を反映または明示的に論点化（S1-6 新設・S1-1実抽出・§19境界明記・データ損失二択・DD-011分割・DD-014依存/Risk Class・既知制約放置期限・見積§25.4）。
+依頼書・結果: `doc/archived/DD/DD-007/phase1-roadmap-review-20260712/codex-review-request.md`・`codex-review-result.md`。9指摘（P1×5・P2×4）全件を反映または明示的に論点化（S1-6 新設・S1-1実抽出・§19境界明記・データ損失二択・DD-011分割・DD-014依存/Risk Class・既知制約放置期限・見積§25.4）。
 
 ### ChatGPTレビュー（2026-07-12・判定=要修正）
 
-依頼書・結果: `doc/DD/DD-007/phase1-roadmap-review-20260712/`（`01_プロンプト.md`・`chatgpt_review_result.md`）。方向転換不要だが昇格前に修正必須の5系統。**ユーザー判断（2026-07-12）= Alpha必須ラインはレビュー案を全面採用**。反映（草案→正式版へ昇格）:
+依頼書・結果: `doc/archived/DD/DD-007/phase1-roadmap-review-20260712/`（`01_プロンプト.md`・`chatgpt_review_result.md`）。方向転換不要だが昇格前に修正必須の5系統。**ユーザー判断（2026-07-12）= Alpha必須ラインはレビュー案を全面採用**。反映（草案→正式版へ昇格）:
 
 | ChatGPT指摘 | 対応 |
 |---|---|

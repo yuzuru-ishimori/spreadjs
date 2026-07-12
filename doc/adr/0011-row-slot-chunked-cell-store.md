@@ -45,7 +45,7 @@
 
 ## DD-006（PoC-D）拡充: 4分布×4実装の実測と用途別選択
 
-500,000非空・4分布（uniform-sparse/dense-block/top-left-cluster/column-typed）×4実装をNode計測（生JSON `doc/DD/DD-006/measurements/cellstore-node-500k.json`・詳細 `doc/DD/DD-006/measurement-report.md` §AC1）。要点:
+500,000非空・4分布（uniform-sparse/dense-block/top-left-cluster/column-typed）×4実装をNode計測（生JSON `doc/archived/DD/DD-006/measurements/cellstore-node-500k.json`・詳細 `doc/archived/DD/DD-006/measurement-report.md` §AC1）。要点:
 
 - **(A) 行スロット＋チャンク（chunked-rowslot）が総合最良**: 範囲走査8ms（map の 128〜175ms に対し圧倒）・疎メモリ最小（16.7MB）・全分布で安定。
 - **(C) 列指向（columnar）**: read 最速だが**密割当でメモリ高（88MB）**・列型変換で write 遅（192ms）。
