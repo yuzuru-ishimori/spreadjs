@@ -6,10 +6,13 @@
   "description": "PoC-D 計測CLI（CellStore候補4実装の比較・決定論data-gen・ベンチ・replay計測）。製品昇格しない Node ツール（DD-006）。",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "bench:cellstore": "node --expose-gc --import tsx src/bench-cellstore.ts"
+    "bench:cellstore": "node --expose-gc --import tsx src/bench-cellstore.ts",
+    "bench:recalc": "node --expose-gc --import tsx src/bench-recalc.ts"
   },
   "devDependencies": {
     "@nanairo-sheet/sheet-core": "*",
+    "@nanairo-sheet/sheet-formula": "*",
+    "@nanairo-sheet/sheet-types": "*",
     "@types/node": "^22.10.5",
     "tsx": "^4.19.2"
   }

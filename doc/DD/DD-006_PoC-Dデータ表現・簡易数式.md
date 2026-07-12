@@ -2,7 +2,7 @@
 
 | 作成日 | 更新日 | ステータス | 補足 |
 |--------|--------|-----------|------|
-| 2026-07-12 | 2026-07-12 | 進行中 | DD-005完了→着手。**Phase 1（CellStore 4実装）＋Phase 2（数式parser・固定IDバインド）実装済**（`apps/pocd-bench`＋`packages/sheet-formula`・test 499件green・回帰0・typecheck:core green）。外部レビュー2回反映済み。Phase 3以降（依存グラフ/評価器/replay/レポート/ADR/Codex）未着手 |
+| 2026-07-12 | 2026-07-12 | 進行中 | DD-005完了→着手。**Phase 1〜3実装済**（CellStore 4実装／数式parser・固定IDバインド／依存グラフ・評価器・差分再計算。test 524件green・回帰0・typecheck:core green・AC2 smoke PASS・AC3/4 sheet-core結合green）。外部レビュー2回反映済み。Phase 4（replay計測）・Phase 5（ブラウザ確認/レポート/ADR/Codex）未着手 |
 
 > アプローチ: 標準（計測中心のPoC）＋TDD（parser・固定IDバインド・依存グラフ・CellStore候補のDOM非依存純ロジック）
 
@@ -95,14 +95,14 @@
 - [x] 🔬 **機械検証**: `test`/`typecheck`/`typecheck:core`/`lint` green。パッケージのランタイム依存ゼロ（package.json `dependencies` なし・env-free 型検査で Node/DOM 型混入なし）を確認 → **完了**（test **499件green＝Phase 1後455＋新44・回帰0**／typecheck 全workspace green／typecheck:core green／lint green／`dependencies:{}`）
 - [x] 😈 **DA批判レビュー**（全角/空白トークン・巨大数値・深いネストのスタック）→ **完了**（DA表 #9〜#10: 深いネストのスタック安全・比較演算子/裸識別子のエラー分類）
 
-### Phase 3: 依存グラフ・差分再計算・評価器（TDD＋計測）
-- [ ] **Red→Green**: `packages/sheet-formula/src/{dep-graph,evaluator}.test.ts`（cycle・diamond・range重なり・#REF!伝播・行挿入/削除の参照維持=AC3/4）
-- [ ] `packages/sheet-formula/src/dep-graph.ts`（新規）: 全展開＋列別interval indexの2実装（§14.4）・dirty集合→topological再計算・DFS coloring cycle検出
-- [ ] `packages/sheet-formula/src/evaluator.ts`（新規）: `CellReader` 抽象上で5関数（SUM/AVERAGE/MIN/MAX/COUNT・要確認2回答）・空白/文字列/エラー伝播規則・**特殊値の意味論**（非有限→暫定`#VALUE!`・0除算優先・負の0正規化＝function-spec §2.1／ロケール不変＝§2.2）・評価時資源制限（1範囲の最大参照セル数・処理量上限カウンタ＝AC8）を実装（関数ごとの仕様・上限値を `DD-006/function-spec.md` に明文化。テスト側に別仕様を作らない）
-- [ ] `apps/pocd-bench/src/integration-sheetcore.test.ts`（新規）: sheet-core結合試験（AC3/4の実文書版）— sheet-coreで文書作成→数式をRowId/ColumnIdへbind→`InsertRows`適用→A1表示変化・固定ID評価値維持を確認／`DeleteRows`適用→`#REF!` を確認（sheet-coreは読み取り＋apply利用のみ。Axis情報が外部公開されていない場合は読み取り専用アダプタ）
-- [ ] `apps/pocd-bench/src/bench-recalc.ts`（新規）: 影響式数別シナリオ（**影響100式以下=合否対象**／影響1,000式／全10,000式／10,000行範囲SUM／10,000式チェーン=レポート項目・Worker分離閾値素材）で1セル変更×N回→シナリオ別p95/worst JSON出力（AC2）＋依存表現2方式の構築/更新時間比較
-- [ ] 🔬 **機械検証**: `test`/`typecheck`/`lint` green＋bench-recalc実行でAC2判定値出力
-- [ ] 😈 **DA批判レビュー**（再計算順の非決定性・interval indexの境界off-by-one・エラー伝播の抜け）
+### Phase 3: 依存グラフ・差分再計算・評価器（TDD＋計測）★実装済（2026-07-12）
+- [x] **Red→Green**: `packages/sheet-formula/src/{dep-graph,evaluator}.test.ts`（cycle・diamond・range重なり・#REF!伝播）＋`apps/pocd-bench/src/integration-sheetcore.test.ts`（行挿入/削除の参照維持=AC3/4実文書）→ **完了**（evaluator 13＋dep-graph 10＋結合 2）
+- [x] `packages/sheet-formula/src/dep-graph.ts`（新規）: 全展開＋列別interval indexの2実装（§14.4）・dirty集合→topological再計算・DFS coloring cycle検出 → **完了**（2戦略の dependents 集合が等価・**反復DFS**で深いチェーンでもスタック枯渇せず・自己/相互/3項/範囲自己包含の循環→#CYCLE!）＋`recalc.ts`（FormulaSheet=値ストア＋CellReader）
+- [x] `packages/sheet-formula/src/evaluator.ts`（新規）: `CellReader` 抽象上で5関数（SUM/AVERAGE/MIN/MAX/COUNT・要確認2回答）・空白/文字列/エラー伝播規則・**特殊値の意味論**（非有限→暫定`#VALUE!`・0除算優先・負の0正規化＝function-spec §2.1／ロケール不変＝§2.2）・評価時資源制限（処理量上限カウンタ L6＝AC8）を実装 → **完了**（範囲=非空走査・COUNTのみエラー非伝播・AVERAGE数値0件=#DIV/0!・関数仕様は `function-spec.md` 準拠でテスト側に別仕様なし）
+- [x] `apps/pocd-bench/src/integration-sheetcore.test.ts`（新規）: sheet-core結合試験（AC3/4の実文書版）— sheet-coreで文書作成→数式をRowId/ColumnIdへbind→`InsertRows`適用→A1表示変化・固定ID評価値維持を確認／`DeleteRows`適用→`#REF!` を確認 → **完了**（sheet-coreは読み取り＋`applyOperation`のみ・`displayRowOrder`/`columnOrder` から読み取り専用 AxisView アダプタ・A1→A2表示変化＆値10維持＆削除で#REF!）
+- [x] `apps/pocd-bench/src/bench-recalc.ts`（新規）: 影響式数別シナリオ（**影響100式以下=合否対象**／影響1,000式／全10,000式／10,000行範囲SUM／10,000式チェーン=レポート項目・Worker分離閾値素材）で1セル変更×N回→シナリオ別p95/worst JSON出力（AC2）＋依存表現2方式の構築/更新時間比較 → **完了**（`npm run bench:recalc`〔`--full`で10,000規模〕・`ac2Judgment` 出力。smoke値: fanout-100 p95 0.76ms/worst 0.76ms=**PASS**。本計測10,000式はPhase 5）
+- [x] 🔬 **機械検証**: `test`/`typecheck`/`typecheck:core`/`lint` green＋bench-recalc実行でAC2判定値出力 → **完了**（test **524件green＝Phase 2後499＋新25・回帰0**／typecheck・typecheck:core・lint green／bench-recalc `ac2Judgment.pass=true`）
+- [x] 😈 **DA批判レビュー**（再計算順の非決定性・interval indexの境界off-by-one・エラー伝播の抜け）→ **完了**（DA表 #11〜#12: 深いチェーンのスタック安全〔反復DFS〕・2戦略の dependents 等価性）
 
 ### Phase 4: Operation replay計測
 - [ ] `apps/pocd-bench/src/op-gen.ts`（新規）: シード付きPRNGで100,000 Operation列（SetCells/InsertRows/DeleteRows混在比率は決定論・DD-003 fuzzer踏襲）＋ユニットテスト（再現性）
@@ -135,6 +135,7 @@
 - **外部レビュー第2回を受領・7指摘を doc-only で反映**（手動運用方針・詳細記録: `DD-006/chatgpt-review-20260712-2.md`）: ①ベンチ規約先行固定（`bench-protocol.md` 新設） ②CellStore用途別選択表を許容 ③データ分布4種 ④数式の意味論を function-spec §2.1/§2.2 へ明文化（非有限・負の0・ロケール不変） ⑤Worker導入条件を判断表として成果物化 ⑥snapshot閾値は暫定推奨に留める ⑦sheet-formula に env-free typecheck 追加。決定事項・AC1/AC5・Phase 1/2/3/5タスクへ還流。コード・workspace・lock は不変（実装はDD-005完了後）
 - **Phase 1（CellStore 4実装比較）実装**（DD-005完了→着手。ゲート確認で「現行計画で即着手」・プロセス密度レビューは Phase 0残り現状維持で無ブロック）: 新規ワークスペース `apps/pocd-bench`（Node計測CLI・製品昇格しない）を追加し `package-lock.json` を更新（並行DDなしのタイミングで実施＝DD本文の制約どおり）。`cell-store.ts`（共通契約）・4ストア（map／chunked-column〔§6.4列チャンク〕／chunked-rowslot〔DD-004移植〕／columnar〔密向け・数値列 Float64Array〕）・`data-gen.ts`（4分布・正準数値）・`bench-cellstore.ts`（bench-protocol準拠CLI）・等価性/data-genテストを実装。**test 455件green（既存438＋新17・回帰0）・typecheck/lint 全workspace green・bench CLI JSON出力確認**。PRNG/行スロットは pocb を再実装（apps間 import なし＝憲章§25）。既存 playground/packages/collaboration-server は無変更。ステータス 検討中→進行中。Phase 2以降（parser/固定IDバインド/依存グラフ/replay/レポート/ADR/Codex）未着手
 - **Phase 2（数式parser・固定IDバインド）実装**（TDD・一気通貫指示で継続）: 新規製品パッケージ `packages/sheet-formula`（外部ランタイム依存ゼロ・DOM/Node非依存・env-freeゲート `tsconfig.core.json`＋`typecheck:core`）を追加。`errors`（6エラー値）・`limits`（L1〜L5＝function-spec §1）・`a1`（列↔index）・`ast`（canonical＋`serialize`）・`tokenizer`（ASCIIのみ・全角/未定義文字拒否）・`parser`（§14.2再帰下降・演算子優先順位・べき乗左結合・単項・比較演算子拒否・#NAME?・資源制限）・`bind`（A1↔`BoundCellReference`・`AxisView`・行挿入でRowId不変/削除で#REF!）を実装。**test 499件green（Phase 1後455＋新44・回帰0）・typecheck/typecheck:core/lint green・`dependencies:{}`**。L6（評価時処理量）はPhase 3評価器で実装。Phase 3以降未着手
+- **Phase 3（依存グラフ・差分再計算・評価器）実装**（TDD＋計測）: `sheet-formula` に `evaluator`（5関数・特殊値§2.1/§2.2・エラー伝播・L6処理量上限）・`dep-graph`（2戦略〔expand/interval〕・dirty→topological・**反復DFS coloring cycle検出**〔深いチェーンでスタック枯渇しない〕）・`recalc`（FormulaSheet=値ストア＋CellReader）を追加。`pocd-bench` に `integration-sheetcore.test`（sheet-core 実文書で AC3/4＝行挿入でA1→A2表示・固定ID評価値維持・削除で#REF!。読み取り＋`applyOperation`のみ）・`bench-recalc`（影響式数別 p95/worst・AC2判定・2戦略比較）を追加（pocd-benchへ sheet-formula/sheet-types 依存追加・lock更新）。**test 524件green（Phase 2後499＋新25・回帰0）・typecheck/typecheck:core/lint green**。AC2 smoke: fanout-100 p95 0.76ms/worst 0.76ms=**PASS**（16/33ms基準・本計測10,000式はPhase 5）。DA #11〜#12記録。Phase 4以降未着手
 
 ---
 
@@ -158,3 +159,5 @@
 | 8 | 1 | columnar の数値列 Float64Array 化は「正準数値（String(Number(s))===s）」前提。data-gen が非正準数値を出すと round-trip 破綻＝等価性崩壊 | 中 | 非正準数値（"12.50" 等）を数値列に入れ get が "12.5" を返さないか | 正しさ（等価性） | data-gen は正準数値のみ生成（テスト `isCanonicalNumber` で検証）。非正準値 set 時は該当列を文字列列へ変換する経路を実装＋変異等価性テストで担保。4分布すべてで等価性 green |
 | 9 | 2 | 再帰下降パーサは深いネストで**スタック枯渇**の懸念（外部入力＝数式・AC8の核心） | 高 | `=(((…)))` を深さ10万で parse | 正しさ（安全性） | L3（ネスト深さ64・`DEFAULT_LIMITS`）で `enter()` が深さ超過を検出し #ERROR!。**深さ10万でもクラッシュせずエラー値を返す**ことをテストで確認（例外を外へ出さない・parse は必ず結果オブジェクトを返す） |
 | 10 | 2 | エラー分類の一貫性（function-spec §4 との一致）。比較演算子・裸識別子・未知関数・引数0・範囲超過のエラー値が仕様どおりか | 中 | 各境界式を parse しエラー値を照合 | 正しさ | 比較演算子→#ERROR!（予約拒否）／未知関数・裸識別子→#NAME?／引数0・構文→#ERROR!／範囲L5超過→#REF!。parser.test/limits.test で網羅。指数表記 `1e3` は #ERROR!（MVP未対応・scenarios §1 既知の制約） |
+| 11 | 3 | **深い依存チェーンの再計算順で再帰DFSがスタック枯渇**（10,000式チェーンはレポート項目）。数式は外部入力・AC8の系 | 高 | chain-10,000 を recalcAll | 正しさ（安全性） | topoSort を**再帰→反復DFS**へ変更（明示 frame スタック＋gray path）。chain-2,000 の再計算・cycle検出がクラッシュせず動作（bench-recalc chain シナリオ green）。深いチェーンでもエラーにならず正しい順序で収束 |
+| 12 | 3 | 依存表現2方式（expand/interval）で **dependents 集合が食い違う**と方式比較が無意味＋再計算漏れ | 中 | 範囲重なり・連鎖のグラフで両戦略の affectedSet を比較 | 計測の妥当性／正しさ | `dep-graph.test` で両戦略の `affectedSet` 等価性を検証（`SUM(A1:A50)`＋`SUM(A25:A75)`重なり＋連鎖 D=A1+B1・複数変更点）。bench-recalc は同一結果前提で構築/更新時間のみ比較 |

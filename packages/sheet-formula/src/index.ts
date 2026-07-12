@@ -8,3 +8,6 @@ export * from './ast';
 export * from './tokenizer';
 export * from './parser';
 export * from './bind';
+export * from './evaluator';
+export * from './dep-graph';
+export * from './recalc';
