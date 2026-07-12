@@ -2,7 +2,7 @@
 
 | 作成日 | 更新日 | ステータス | 補足 |
 |--------|--------|-----------|------|
-| 2026-07-12 | 2026-07-12 | 進行中 | **Phase 1（判定材料集約）＋Phase 2（判定＝条件付きGo）＋Phase 3（バックログ採択）まで実施**。`go-nogo-package.md` §1〜§8 記入・🔬doc-check green・😈DA 7所見・🧑‍⚖️Codex証拠監査 6指摘全対応（見送り0）。**判定＝条件付きGo**（CG-1 実機IME検証を筆頭に CG-1〜6 を決定事項へ記録・前提条件も分離記録）。Phase 3 は並行セッションの `phase1-dd-roadmap.md` を**正本として採択**（重複回避・薄い採択記録＝`phase1-backlog.md`）。**残＝ユーザーのバックログ承認＋phase1-dd-roadmap.md の ChatGPTレビュー（これから）→ 正式版昇格でクローズ**。要確認1〜4回答済み・外部レビュー2回反映済み |
+| 2026-07-12 | 2026-07-12 | 確認待ち | **全Phase完了**（Phase 1 判定材料集約 → Phase 2 判定＝**条件付きGo**〔CG-1〜6・前提条件記録〕→ Phase 3 バックログ確定）。🔬doc-check green・😈DA 7所見・🧑‍⚖️Codex証拠監査6指摘全対応（見送り0）。Phase 3: `phase1-dd-roadmap.md` を採択→**ChatGPTレビュー（要修正）反映で正式版へ昇格**（Alpha必須ライン全面採用〔reconnect必須・Presence他除外〕・CG-1〜6ハードゲート本体化・過積載DD分割・製品境界/consumer実証明記）。採択記録=`phase1-backlog.md`。**→ 完了/アーカイブはユーザー確認待ち**。要確認1〜4回答済み・外部レビュー3回反映済み |
 
 > アプローチ: 標準（実装なしの判定・計画DD。コード変更ゼロ、成果物はすべてドキュメント）
 
@@ -138,7 +138,7 @@ Phase 0 の各PoC結果（DD-002〜006）・ADR・性能SLO・既知の制約・
 - [x] `phase1-sdk-alpha-conditions.md` のSDK Alpha完了条件を**最初の縦切りの公開面 DD-012 の完了条件へ昇格**（phase1-backlog.md §3）＋**技術Go/前提条件の分離を §4 に記入**（採用CellStore=chunked-rowslot・Tier 1=Win Chrome/Edge・残存IMEリスク・共同編集既知制約・公開境界・ADR帰結・技術負債）→ 2026-07-12
 - [x] 条件付きGo条件を対象範囲・SLOへ反映: **CG-1〜6 を7項目形式で決定事項へ記録**＋phase1-backlog.md §2 でロードマップDDへ対応づけ（Tier 1限定・500k基準・snapshot・RowIdキー等）→ 2026-07-12
 - [x] `doc/plan/phase0-dd-roadmap.md`「Phase 1以降」節へ phase1-dd-roadmap.md／phase1-backlog.md への参照を追記。DOC-MAP は phase1-dd-roadmap.md を並行セッションが登録済み・phase1-backlog.md は `doc/DD/` 配下（doc-check 対象外）→ 2026-07-12
-- [x] 👀 **ユーザーレビュー**: バックログ（`phase1-dd-roadmap.md` 路線）を **2026-07-12 ユーザー承認**。→ 残るクローズ条件は **phase1-dd-roadmap.md の ChatGPTレビュー1点のみ**（レビューパック `phase1-roadmap-review-20260712/` を条件付きGo・CG-1〜6反映で最新化済み・並行セッションが先行作成→本セッションが更新）→ レビュー反映で草案から正式版へ昇格しPhase 3クローズ
+- [x] 👀 **ユーザーレビュー**: バックログ（`phase1-dd-roadmap.md` 路線）を **2026-07-12 ユーザー承認**。**ChatGPTレビュー（判定=要修正）実施 → Alpha必須ラインを全面採用（reconnect必須・Presence/Clipboard/行操作/数式を除外）→ roadmap を正式版へ反映**（結果 `phase1-roadmap-review-20260712/chatgpt_review_result.md`・反映は roadmap §10、CG-1〜6ハードゲート表本体化・過積載DD分割・製品境界/consumer実証明記）。**→ Phase 3 完了・DD-007 の全Phase（判定＋バックログ確定）完了**
 - [x] 🔬 **機械検証**: `bash scripts/doc-check.sh` → エラー0（2026-07-12）
 - [x] 😈 **DA批判レビュー**（縦切り原則・粒度）→ 2026-07-12 実施（DA表 #7）
 
