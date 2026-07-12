@@ -2,7 +2,7 @@
 
 | 作成日 | 更新日 | ステータス | 補足 |
 |--------|--------|-----------|------|
-| 2026-07-13 | 2026-07-13 | 確認待ち | 実装完了（rename 5 package・66 renames＋import 全置換）・test 561/561・typecheck/lint/build green・Codex(medium) findings 0・旧名/旧dir 参照 0。DD-011 の前提確定 |
+| 2026-07-13 | 2026-07-13 | 完了 | 実装完了（rename 5 package・66 renames＋import 全置換・dir==name 統一）・test 561/561・typecheck/lint/build green・Codex(medium) findings 0・旧名/旧dir 参照 0＋正典パッケージ名の現行構成整合。DD-011 の前提確定。コミット cbf7064系列（159d5e8） |
 
 ```text
 Risk Class: B
