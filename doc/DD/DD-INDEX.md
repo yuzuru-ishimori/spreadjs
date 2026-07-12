@@ -8,7 +8,7 @@
 |----|------|-----------|------|
 | DD-007 | Phase0GoNoGo判定 | 検討中 | 要確認1〜4回答済み。外部レビュー第2回反映（証拠レベルA〜E・技術Go/Phase1前提の分離・ADR非自動Accepted・SDK Alpha完了条件案）。判定材料テンプレート先出し済み。着手条件=DD-002〜006全完了（現状: DD-002完了・DD-004完了・DD-005進行中〔Phase 1完了〕・DD-006 Phase 0事前精査済〔検討中〕） |
 | DD-006 | PoC-Dデータ表現・簡易数式 | 検討中 | 要確認1〜5回答済み・外部レビュー6指摘反映。着手条件: DD-005（統合PoC）完了後 |
-| DD-005 | 統合PoC-IME・Canvas・共同編集 | 進行中 | 要確認1〜3確定（案A/Codex2回/初期約10万セル）。**Phase 1**（sheet-collaboration 抽出・Codex xhigh 済）＋**Phase 2**（統合ページ土台＝browser-transport・document-view read-through Adapter・session-sync・50,000行×200列 決定論シード・実 WS で client/server hash 一致 de-risk 済）実装完了。test 398/E2E 11 green・回帰0。**Phase 3（IME×共同編集結線）以降は未着手・Codex は Phase 4**。headed 2タブ smoke は主セッションが実行 |
+| DD-005 | 統合PoC-IME・Canvas・共同編集 | 進行中 | 要確認1〜3確定（案A/Codex2回/初期約10万セル）。**Phase 1**（sheet-collaboration 抽出・Codex xhigh 済）＋**Phase 2**（統合ページ土台）＋**Phase 3**（IME×共同編集結線＝commit-bridge cell-level beforeRevision・ime-editing-session・integration-editor・Presence・#8不変/AC4退避）実装完了。**#3 protocol 検証＝cell-level 確定**（SetCellsChange.beforeRevision＋CellRecord.lastChangedRevision＋server validateSetCells がセル単位で照合）。test 434/E2E 11 green・回帰0。**Phase 4（統合E2E・Codex）以降は未着手・Codex は Phase 4**。headed 2タブ smoke（#9競合表示・変換中スクロール追従）は主セッションが実行 |
 
 ## 保留・見送り
 

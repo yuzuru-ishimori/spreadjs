@@ -196,14 +196,16 @@ export class DocumentView {
     return { needsRedraw, structuralRebuilt, dirty };
   }
 
-  private rowIdAt(index: number): RowId | undefined {
+  /** 表示 index → RowId（範囲外は undefined）。Phase 3 の editingTarget 解決に使う（#4）。 */
+  rowIdAt(index: number): RowId | undefined {
     if (index < 0 || index >= this.currentRowAxis.count()) {
       return undefined;
     }
     return this.currentRowAxis.getId(index);
   }
 
-  private columnIdAt(index: number): ColumnId | undefined {
+  /** 表示 index → ColumnId（範囲外は undefined）。 */
+  columnIdAt(index: number): ColumnId | undefined {
     if (index < 0 || index >= this.currentColAxis.count()) {
       return undefined;
     }

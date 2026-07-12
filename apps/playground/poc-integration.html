@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>spreadjs playground — 統合PoC（IME・Canvas・共同編集）DD-005 Phase 2</title>
+    <title>spreadjs playground — 統合PoC（IME・Canvas・共同編集）DD-005 Phase 3</title>
     <style>
       html,
       body {
@@ -72,17 +72,7 @@
         height: 1px;
       }
 
-      /* 最小セル編集（2 タブ相互反映 smoke 用・Phase 3 の IME 常駐 textarea が置き換える）。 */
-      #int-editor {
-        position: absolute;
-        display: none;
-        box-sizing: border-box;
-        border: 2px solid #1a73e8;
-        outline: none;
-        font: 13px system-ui, sans-serif;
-        padding: 0 4px;
-        z-index: 10;
-      }
+      /* IME 常駐 textarea・競合 badge は integration-editor が動的に生成する（.int-cell-editor / .int-conflict-badge）。 */
 
       .int-readout {
         flex: 0 0 auto;
@@ -102,19 +92,19 @@
   <body>
     <div class="int-wrap">
       <div class="int-header">
-        <h1>統合PoC — ClientSession（唯一の正本）→ DocumentView → Canvas（DD-005 Phase 2）</h1>
+        <h1>統合PoC — IME×Canvas×共同編集（DD-005 Phase 3）</h1>
         <div class="int-status" id="int-status">未接続</div>
         <div class="int-hint">
-          セルをダブルクリックで編集 → Enter で確定（サーバーへ SetCells 送信・他タブへ反映）。
-          スクロールで 50,000 行を仮想スクロール。接続先は <code>?server=http://host:port</code>、表示名は
-          <code>?name=Alice</code> で指定。
+          セルをクリックで選択 → そのまま入力（日本語 IME 可）→ Enter で確定（cell-level beforeRevision の
+          SetCells をサーバーへ送信・他タブへ反映）。既存値の編集はダブルクリック。編集中に他者が同じセルを確定すると
+          競合インジケーターを表示（IME 変換中の文字は維持）。スクロールで 50,000 行を仮想スクロールし textarea が追従。
+          接続先は <code>?server=http://host:port</code>、表示名は <code>?name=Alice</code> で指定。
         </div>
       </div>
       <div class="int-stage" id="int-stage">
         <canvas id="int-base"></canvas>
         <canvas id="int-overlay"></canvas>
         <div id="int-scroller"><div id="int-spacer"></div></div>
-        <input id="int-editor" type="text" autocomplete="off" spellcheck="false" />
       </div>
       <div class="int-readout" id="int-readout">初期ロード計測待ち…</div>
     </div>
