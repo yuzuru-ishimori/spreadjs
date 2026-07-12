@@ -2,7 +2,7 @@
 
 | 作成日 | 更新日 | ステータス | 補足 |
 |--------|--------|-----------|------|
-| 2026-07-13 | 2026-07-13 | 確認待ち | 実装・テスト（561 green）・Codexレビュー反映・CG-2 解除証拠まで完了。**ADR-0011 は Codex レビュー（xhigh・findings 4件全対応）をもって Accepted 確定**（ユーザー判断 2026-07-13＝ChatGPT ではなく Codex レビューで十分）。AC6 性能 baseline 解釈も同承認に含む。コミット後にアーカイブ判断 |
+| 2026-07-13 | 2026-07-13 | 完了 | 実装・テスト（561 green）・Codexレビュー反映（findings 4件全対応）・**CG-2 解除**（index→RowId slot間接・serialization/replay整合証拠）まで完了。**ADR-0011 は Codex レビューをもって Accepted 確定**（ユーザー判断 2026-07-13＝ChatGPT ではなく Codex で十分・AC6 性能 baseline 解釈も同承認に含む）。コミット cbf7064 |
 
 > アプローチ: TDD（データ構造・serialization・replay 決定性が中心で「正解」が明確・画面なし）
 > 正典: `doc/plan/phase1-dd-roadmap.md` §0（CG-2）/§3/§4/§5・`doc/adr/0011-row-slot-chunked-cell-store.md`・

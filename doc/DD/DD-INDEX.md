@@ -6,7 +6,6 @@
 
 | DD | 件名 | ステータス | 補足 |
 |----|------|-----------|------|
-| DD-010 | 安定ID・CellStore移行 | 確認待ち | 実装・テスト（561 green）・Codexレビュー反映・CG-2 解除証拠まで完了。**ADR-0011 Accepted 化には実装完了後の手動 ChatGPT 外部レビューが必要**（オーケストレータ/ユーザー実施）。コミット・アーカイブ未実施 |
 
 ## 保留・見送り
 
@@ -17,6 +16,7 @@
 
 | DD | 件名 | 主な成果 |
 |----|------|---------|
+| DD-010 | 安定ID・CellStore移行 | 実装・テスト（561 green）・Codexレビュー反映（findings 4件全対応）・**CG-2 解除**（index→RowId slot間接・serialization/replay整合証拠）まで完了。**ADR-0011 は Codex レビューをもって Accepted 確定**（ユーザー判断 2026-07-13＝ChatGPT ではなく Codex で十分・AC6 性能 baseline 解釈も同承認に含む）。コミット cbf7064 |
 | DD-009 | 基盤判断 | 成果物完成（台帳・境界・CG台帳・ADR）＋Codex反映済＋Q1〜Q7暫定確定。外部レビュー(ChatGPT)は保留・事後実施可（ユーザー決定で完了） |
 | DD-008 | 製品憲章導入と文書体系同期 | 憲章Accepted・3層文書体系確立（D-004昇格）・5文書同期・Codex指摘4件全対応。コミット 6bfc2bd |
 | DD-007 | Phase0GoNoGo判定 | **全Phase完了**（Phase 1 判定材料集約 → Phase 2 判定＝**条件付きGo**〔CG-1〜6・前提条件記録〕→ Phase 3 バックログ確定）。🔬doc-check green・😈DA 7所見・🧑‍⚖️Codex証拠監査6指摘全対応（見送り0）。Phase 3: `phase1-dd-roadmap.md` を採択→**ChatGPTレビュー（要修正）反映で正式版へ昇格**（Alpha必須ライン全面採用〔reconnect必須・Presence他除外〕・CG-1〜6ハードゲート本体化・過積載DD分割・製品境界/consumer実証明記）。採択記録=`phase1-backlog.md`。**→ 2026-07-12 完了・アーカイブ（`doc/archived/DD/DD-007/`）**。要確認1〜4回答済み・外部レビュー3回反映済み |
