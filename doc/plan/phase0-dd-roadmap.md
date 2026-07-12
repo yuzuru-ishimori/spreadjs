@@ -25,17 +25,17 @@
 
 ## Phase 0 DD一覧（技術リスク別）
 
-> DD番号は作成順＝実装順。DD-001〜004は採番済み、005〜007は予定。
+> DD番号は作成順＝実装順。**DD-001〜007 は採番・起票済み**（DD-001〜004 完了・アーカイブ、DD-005 実装中、DD-006/007 起票済み）。状態列は作業管理用の目安で、**現在状態の正は `DD-INDEX.md`／各DDヘッダ**。
 
 | DD | 題 | 内容（計画書対応） | 主な成果物・レビュー対象 | 状態 |
 |----|----|-------------------|------------------------|------|
 | DD-001 | 開発基盤・monorepo | npm workspaces、TS strict、`sheet-types`骨格、playground土台、test/typecheck/lint（§17・§26-1） | `npm run dev/test/typecheck/lint` が動く骨格 | ✅完了 |
-| DD-002 | 日本語IME・常駐textarea | 20×10 Canvas＋常駐textarea＋生イベントrecorder＋実トレース採取→状態機械＋リモート更新シミュレーター（§18.1・§11） | 実IMEトレース、状態機械、合格判定（**実機手動試験含む**） | 進行中 |
-| DD-003 | 共同編集・Operation収束 | `sheet-core`/`sheet-server-core`最小＋WS同期＋楽観適用rollback/replay＋Presence(3種+識別・TTL)＋2ブラウザーデバッグデモ（§18.3・§7・§8・§9） | ランダムOperation収束（hash一致）、ADR-005/008ドラフト | 検討中 |
-| DD-004 | Canvas描画・仮想スクロール | 50,000行×200列、可変行高・列幅、固定行列、Presence overlay 20人、高DPI（§18.2・§12・§13） | fps・メモリ計測、scroll anchor検証、ADR-011ドラフト | 検討中 |
-| DD-005 | 統合PoC（IME・Canvas・共同編集） | DD-002 のIME＋DD-004 のCanvas描画＋DD-003 の共同編集クライアントを**一つのセル編集フロー**として結線し、下記の統合シナリオを実装・検証。textarea追従の ViewportTransform 統合（§13.5）を含む（§18.1〜18.3・§11） | 統合シナリオ成立の証跡（イベントトレース・試験証跡） | 検討中 |
-| DD-006 | データ表現・簡易数式 | CellStore方式比較、500k非空セル計測、formula parser最小＋固定ID参照＋依存グラフ、replay計測（§18.4・§6・§14） | 計測レポート、ADR-011/022ドラフト | 未起票 |
-| DD-007 | Phase 0 Go/No-Go判定・Phase 1正式バックログ | 各PoC結果・ADR・性能SLO（§21）・既知の制約を集約し、Go／条件付きGo／No-Go を判定。Goの場合 Phase 1 正式バックログを確定 | 判定一式＋Phase 1バックログ | 未起票 |
+| DD-002 | 日本語IME・常駐textarea | 20×10 Canvas＋常駐textarea＋生イベントrecorder＋実トレース採取→状態機械＋リモート更新シミュレーター（§18.1・§11） | 実IMEトレース、状態機械、合格判定（**実機手動試験含む**） | ✅完了（アーカイブ） |
+| DD-003 | 共同編集・Operation収束 | `sheet-core`/`sheet-server-core`最小＋WS同期＋楽観適用rollback/replay＋Presence(3種+識別・TTL)＋2ブラウザーデバッグデモ（§18.3・§7・§8・§9） | ランダムOperation収束（hash一致）、ADR-005/008ドラフト | ✅完了（アーカイブ） |
+| DD-004 | Canvas描画・仮想スクロール | 50,000行×200列、可変行高・列幅、固定行列、Presence overlay 20人、高DPI（§18.2・§12・§13） | fps・メモリ計測、scroll anchor検証、ADR-011ドラフト | ✅完了（アーカイブ・実機run overall=pass） |
+| DD-005 | 統合PoC（IME・Canvas・共同編集） | DD-002 のIME＋DD-004 のCanvas描画＋DD-003 の共同編集クライアントを**一つのセル編集フロー**として結線し、下記の統合シナリオを実装・検証。textarea追従の ViewportTransform 統合（§13.5）を含む（§18.1〜18.3・§11） | 統合シナリオ成立の証跡（イベントトレース・試験証跡） | 🔄進行中（Phase 1〜3完了・Phase 4実装中） |
+| DD-006 | データ表現・簡易数式 | CellStore方式比較、500k非空セル計測、formula parser最小＋固定ID参照＋依存グラフ、replay計測（§18.4・§6・§14） | 計測レポート、ADR-011/022ドラフト | 検討中（起票済み・着手=DD-005完了後） |
+| DD-007 | Phase 0 Go/No-Go判定・Phase 1正式バックログ | 各PoC結果・ADR・性能SLO（§21）・既知の制約を集約し、Go／条件付きGo／No-Go を判定。Goの場合 Phase 1 正式バックログを確定 | 判定一式＋Phase 1バックログ | 検討中（起票済み・着手=DD-002〜006完了後） |
 
 ### DD-005 の統合シナリオ（Phase 0 Go の必須条件）
 
@@ -55,6 +55,8 @@
 ```
 
 この統合シナリオが成立して初めて Phase 0 を Go とできる（判定そのものは DD-007 で行う）。
+
+**DD-005 進捗（2026-07-12・作業管理メモ。現在状態の正は DD-INDEX/DDヘッダ）**: 案A（`packages/sheet-collaboration` 抽出）で **Phase 1**（抽出・git R100 byte-identical・362テスト green・`bbd7f49`）／**Phase 2**（統合ページ土台＝単一正本 ClientSession→DocumentView〔read-through Adapter〕→Canvas・headed 2タブ smoke で相互反映 PASS・`870e945`）／**Phase 3**（IME×共同編集結線＝IME状態機械再利用・cell-level beforeRevision・**上記シナリオ 1〜8＝AC2 中核を実ブラウザーで実証**〔#9 競合表示・reject→Conflict Queue→収束〕・`812c035`）完了・コミット済み。**Phase 4**（統合E2E・Codex xhigh）実装中。**シナリオ 9（スクロール追従）・10（Presence 全種）と実IME（候補ウィンドウ・確定 Enter 順序 A/B）は Phase 5 ユーザー実機ゲートで最終確認**（DD-002 DA #11 の正式回収）。統合ブリッジ設計・状態所有権・既知制約は DD-005 本文「Phase 2/3 詳細設計・状態所有権」節を正とする。
 
 ### 旧DD-006の分割（2026-07-12 ユーザー確定）
 
