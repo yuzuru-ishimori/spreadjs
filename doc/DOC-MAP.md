@@ -23,7 +23,8 @@
 | `doc/plan/nanairo_realtime_spreadsheet_development_plan_v1.md` | 開発計画・基本設計（技術方式の正典。アーキテクチャ・ADR・プロトコル・IME・数式・性能・リスク。上位は製品憲章） |
 | `doc/plan/nanairo_realtime_spreadsheet_concept_record_v1.md` | 構想記録（計画書の入力資料＝歴史的記録。製品戦略の現在の正は製品憲章） |
 | `doc/plan/phase0-dd-roadmap.md` | Phase 0のDDロードマップ（DD作業管理上の最上位。計画書§18/§26→DDの写像。dd-auto実行順と進捗対応表） |
-| `doc/plan/phase1-dd-roadmap.md` | Phase 1のDDロードマップ（**草案**。Stage 1社内SDK Alphaまでの縦切りDD計画。密度レジーム・境界整合・SDK Alpha完了条件。Go判定後にDD-007 Phase 3で`phase1-backlog.md`へ昇格） |
+| `doc/plan/phase1-dd-roadmap.md` | Stage 1 SDK Alpha DDロードマップ（**正式版**。Stage 1社内SDK Alphaまでの縦切りDD計画 DD-009〜022。密度レジーム・境界整合・SDK Alpha完了条件・CG-1〜6 ハードゲート） |
+| `doc/plan/cg-ledger.md` | CG解除台帳（条件付きGo 解除ゲート CG-1〜6 の横断追跡。DD-018 移行判定まで複数DDが参照する常設台帳。起票: DD-009。定義本体は phase1-dd-roadmap.md §0） |
 
 ## レビュー・分析資料（非正典）
 
@@ -36,6 +37,7 @@
 | ファイル | 説明 |
 |---------|------|
 | `doc/adr/0005-server-ordered-operation-log.md` | サーバー主導型全順序Operationログ（PoC-C/DD-003で検証・Status: Proposed） |
+| `doc/adr/0015-stage1-api-maturity-and-tier1-support.md` | Stage 1 Alpha の公開API成熟度方針（Internal→Experimental・0.x・CHANGELOG・fail-fast）とTier 1対応環境（Win Chrome/Edge・CG-4）（DD-009で起票・Status: Draft・Accepted化はDD-016） |
 | `doc/adr/0008-optimistic-apply-rollback-replay.md` | 楽観適用＋rollback/replay（PoC-C/DD-003で検証・Status: Proposed） |
 | `doc/adr/0011-row-slot-chunked-cell-store.md` | 行スロット＋チャンク化セルストア（PoC-B/DD-004で起票・Status: Draft・DD-006で拡充） |
 | `doc/adr/0022-zero-runtime-dependency-core.md` | コアはゼロランタイム依存を原則（DD-005/006で実証・Status: Draft・Accepted化はDD-007） |

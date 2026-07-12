@@ -16,6 +16,7 @@
 
 | DD | 件名 | 主な成果 |
 |----|------|---------|
+| DD-009 | 基盤判断 | 成果物完成（台帳・境界・CG台帳・ADR）＋Codex反映済＋Q1〜Q7暫定確定。外部レビュー(ChatGPT)は保留・事後実施可（ユーザー決定で完了） |
 | DD-008 | 製品憲章導入と文書体系同期 | 憲章Accepted・3層文書体系確立（D-004昇格）・5文書同期・Codex指摘4件全対応。コミット 6bfc2bd |
 | DD-007 | Phase0GoNoGo判定 | **全Phase完了**（Phase 1 判定材料集約 → Phase 2 判定＝**条件付きGo**〔CG-1〜6・前提条件記録〕→ Phase 3 バックログ確定）。🔬doc-check green・😈DA 7所見・🧑‍⚖️Codex証拠監査6指摘全対応（見送り0）。Phase 3: `phase1-dd-roadmap.md` を採択→**ChatGPTレビュー（要修正）反映で正式版へ昇格**（Alpha必須ライン全面採用〔reconnect必須・Presence他除外〕・CG-1〜6ハードゲート本体化・過積載DD分割・製品境界/consumer実証明記）。採択記録=`phase1-backlog.md`。**→ 2026-07-12 完了・アーカイブ（`doc/archived/DD/DD-007/`）**。要確認1〜4回答済み・外部レビュー3回反映済み |
 | DD-006 | PoC-Dデータ表現・簡易数式 | **Phase 1〜5 実装＋Codexレビュー反映（P1×6・P2×6）＋AC9ブラウザ実機実測（Chrome 150・乖離なし）完了**。**AC1〜9 全実測合格**（AC2 fanout-100 p95 1.09ms／メモリ全方式300MB内／AC5 replay 100k=14分＝snapshot必須／固定ID数式評価を実文書で実証／AC9 Node比1.0〜1.2倍で乖離なし・§18.6メモリNo-Go非該当）。sheet-formula 74＋結合3テスト green。成果=CellStore用途別選択表・ADR-011拡充・ADR-022ドラフト・計測レポート。DD-007（Go/No-Go）判定材料が揃った |

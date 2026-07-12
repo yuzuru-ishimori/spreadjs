@@ -4,7 +4,7 @@
 >
 > **用語（ChatGPTレビュー §3.3 の指摘）**: 「**計画書Phase**」（`nanairo_realtime_spreadsheet_development_plan_v1.md` §19 の Phase 1/2/3＝**何を作るかの技術コンテンツの区切り**）と、「**Delivery Phase A**」（＝本ロードマップ＝**Stage 1 社内SDK Alpha までのデリバリー単位**）は別軸。本文では常に修飾して書く。Stage 1 Alpha は計画書 §19 Phase 1 の中核＋Phase 2 の最小部分を Alpha 品質で含む（＝技術フェーズ Phase 1 の完了とは別）。
 >
-> **番号（レビュー §7.1-10）**: 候補DD番号（DD-009〜）と枝番（DD-011P 等）は**暫定**。DD-INDEX・生成スクリプトは数値IDを前提とするため、**正式採番は各DD起票時に連番で行う**（枝番を恒久化しない）。
+> **番号（レビュー §7.1-10 → 2026-07-12 ユーザー決定で更新）**: 管理容易性のため **本ロードマップで具体的DD番号を確定**（DD-009〜022）。既存 DD-008 まで採番済みのため Stage 1 は DD-009 から。**想定外DDは子DDとして起票**する（例: DD-011 作業中に派生した独立DD → `DD-011-1`・`DD-011-2`）。子DDはトップレベル連番（DD-009…022）を崩さず親の直下にぶら下げる運用。**letter枝番（`DD-011P` 等）は禁止**（数値ID前提スクリプトが壊れるため §7.1-10 の指摘どおり）。`DD-NNN-M` 形式は生成スクリプトで安全（sort_key が `-M` を除去し親 NNN 配下にソート・表示は `DD-NNN-M` を維持）。
 >
 > 正典との関係: 技術方式は計画書、製品目的・提供形態・成熟段階は製品憲章 `doc/product/nanairo_sheet_product_charter_v1.md`、DD作業管理の上位は `phase0-dd-roadmap.md`（3層構造を引き継ぐ）。DDの現在状態は `doc/DD/DD-INDEX.md` と各DDヘッダを正とする。
 
@@ -32,7 +32,7 @@
 | CG | 主担当DD | 解除証拠 | 期限 | 未解除時 |
 |---|---|---|---|---|
 | CG-1 実機IME | 単一利用者IME DD＋**最終consumer統合後のTier 1実機スモーク** | 実機trace・確定Enter順序A/B・先頭欠落0（Win Chrome/Edge両方） | Facade公開前 | **Alpha不可** |
-| CG-2 安定ID（index→RowId） | 安定ID・CellStore移行DD | RowId serialization・replay整合試験 | **共同編集永続化DD（旧DD-011P）より前** | **Alpha不可** |
+| CG-2 安定ID（index→RowId） | 安定ID・CellStore移行DD（DD-010） | RowId serialization・replay整合試験 | **永続化・snapshot復元DD（DD-014）より前** | **Alpha不可** |
 | CG-3 snapshot正式形式 | 永続化・snapshot復元DD | versioned snapshot・snapshot+tail replay一致・100k で log全replay非依存・O(N²)回避測定 | reconnect DD前 | **Alpha不可** |
 | CG-4 Tier 1環境 | 基盤判断＋全DD共通 | Tier 1 compatibility matrix | Phase開始時に確定・exitで実証 | 対象外環境を明示（境界化で可） |
 | CG-5 reconnect境界（D27/D34） | reconnect/catch-up/idempotency DD | fault injection・再送・収束（障害種別ごと保証/非保証を分ける） | Alpha exit前 | **Alpha不可** |
@@ -102,34 +102,34 @@ Evidence Level: full / standard / minimal
 - **B/C→A 昇格ルール**: B/Cで開始後、受け入れ基準変更／データ形式・protocol変更／永続化境界へ波及／利用者入力を失う可能性／Internal予定APIをconsumerへ公開／1DDで複数の状態所有者を変更 が判明したら停止してAへ昇格。
 - **密度計測を標準に**（専用DD不要）: 各DDで 人間確認時間・Codex effort/回数・ゲート待ち・review finding数・merge後手戻り・DD開始〜完了・実行したmanual gate を記録。最初は A/B/C が混ざる5件で評価し密度を再調整。
 
-## 3. 基盤DD群（旧DD-009 を3分割・ChatGPTレビュー §4.1）
+## 3. 基盤DD群（DD-009〜011＝レビュー前の単一基盤DDを3分割・ChatGPTレビュー §4.1）
 
 > 設計判断と機械的な基盤整備を別レビューサイクルへ。**すべて Delivery Phase A の前提**（縦切りの前に確定）。
 
-- **基盤判断DD（Risk Class A・External Review対象）**: PoC資産台帳（DD-002〜006 を Adopt/Harden/Rewrite/Discard＋`採用方針/抽出先package/担当DD/完了条件`）・package責務境界（内部 `@nanairo-sheet/{core,selection,…}` と Facade `grid/element/react/server-hono`）・公開面の最小方針・**CG解除台帳**・Tier 1 対象確定・公開API成熟度方針（Internal→Experimental・0.x CHANGELOG）。
-- **基盤実装DD（Risk Class B）**: package skeleton・**package boundary lint**（`apps/*` 間・内部相対import恒久禁止）・contract test骨格・**常設不変条件スイート runner**（§2.3）・**independent consumer harness**（§7）・Phase 1用DD差分テンプレ改修（Risk Class ヘッダ＋製品化6観点。実ファイル改修可否は DD-007 要確認3＝別DD管理系との整合に従う）。
-- **安定ID・CellStore移行DD（Risk Class A・CG-2）**: chunk-store の **index→RowId キー**移行・serialization・replay整合。**共同編集永続化DDより前**（snapshot形式・共同編集 InsertRows/DeleteRows の前提）。
+- **DD-009 基盤判断DD（Risk Class A・External Review対象）**: PoC資産台帳（DD-002〜006 を Adopt/Harden/Rewrite/Discard＋`採用方針/抽出先package/担当DD/完了条件`）・package責務境界（内部 `@nanairo-sheet/{core,selection,…}` と Facade `grid/element/react/server-hono`）・公開面の最小方針・**CG解除台帳**・Tier 1 対象確定・公開API成熟度方針（Internal→Experimental・0.x CHANGELOG）。
+- **DD-010 安定ID・CellStore移行DD（Risk Class A・CG-2）**: chunk-store の **index→RowId キー**移行・serialization・replay整合。**共同編集永続化DD（DD-014）より前**（snapshot形式・共同編集 InsertRows/DeleteRows の前提）。
+- **DD-011 基盤実装DD（Risk Class B）**: package skeleton・**package boundary lint**（`apps/*` 間・内部相対import恒久禁止）・contract test骨格・**常設不変条件スイート runner**（§2.3）・**independent consumer harness**（§7）・Phase 1用DD差分テンプレ改修（Risk Class ヘッダ＋製品化6観点。実ファイル改修可否は DD-007 要確認3＝別DD管理系との整合に従う）。
 
 ## 4. 縦切りDD一覧（Stage 1 SDK Alpha）
 
-> 「最初のマイルストーン＋候補リスト」まで（全順序は進行中に見直す）。番号は暫定・正式採番は起票時。**Stage 1 = 必須／Alpha後拡張／Stage 2** を明示（ChatGPTレビュー §5 全面採用）。
+> 「最初のマイルストーン＋候補リスト」まで（全順序は進行中に見直す）。番号は **DD-009〜022 で確定**（想定外DDは子DD `DD-NNN-M` で起票・§0）。**Stage 1 = 必須／Alpha後拡張／Stage 2** を明示（ChatGPTレビュー §5 全面採用）。
 
-| 縦切り（利用者成果） | 支配的リスク | Risk Class | §19対応 | Stage 1区分 | CG |
-|---|---|---|---|---|---|
-| **基盤判断DD**（資産台帳・境界・API方針・CG台帳・Tier 1） | 公開API境界・アーキ責務 | A | 前提 | **必須** | CG-4 |
-| **安定ID・CellStore移行DD**（index→RowId・serialization・replay整合） | データ表現の安定ID | A | §19 P1/P2 前提 | **必須** | **CG-2** |
-| **基盤実装DD**（skeleton・boundary lint・不変条件スイート・consumer harness・テンプレ） | 基盤整備（機械的） | B | 前提 | **必須** | — |
-| **単一利用者IME縦切りDD**（日本語連続入力・文字列/数値/日付・selection/navigation・ローカルOperation・**5万行 scroll/selection 統合性能回帰ゲート**） | IME状態機械・focus/selection | A | §19 Phase 1 | **必須** | **CG-1・CG-6** |
-| **共同編集同期・OCC DD**（サーバー受理・全順序・cell-level OCC・他クライアント反映） | sequencer/protocol・サイレント上書き | A | §19 Phase 2（最小） | **必須** | — |
-| **永続化・snapshot復元DD**（durable ACK・versioned snapshot＋log・再読込復元） | 永続化・データ損失 | A | §19 Phase 2（最小） | **必須** | **CG-3** |
-| **reconnect/catch-up/idempotency DD**（pending queue・再送・fault injection＝DD-005既知制約回収） | reconnect/データ損失 | A | §19 Phase 2 | **必須** | **CG-5** |
-| **Facade/実consumer統合DD**（主要Facade export・mount/destroy・Command/Event/Options・型定義・**独立consumerからpack済み成果物を利用**・Experimental APIレビュー） | 公開API固定・DX | A | 公開面 | **必須** | — |
-| **Alpha配布・診断DD**（private registry publish・dist-tag・CHANGELOG・Quick Start・compatibility matrix・error code/debug logging・release automation） | 配布・運用 | B | 公開面 | **必須（S1-6）** | — |
-| **Stage 1移行判定DD**（S1-1〜S1-6＋CG-1〜6＋既知制約の**合否判定のみ**・Stage 2バックログ） | マイルストーン判定 | A | §23 Phase境界 | **必須** | 全CG |
-| Presence DD（activeCell/selection/editingCell・overlay・TTL） | Presence（状態複製・TTL） | B | §19 P2（最小） | **Alpha後拡張** | — |
-| Clipboard DD（範囲選択・parser・型変換・原子SetCells・OCC・Undo） | Clipboard原子性・競合 | A | §19 P2/3 | **Alpha後拡張/Stage 2先頭** | — |
-| 行操作DD（RowId・Insert/Delete・tombstone・Canvas座標・共同編集収束・reconnect後収束。**数式参照維持は数式導入後**） | 行操作×共同編集×参照 | A | §19 P2 | **Stage 2（3分割）** | — |
-| 数式DD（四則・参照・SUM・固定ID参照・依存グラフ・replay決定性） | 数式評価・replay決定性 | A | §19 P2 | **Stage 2** | — |
+| DD | 縦切り（利用者成果） | 支配的リスク | Risk Class | §19対応 | Stage 1区分 | CG |
+|---|---|---|---|---|---|---|
+| **DD-009** | **基盤判断DD**（資産台帳・境界・API方針・CG台帳・Tier 1） | 公開API境界・アーキ責務 | A | 前提 | **必須** | CG-4 |
+| **DD-010** | **安定ID・CellStore移行DD**（index→RowId・serialization・replay整合） | データ表現の安定ID | A | §19 P1/P2 前提 | **必須** | **CG-2** |
+| **DD-011** | **基盤実装DD**（skeleton・boundary lint・不変条件スイート・consumer harness・テンプレ） | 基盤整備（機械的） | B | 前提 | **必須** | — |
+| **DD-012** | **単一利用者IME縦切りDD**（日本語連続入力・文字列/数値/日付・selection/navigation・ローカルOperation・**5万行 scroll/selection 統合性能回帰ゲート**） | IME状態機械・focus/selection | A | §19 Phase 1 | **必須** | **CG-1・CG-6** |
+| **DD-013** | **共同編集同期・OCC DD**（サーバー受理・全順序・cell-level OCC・他クライアント反映） | sequencer/protocol・サイレント上書き | A | §19 Phase 2（最小） | **必須** | — |
+| **DD-014** | **永続化・snapshot復元DD**（durable ACK・versioned snapshot＋log・再読込復元） | 永続化・データ損失 | A | §19 Phase 2（最小） | **必須** | **CG-3** |
+| **DD-015** | **reconnect/catch-up/idempotency DD**（pending queue・再送・fault injection＝DD-005既知制約回収） | reconnect/データ損失 | A | §19 Phase 2 | **必須** | **CG-5** |
+| **DD-016** | **Facade/実consumer統合DD**（主要Facade export・mount/destroy・Command/Event/Options・型定義・**独立consumerからpack済み成果物を利用**・Experimental APIレビュー） | 公開API固定・DX | A | 公開面 | **必須** | — |
+| **DD-017** | **Alpha配布・診断DD**（private registry publish・dist-tag・CHANGELOG・Quick Start・compatibility matrix・error code/debug logging・release automation） | 配布・運用 | B | 公開面 | **必須（S1-6）** | — |
+| **DD-018** | **Stage 1移行判定DD**（S1-1〜S1-6＋CG-1〜6＋既知制約の**合否判定のみ**・Stage 2バックログ） | マイルストーン判定 | A | §23 Phase境界 | **必須** | 全CG |
+| **DD-019** | Presence DD（activeCell/selection/editingCell・overlay・TTL） | Presence（状態複製・TTL） | B | §19 P2（最小） | **Alpha後拡張** | — |
+| **DD-020** | Clipboard DD（範囲選択・parser・型変換・原子SetCells・OCC・Undo） | Clipboard原子性・競合 | A | §19 P2/3 | **Alpha後拡張/Stage 2先頭** | — |
+| **DD-021** | 行操作DD（RowId・Insert/Delete・tombstone・Canvas座標・共同編集収束・reconnect後収束。**数式参照維持は数式導入後**。起票時 DD-021-1〜3 に3分割） | 行操作×共同編集×参照 | A | §19 P2 | **Stage 2（3分割）** | — |
+| **DD-022** | 数式DD（四則・参照・SUM・固定ID参照・依存グラフ・replay決定性） | 数式評価・replay決定性 | A | §19 P2 | **Stage 2** | — |
 
 **主要DDの契約（レビュー §4.3/4.4/7.1-4 反映）**:
 - **共同編集同期DD 完了条件**: 2実ブラウザーconsumerで相互反映／randomized test 3クライアント以上／server order と client hash 一致／duplicate operation の二重適用なし／beforeRevision不一致でサイレント上書きなし／reject後も編集中draft保持／IME composition中のremote updateでdraft不変。
@@ -140,19 +140,19 @@ Evidence Level: full / standard / minimal
 **Alpha必須ライン（確定・reconnect必須／Presence等は外す）**:
 
 ```text
-基盤判断DD（CG-4）
-  → 安定ID・CellStore移行DD（CG-2）
-  → 基盤実装DD（skeleton/lint/invariant suite/consumer harness）
-  → 単一利用者IME縦切りDD（CG-1・CG-6）
-  → 共同編集同期・OCC DD
-  → 永続化・snapshot復元DD（CG-3）
-  → reconnect/catch-up/idempotency DD（CG-5）   ← Alpha必須（データ損失経路を塞ぐ）
-  → Facade/実consumer統合DD
-  → Alpha配布・診断DD（S1-6）
-  → Stage 1移行判定DD（事前条件の合否判定のみ）
+DD-009 基盤判断DD（CG-4）
+  → DD-010 安定ID・CellStore移行DD（CG-2）
+  → DD-011 基盤実装DD（skeleton/lint/invariant suite/consumer harness）
+  → DD-012 単一利用者IME縦切りDD（CG-1・CG-6）
+  → DD-013 共同編集同期・OCC DD
+  → DD-014 永続化・snapshot復元DD（CG-3）
+  → DD-015 reconnect/catch-up/idempotency DD（CG-5）   ← Alpha必須（データ損失経路を塞ぐ）
+  → DD-016 Facade/実consumer統合DD
+  → DD-017 Alpha配布・診断DD（S1-6）
+  → DD-018 Stage 1移行判定DD（事前条件の合否判定のみ）
 ```
 
-並行 or Alpha後: 共同編集同期DD → **Presence DD**／**Clipboard DD**（Alpha後拡張）。Stage 1完了後: **行操作DD**・**数式DD**（Stage 2）。
+並行 or Alpha後: DD-013 共同編集同期DD → **DD-019 Presence DD**／**DD-020 Clipboard DD**（Alpha後拡張）。Stage 1完了後: **DD-021 行操作DD**・**DD-022 数式DD**（Stage 2）。
 
 - **DD-018（移行判定）はスコープ決定の場ではなく、事前に決めた条件を証拠で判定する場**（レビュー §4.11）。Alpha必須範囲を判定DDで初めて決めない。
 - 共同編集同期DD・永続化DD・reconnect DD は計画書 Phase 2 相当で**すべて Risk Class A**。fault injection・randomized/property test・復旧試験を必須にし、データ整合の生ログと障害マトリクスは軽量証跡でも削らない（§2.3/§2.4）。
@@ -216,7 +216,7 @@ Evidence Level: full / standard / minimal
 | 密度が実質全DD=A | A/B/C再配分・未解除CG例外・A区分証跡要件・Codex xhigh限定・B→A昇格・密度計測標準化（§2.4） |
 | 製品境界（Tier1/信頼境界/version mismatch/consumer lifecycle）未明記 | §6 Alpha製品境界・§7 consumer実証＋lifecycle契約を新設 |
 | DD-018で初めてAlpha範囲を決めるな | DD-018は事前条件の合否判定のみ（§4・§5） |
-| 枝番は数値ID前提スクリプトで壊れやすい | 候補番号は暫定・正式採番時に連番化（ヘッダ） |
+| 枝番は数値ID前提スクリプトで壊れやすい | letter枝番（`DD-011P`）は禁止のまま。**2026-07-12 ユーザー決定でこの点を更新**: 管理容易性のため DD-009〜022 を本ロードマップで確定し、想定外DDは**スクリプト安全な子DD `DD-NNN-M`** で起票（生成スクリプトが `-M` を除去し親 NNN 配下にソート）。「正式採番は起票時のみ」の旧方針を置換（§0 ヘッダ） |
 
 ---
 
