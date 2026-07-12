@@ -1,0 +1,13 @@
+{
+  // sheet-formula は製品パッケージ候補（数式エンジン）。sheet-core / sheet-collaboration と同じく
+  // DOM/Node を持ち込まない（計画書 §14.1・§17.2・ADR-022 ランタイム依存ゼロ）。lib は ES2022 のみ、
+  // types:[] で @types/*（Node）暗黙取り込みも止め、環境非依存を強制する。
+  // この tsconfig.json は *.test.ts も含めて型検査する。実装ファイル（非テスト）の env-free 純度は
+  // tsconfig.core.json（*.test.ts 除外）が担う（DD-005 sheet-collaboration [P2] と同運用）。
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "types": []
+  },
+  "include": ["src/**/*.ts"]
+}

@@ -1,0 +1,15 @@
+{
+  // 数式エンジンのコア純度ゲート（助言#7・DD-006 AC8隣接）。実装ファイル（非テスト）を types:[] で
+  // 型検査し、tokenizer/parser/ast/limits/bind/dep-graph/evaluator に Node/DOM API が混入していない
+  // ことを回帰的に保証する（ブラウザーでも安全に import できる env-free の担保）。
+  // *.test.ts を除外するのは、各テストの vitest import が @types/node を program へ持ち込み、
+  // types:[] でも process/Buffer 等が解決されてゲートが無効化されるため（DD-005 [P2] と同運用）。
+  // `npm run typecheck:core` で実行。
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "types": []
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/**/*.test.ts"]
+}

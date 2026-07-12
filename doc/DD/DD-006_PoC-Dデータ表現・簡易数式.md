@@ -2,7 +2,7 @@
 
 | 作成日 | 更新日 | ステータス | 補足 |
 |--------|--------|-----------|------|
-| 2026-07-12 | 2026-07-12 | 進行中 | DD-005完了→着手。**Phase 1（CellStore 4実装比較）実装済**（map/chunked-column/chunked-rowslot/columnar＋4分布data-gen＋bench-cellstore・等価性17テストgreen・全workspace回帰0）。外部レビュー2回反映済み。Phase 2以降（parser/依存グラフ/replay/レポート）未着手 |
+| 2026-07-12 | 2026-07-12 | 進行中 | DD-005完了→着手。**Phase 1（CellStore 4実装）＋Phase 2（数式parser・固定IDバインド）実装済**（`apps/pocd-bench`＋`packages/sheet-formula`・test 499件green・回帰0・typecheck:core green）。外部レビュー2回反映済み。Phase 3以降（依存グラフ/評価器/replay/レポート/ADR/Codex）未着手 |
 
 > アプローチ: 標準（計測中心のPoC）＋TDD（parser・固定IDバインド・依存グラフ・CellStore候補のDOM非依存純ロジック）
 
@@ -86,14 +86,14 @@
 - [x] 🔬 **機械検証**: `npm run test`/`typecheck`/`lint` green（既存workspace回帰0）＋ベンチCLI実行でJSON出力 → **完了**（test **455件green＝既存438＋新17・回帰0**／typecheck 全workspace green／lint green／bench CLI JSON出力確認）
 - [x] 😈 **DA批判レビュー**（GC影響の排除・ウォームアップ・計測順序の偏り）→ **完了**（DA表 #6〜#8: 計測ノイズ抑制の実装・メモリ概算の粒度・columnar数値列変換の等価性）
 
-### Phase 2: formula parser・固定IDバインド（TDD）
-- [ ] **Red→Green**: `packages/sheet-formula/src/{tokenizer,parser,bind}.test.ts` へ scenarios.md をコード化→実装で green 化
-- [ ] `packages/sheet-formula/src/{tokenizer,parser,ast}.ts`（新規）: §14.2文法（比較演算は文法上予約のみ・拒否）・canonical AST・エラー値型（6種・要確認5回答）
-- [ ] `packages/sheet-formula/src/limits.ts`（新規）: parser資源制限（最大式長・最大ASTノード数・最大括弧ネスト深さ・最大関数引数数）の実装＋境界/超過ユニットテスト（AC8。上限値は function-spec.md の定義に従う）
-- [ ] `packages/sheet-formula/src/bind.ts`（新規）: A1↔`BoundCellReference` 双方向変換（`$`属性保持）・範囲参照・`AxisView` インターフェイス（RowId/ColumnId⇄表示index）
-- [ ] `packages/sheet-formula/tsconfig.core.json`＋`typecheck:core`（新規・助言#7）: 実装ファイル（`src/**/*.ts`・`exclude:*.test.ts`・`types:[]`・DOM lib なし）の env-free 型検査ゲート。probe（環境API一時挿入で core=検出・main=素通りを実測）で実効性確認（DD-005 sheet-collaboration [P2] と同運用）
-- [ ] 🔬 **機械検証**: `test`/`typecheck`/`typecheck:core`/`lint` green。パッケージのランタイム依存ゼロ（package.json `dependencies` なし・env-free 型検査で Node/DOM 型混入なし）を確認
-- [ ] 😈 **DA批判レビュー**（全角/空白トークン・巨大数値・深いネストのスタック）
+### Phase 2: formula parser・固定IDバインド（TDD）★実装済（2026-07-12）
+- [x] **Red→Green**: `packages/sheet-formula/src/{tokenizer,parser,limits,bind}.test.ts` へ scenarios.md をコード化→実装で green 化 → **完了**（44テスト green）
+- [x] `packages/sheet-formula/src/{tokenizer,parser,ast}.ts`（新規）: §14.2文法（比較演算は予約のみ・拒否）・canonical AST（`serialize`）・エラー値型（6種＝`errors.ts`）＋`a1.ts`（列↔index）→ **完了**（優先順位/べき乗左結合/単項/`-2^2`=`(-2)^2`/未知関数=#NAME?/大小非区別/canonical whitespace不変）
+- [x] `packages/sheet-formula/src/limits.ts`（新規）: parser資源制限（L1式長/L2ASTノード数/L3ネスト深さ/L4引数数/L5範囲セル数）＋境界/超過ユニットテスト（AC8） → **完了**（`DEFAULT_LIMITS`＝function-spec §1。深さ10万でもスタック枯渇せずエラー値。L5→#REF!。L6=処理量はPhase 3評価器）
+- [x] `packages/sheet-formula/src/bind.ts`（新規）: A1↔`BoundCellReference` 双方向変換（`$`属性保持）・範囲参照・`AxisView` インターフェイス（RowId/ColumnId⇄表示index）→ **完了**（行挿入でRowId不変・A1表示A1→A3・参照先削除で#REF!・`createArrayAxisView`）
+- [x] `packages/sheet-formula/tsconfig.core.json`＋`typecheck:core`（新規・助言#7）: 実装ファイル（`src/**/*.ts`・`exclude:*.test.ts`・`types:[]`・DOM lib なし）の env-free 型検査ゲート → **完了**（`typecheck:core` green・`dependencies` 空＝外部ランタイム依存ゼロ）
+- [x] 🔬 **機械検証**: `test`/`typecheck`/`typecheck:core`/`lint` green。パッケージのランタイム依存ゼロ（package.json `dependencies` なし・env-free 型検査で Node/DOM 型混入なし）を確認 → **完了**（test **499件green＝Phase 1後455＋新44・回帰0**／typecheck 全workspace green／typecheck:core green／lint green／`dependencies:{}`）
+- [x] 😈 **DA批判レビュー**（全角/空白トークン・巨大数値・深いネストのスタック）→ **完了**（DA表 #9〜#10: 深いネストのスタック安全・比較演算子/裸識別子のエラー分類）
 
 ### Phase 3: 依存グラフ・差分再計算・評価器（TDD＋計測）
 - [ ] **Red→Green**: `packages/sheet-formula/src/{dep-graph,evaluator}.test.ts`（cycle・diamond・range重なり・#REF!伝播・行挿入/削除の参照維持=AC3/4）
@@ -134,6 +134,7 @@
 - **Phase 0 事前精査を実施**（DD-005を別セッションで並行実施中の独立ドキュメント作業・`package-lock.json` 非更新で無干渉）: `DD-006/scenarios.md`・`DD-006/function-spec.md` を作成、実装前詳細化トリガー判定（Phase 1〜5全「要」）、Codexレビュー要否を確定（必須・effort high）、DA調査5件を記録。Phase 1以降（コード実装・ワークスペース追加）は**着手条件（DD-005完了）未達**かつ**lock衝突回避**のため未着手（DD-005完了後に着手）。本作業はコミットせず作業ツリーに残す（ユーザーレビュー用）
 - **外部レビュー第2回を受領・7指摘を doc-only で反映**（手動運用方針・詳細記録: `DD-006/chatgpt-review-20260712-2.md`）: ①ベンチ規約先行固定（`bench-protocol.md` 新設） ②CellStore用途別選択表を許容 ③データ分布4種 ④数式の意味論を function-spec §2.1/§2.2 へ明文化（非有限・負の0・ロケール不変） ⑤Worker導入条件を判断表として成果物化 ⑥snapshot閾値は暫定推奨に留める ⑦sheet-formula に env-free typecheck 追加。決定事項・AC1/AC5・Phase 1/2/3/5タスクへ還流。コード・workspace・lock は不変（実装はDD-005完了後）
 - **Phase 1（CellStore 4実装比較）実装**（DD-005完了→着手。ゲート確認で「現行計画で即着手」・プロセス密度レビューは Phase 0残り現状維持で無ブロック）: 新規ワークスペース `apps/pocd-bench`（Node計測CLI・製品昇格しない）を追加し `package-lock.json` を更新（並行DDなしのタイミングで実施＝DD本文の制約どおり）。`cell-store.ts`（共通契約）・4ストア（map／chunked-column〔§6.4列チャンク〕／chunked-rowslot〔DD-004移植〕／columnar〔密向け・数値列 Float64Array〕）・`data-gen.ts`（4分布・正準数値）・`bench-cellstore.ts`（bench-protocol準拠CLI）・等価性/data-genテストを実装。**test 455件green（既存438＋新17・回帰0）・typecheck/lint 全workspace green・bench CLI JSON出力確認**。PRNG/行スロットは pocb を再実装（apps間 import なし＝憲章§25）。既存 playground/packages/collaboration-server は無変更。ステータス 検討中→進行中。Phase 2以降（parser/固定IDバインド/依存グラフ/replay/レポート/ADR/Codex）未着手
+- **Phase 2（数式parser・固定IDバインド）実装**（TDD・一気通貫指示で継続）: 新規製品パッケージ `packages/sheet-formula`（外部ランタイム依存ゼロ・DOM/Node非依存・env-freeゲート `tsconfig.core.json`＋`typecheck:core`）を追加。`errors`（6エラー値）・`limits`（L1〜L5＝function-spec §1）・`a1`（列↔index）・`ast`（canonical＋`serialize`）・`tokenizer`（ASCIIのみ・全角/未定義文字拒否）・`parser`（§14.2再帰下降・演算子優先順位・べき乗左結合・単項・比較演算子拒否・#NAME?・資源制限）・`bind`（A1↔`BoundCellReference`・`AxisView`・行挿入でRowId不変/削除で#REF!）を実装。**test 499件green（Phase 1後455＋新44・回帰0）・typecheck/typecheck:core/lint green・`dependencies:{}`**。L6（評価時処理量）はPhase 3評価器で実装。Phase 3以降未着手
 
 ---
 
@@ -155,3 +156,5 @@
 | 6 | 1 | 計測ノイズ対策の実装確認（DA #5 の実装）。bench-cellstore が warmup/trials/GC明示/順序ローテーションを実装しているか | 中 | `bench-cellstore.ts` レビュー＋smoke実行 | 計測の妥当性 | 実装済（warmup 3・trials 10・中央値/p95/worst・各計測直前 `globalThis.gc()`＋`--expose-gc`・分布ごと実行順ローテーション・全raw保存）。残: `heapUsed` はストア外割当も含み粗い → 方式間比較は `approxMemoryBytes()` を主指標・heapUsed は補助（Phase 5レポートで並記） |
 | 7 | 1 | 既定 smoke 規模（5,000×50・非空20,000）で満足し 500k 本計測（AC1合否）を怠るリスク | 中 | 既定引数で bench 実行→合否規模でないことに気づかない | 計測の妥当性 | JSON `meta.acRelevant`（非空≥500,000 で true）で合否/参考を機械的に区別。`bench-protocol.md` §0/§5 に「500k本計測は Phase 5」明記。Phase 5 で 50,000×200・非空500,000 を CLI 引数で実施 |
 | 8 | 1 | columnar の数値列 Float64Array 化は「正準数値（String(Number(s))===s）」前提。data-gen が非正準数値を出すと round-trip 破綻＝等価性崩壊 | 中 | 非正準数値（"12.50" 等）を数値列に入れ get が "12.5" を返さないか | 正しさ（等価性） | data-gen は正準数値のみ生成（テスト `isCanonicalNumber` で検証）。非正準値 set 時は該当列を文字列列へ変換する経路を実装＋変異等価性テストで担保。4分布すべてで等価性 green |
+| 9 | 2 | 再帰下降パーサは深いネストで**スタック枯渇**の懸念（外部入力＝数式・AC8の核心） | 高 | `=(((…)))` を深さ10万で parse | 正しさ（安全性） | L3（ネスト深さ64・`DEFAULT_LIMITS`）で `enter()` が深さ超過を検出し #ERROR!。**深さ10万でもクラッシュせずエラー値を返す**ことをテストで確認（例外を外へ出さない・parse は必ず結果オブジェクトを返す） |
+| 10 | 2 | エラー分類の一貫性（function-spec §4 との一致）。比較演算子・裸識別子・未知関数・引数0・範囲超過のエラー値が仕様どおりか | 中 | 各境界式を parse しエラー値を照合 | 正しさ | 比較演算子→#ERROR!（予約拒否）／未知関数・裸識別子→#NAME?／引数0・構文→#ERROR!／範囲L5超過→#REF!。parser.test/limits.test で網羅。指数表記 `1e3` は #ERROR!（MVP未対応・scenarios §1 既知の制約） |
