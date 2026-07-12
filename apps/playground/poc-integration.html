@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>spreadjs playground — 統合PoC（IME・Canvas・共同編集）DD-005 Phase 2</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        font-family: system-ui, sans-serif;
+        background: #f5f5f5;
+        color: #222;
+      }
+
+      .int-wrap {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        box-sizing: border-box;
+        padding: 8px 12px;
+      }
+
+      .int-header {
+        flex: 0 0 auto;
+      }
+
+      .int-header h1 {
+        font-size: 15px;
+        margin: 0 0 4px;
+      }
+
+      .int-status {
+        font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+        font-size: 12px;
+        color: #14522a;
+        margin-bottom: 6px;
+      }
+
+      .int-hint {
+        font-size: 11px;
+        color: #777;
+        margin-bottom: 6px;
+      }
+
+      /* §13.1: DOM viewport（native scroll）＋ spacer ＋ viewport 同サイズ固定 Canvas。 */
+      .int-stage {
+        position: relative;
+        flex: 1 1 auto;
+        min-height: 240px;
+        border: 1px solid #bbb;
+        background: #fff;
+        overflow: hidden;
+      }
+
+      #int-base,
+      #int-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        display: block;
+      }
+
+      #int-scroller {
+        position: absolute;
+        inset: 0;
+        overflow: auto;
+      }
+
+      #int-spacer {
+        width: 1px;
+        height: 1px;
+      }
+
+      /* 最小セル編集（2 タブ相互反映 smoke 用・Phase 3 の IME 常駐 textarea が置き換える）。 */
+      #int-editor {
+        position: absolute;
+        display: none;
+        box-sizing: border-box;
+        border: 2px solid #1a73e8;
+        outline: none;
+        font: 13px system-ui, sans-serif;
+        padding: 0 4px;
+        z-index: 10;
+      }
+
+      .int-readout {
+        flex: 0 0 auto;
+        font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+        font-size: 11px;
+        color: #333;
+        white-space: pre-wrap;
+        margin-top: 6px;
+        max-height: 72px;
+        overflow: auto;
+        background: #fff;
+        border: 1px solid #ddd;
+        padding: 4px 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="int-wrap">
+      <div class="int-header">
+        <h1>統合PoC — ClientSession（唯一の正本）→ DocumentView → Canvas（DD-005 Phase 2）</h1>
+        <div class="int-status" id="int-status">未接続</div>
+        <div class="int-hint">
+          セルをダブルクリックで編集 → Enter で確定（サーバーへ SetCells 送信・他タブへ反映）。
+          スクロールで 50,000 行を仮想スクロール。接続先は <code>?server=http://host:port</code>、表示名は
+          <code>?name=Alice</code> で指定。
+        </div>
+      </div>
+      <div class="int-stage" id="int-stage">
+        <canvas id="int-base"></canvas>
+        <canvas id="int-overlay"></canvas>
+        <div id="int-scroller"><div id="int-spacer"></div></div>
+        <input id="int-editor" type="text" autocomplete="off" spellcheck="false" />
+      </div>
+      <div class="int-readout" id="int-readout">初期ロード計測待ち…</div>
+    </div>
+    <script type="module" src="/src/integration/main.ts"></script>
+  </body>
+</html>

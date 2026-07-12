@@ -10,6 +10,8 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@nanairo-sheet/sheet-collaboration": "*",
+    "@nanairo-sheet/sheet-core": "*",
     "@nanairo-sheet/sheet-types": "*",
     "vite": "^6.0.5"
   }

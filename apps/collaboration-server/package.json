@@ -6,6 +6,7 @@
   "description": "開発用WSサーバー＋ヘッドレスクライアント（楽観適用・rollback/replay・in-process フォールト注入）。Phase 4 で hono/@hono/node-server/ws による実WSアダプター＋2タブデモを追加",
   "scripts": {
     "dev": "tsx src/server.ts",
+    "dev:integration": "tsx src/server.ts --integration",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

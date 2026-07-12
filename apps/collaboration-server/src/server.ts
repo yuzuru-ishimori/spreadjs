@@ -14,6 +14,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
+import { cors } from 'hono/cors';
 import { WebSocket, WebSocketServer } from 'ws';
 import type { RawData } from 'ws';
 
@@ -37,6 +38,12 @@ import {
 import type { RowId } from '@nanairo-sheet/sheet-types';
 import { decodeClientMessage } from '@nanairo-sheet/sheet-collaboration';
 
+import {
+  DEFAULT_INTEGRATION_DATASET,
+  integrationColumnOrder,
+  seedIntegrationDataset,
+} from './seed-dataset';
+import type { IntegrationDatasetConfig } from './seed-dataset';
 import { rawDataToString } from './ws-frame';
 
 const DEFAULT_PORT = 8787; // playground(5173) と非衝突（指示 3）
@@ -58,6 +65,7 @@ export interface StartServerOptions {
   ttlMillis?: number; // 既定 15000（Room presence TTL）
   sweepMillis?: number; // 既定 5000（sweep 実タイマー間隔）
   restoreFrom?: SnapshotData; // 指定時: snapshot＋log から復元起動（seed をスキップ・revision 継続・S-K2/K4）
+  integrationDataset?: IntegrationDatasetConfig | boolean; // DD-005 Phase 2: 50,000行×200列・非空約10万を投入（true=既定規模）
 }
 
 export interface RunningServer {
@@ -192,7 +200,12 @@ class RoomBridge {
 export async function startServer(options: StartServerOptions = {}): Promise<RunningServer> {
   const host = options.host ?? '127.0.0.1';
   const documentId = options.documentId ?? 'demo-doc';
-  const columnOrderStrings = options.columnOrder ?? ['col-a', 'col-b', 'col-c'];
+  // DD-005 統合データセット指定時は列順・シードを 50,000行×200列へ切り替える（既存の小規模デモとは排他）。
+  const datasetConfig = resolveDataset(options.integrationDataset);
+  const columnOrderStrings =
+    datasetConfig !== undefined
+      ? integrationColumnOrder(datasetConfig.cols).map((c) => String(c))
+      : options.columnOrder ?? ['col-a', 'col-b', 'col-c'];
   const seedRows = options.seedRows ?? DEFAULT_SEED_ROWS;
   const heartbeatMillis = options.heartbeatMillis ?? DEFAULT_HEARTBEAT_MILLIS;
   const ttlMillis = options.ttlMillis ?? DEFAULT_TTL_MILLIS;
@@ -213,16 +226,24 @@ export async function startServer(options: StartServerOptions = {}): Promise<Run
     ttlMillis,
   });
   if (options.restoreFrom === undefined) {
-    seedInitialRows(sequencer, documentId, seedRows);
+    if (datasetConfig !== undefined) {
+      seedIntegrationDataset(sequencer, documentId, datasetConfig);
+    } else {
+      seedInitialRows(sequencer, documentId, seedRows);
+    }
   }
 
   const bridge = new RoomBridge(room);
   const demoHtml = loadDemoHtml();
 
   const app = new Hono();
+  // dev サーバー: playground 統合ページは別オリジン（Vite dev の別ポート）から /config・/snapshot を fetch するため
+  // CORS を許可する（開発用途のみ。DD-005 Phase 2 headed smoke でクロスオリジン fetch のブロックが判明し追加）。
+  app.use('*', cors());
   app.get('/', (c) => c.html(demoHtml));
   app.get('/health', (c) => c.text('ok'));
-  app.get('/config', (c) => c.json({ documentId, heartbeatMillis }));
+  // columnOrder はブラウザークライアント（playground 統合ページ）が ClientSession を同一列順で構築するために配る。
+  app.get('/config', (c) => c.json({ documentId, heartbeatMillis, columnOrder: columnOrderStrings }));
   app.get('/snapshot', (c) => c.json(serializeSnapshot(room.exportState())));
 
   const { server, boundPort } = await new Promise<{ server: NodeServer; boundPort: number }>(
@@ -271,6 +292,19 @@ export async function startServer(options: StartServerOptions = {}): Promise<Run
     connectionCount: () => bridge.connectionCount(),
     close: () => closeServer(server, wss, sweepTimer),
   };
+}
+
+/** integrationDataset オプションを具体設定へ正規化する（undefined/false=無効・true=既定規模・object=既定へマージ）。 */
+function resolveDataset(
+  option: IntegrationDatasetConfig | boolean | undefined,
+): IntegrationDatasetConfig | undefined {
+  if (option === undefined || option === false) {
+    return undefined;
+  }
+  if (option === true) {
+    return DEFAULT_INTEGRATION_DATASET;
+  }
+  return { ...DEFAULT_INTEGRATION_DATASET, ...option };
 }
 
 /** 初期グリッド（row-1..row-N）を単一 InsertRows で投入する（デモの見える行）。 */
@@ -343,14 +377,23 @@ function isMainModule(): boolean {
 if (isMainModule()) {
   const envPort = process.env.PORT;
   const port = envPort === undefined ? DEFAULT_PORT : Number(envPort);
-  startServer({ port })
+  // DD-005 統合PoC のシード投入は `--integration` フラグ or `SEED_DATASET=integration` で有効化する。
+  const integrationDataset =
+    process.argv.includes('--integration') || process.env.SEED_DATASET === 'integration';
+  startServer({ port, integrationDataset })
     .then((running) => {
       process.stdout.write(
         `collaboration-server listening on ${running.url} (documentId=${running.documentId})\n`,
       );
-      process.stdout.write(
-        `open two tabs with different names, e.g. ${running.url}/?name=Alice and ${running.url}/?name=Bob\n`,
-      );
+      if (integrationDataset) {
+        process.stdout.write(
+          `DD-005 integration dataset seeded (50,000 rows x 200 cols). WS: ws://${running.url.replace(/^https?:\/\//, '')}/ws\n`,
+        );
+      } else {
+        process.stdout.write(
+          `open two tabs with different names, e.g. ${running.url}/?name=Alice and ${running.url}/?name=Bob\n`,
+        );
+      }
       const shutdown = (): void => {
         void running.close().then(() => {
           process.exit(0);

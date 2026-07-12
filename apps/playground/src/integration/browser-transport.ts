@@ -1,0 +1,247 @@
+// ブラウザー native WebSocket による ClientTransport 実装（DD-005 Phase 2・案A）。
+// ClientSession に注入され、join/submit/presence/heartbeat/requestCatchup を JSON でサーバーへ送り、
+// サーバーメッセージ（decodeServerMessage で型安全 decode）を ClientSession へ配る。予期しない切断は
+// 自動再接続し、同一 clientId で再 join → welcome/operations 差分 → pending 再送（§8.5・ClientSession が担う）。
+//
+// 【依存境界】このファイルは browser の WebSocket（DOM）を使う実 WS トランスポートで apps/playground に置く。
+// ClientSession コアは @nanairo-sheet/sheet-collaboration（Node/DOM 非依存）。sheet-collaboration の本体バレルは
+// server-core 非依存ゆえブラウザーバンドルに安全に含められる（DD-005 Phase 1）。
+//
+// 【テスト容易性】native WebSocket と setTimeout を直接掴まず、SocketFactory / TransportTimer を注入で受ける
+// （既定は本ファイル内の DOM 実装）。これにより再接続の状態遷移・outbox flush・decode drop を DOM/WS なしの
+// node 環境でユニットテストできる（browser-transport.test.ts）。
+import { decodeServerMessage } from '@nanairo-sheet/sheet-collaboration';
+import type { ClientTransport, TransportListener } from '@nanairo-sheet/sheet-collaboration';
+import type { ClientMessage } from '@nanairo-sheet/sheet-core';
+
+// WebSocket.readyState（HTML 仕様の数値定数。DOM 非依存に固定値で持つ）。
+const SOCKET_CONNECTING = 0;
+const SOCKET_OPEN = 1;
+
+/** トランスポートが掴むソケットの最小契約（native WebSocket でも fake でも実装できる）。 */
+export interface TransportSocket {
+  send(data: string): void;
+  close(): void;
+  /** WebSocket.readyState（0=CONNECTING/1=OPEN/2=CLOSING/3=CLOSED）。 */
+  readonly readyState: number;
+}
+
+/** ソケットからトランスポートへのイベント配線。 */
+export interface SocketEvents {
+  onOpen(): void;
+  onMessage(data: string): void;
+  onClose(): void;
+  onError(message: string): void;
+}
+
+/** url とイベントハンドラから TransportSocket を作る（既定は native WebSocket・テストは fake）。 */
+export type SocketFactory = (url: string, events: SocketEvents) => TransportSocket;
+
+// タイマーハンドルは不透明トークン（transport は中身を見ず clear へ渡すだけ）。実 setTimeout（Timeout）も
+// テストの手動タイマー（number）も受けられるよう両方を許す。
+export type TimerHandle = ReturnType<typeof setTimeout> | number;
+
+/** 再接続タイマーの注入点（既定は setTimeout/clearTimeout・テストは手動タイマー）。 */
+export interface TransportTimer {
+  set(callback: () => void, delayMillis: number): TimerHandle;
+  clear(handle: TimerHandle): void;
+}
+
+const defaultSocketFactory: SocketFactory = (url, events) => {
+  const ws = new WebSocket(url);
+  ws.addEventListener('open', () => {
+    events.onOpen();
+  });
+  ws.addEventListener('message', (event: MessageEvent) => {
+    // PoC サーバーは JSON テキストフレームのみ送る。Blob/ArrayBuffer は想定外ゆえ drop（P08: 記録）。
+    if (typeof event.data === 'string') {
+      events.onMessage(event.data);
+    } else {
+      events.onError('non-string frame');
+    }
+  });
+  ws.addEventListener('close', () => {
+    events.onClose();
+  });
+  ws.addEventListener('error', () => {
+    events.onError('websocket error');
+  });
+  return {
+    send: (data) => ws.send(data),
+    close: () => ws.close(),
+    get readyState() {
+      return ws.readyState;
+    },
+  };
+};
+
+const defaultTimer: TransportTimer = {
+  set: (callback, delayMillis) => setTimeout(callback, delayMillis),
+  clear: (handle) => {
+    clearTimeout(handle);
+  },
+};
+
+export interface BrowserTransportOptions {
+  /** 予期しない切断後の自動再接続を有効にする（既定 true）。close() で無効化。 */
+  autoReconnect?: boolean;
+  /** 再接続までの待機（ミリ秒・既定 1000）。 */
+  reconnectDelayMillis?: number;
+  /** ソケット生成の注入（既定 native WebSocket）。テストは fake を渡す。 */
+  socketFactory?: SocketFactory;
+  /** 再接続タイマーの注入（既定 setTimeout）。テストは手動タイマーを渡す。 */
+  timer?: TransportTimer;
+  /** drop/error のログ出力（既定 console.error）。 */
+  logger?: (message: string) => void;
+  /** 受信フレームの計測フック（#6 初期 snapshot 経路: 受信文字数・JSON parse 時間）。 */
+  onServerFrame?: (info: { chars: number; parseMillis: number }) => void;
+}
+
+const DEFAULT_RECONNECT_DELAY = 1_000;
+
+export class BrowserWebSocketTransport implements ClientTransport {
+  private readonly url: string;
+  private readonly autoReconnect: boolean;
+  private readonly reconnectDelayMillis: number;
+  private readonly socketFactory: SocketFactory;
+  private readonly timer: TransportTimer;
+  private readonly logger: (message: string) => void;
+  private readonly onServerFrame: ((info: { chars: number; parseMillis: number }) => void) | undefined;
+
+  private listener: TransportListener | undefined;
+  private socket: TransportSocket | undefined;
+  private closedByUser = false;
+  private reconnectHandle: TimerHandle | undefined;
+  private readonly outbox: ClientMessage[] = []; // CONNECTING 中に送られたメッセージ（open で flush）
+
+  constructor(url: string, options: BrowserTransportOptions = {}) {
+    this.url = url;
+    this.autoReconnect = options.autoReconnect ?? true;
+    this.reconnectDelayMillis = options.reconnectDelayMillis ?? DEFAULT_RECONNECT_DELAY;
+    this.socketFactory = options.socketFactory ?? defaultSocketFactory;
+    this.timer = options.timer ?? defaultTimer;
+    this.logger =
+      options.logger ??
+      ((message) => {
+        console.error(message);
+      });
+    this.onServerFrame = options.onServerFrame;
+  }
+
+  setListener(listener: TransportListener): void {
+    this.listener = listener;
+  }
+
+  /** 接続を確立する（open で handleConnected → session が join 送信）。 */
+  connect(): void {
+    this.closedByUser = false;
+    this.openSocket();
+  }
+
+  /** ClientMessage を送信する（OPEN は即送信・CONNECTING はバッファ・その他は drop＝session の再送に委ねる）。 */
+  send(message: ClientMessage): void {
+    const socket = this.socket;
+    if (socket !== undefined && socket.readyState === SOCKET_OPEN) {
+      socket.send(JSON.stringify(message));
+      return;
+    }
+    if (socket !== undefined && socket.readyState === SOCKET_CONNECTING) {
+      this.outbox.push(message);
+    }
+    // CLOSING/CLOSED/未接続は drop（未 ACK pending は ClientSession が再接続後に再送＝§8.5）。
+  }
+
+  /** 明示 close（再接続を止め、ソケットとタイマーを解放する＝ページ離脱・テスト後始末）。 */
+  close(): void {
+    this.closedByUser = true;
+    if (this.reconnectHandle !== undefined) {
+      this.timer.clear(this.reconnectHandle);
+      this.reconnectHandle = undefined;
+    }
+    this.outbox.length = 0;
+    const socket = this.socket;
+    this.socket = undefined;
+    if (socket !== undefined) {
+      socket.close();
+    }
+  }
+
+  private openSocket(): void {
+    this.socket = this.socketFactory(this.url, {
+      onOpen: () => {
+        this.handleOpen();
+      },
+      onMessage: (data) => {
+        this.handleMessage(data);
+      },
+      onClose: () => {
+        this.handleClose();
+      },
+      onError: (message) => {
+        this.handleError(message);
+      },
+    });
+  }
+
+  private handleOpen(): void {
+    this.flushOutbox();
+    this.requireListener().handleConnected(); // → session が同一 clientId で join 送信
+  }
+
+  private handleMessage(data: string): void {
+    let parsed: unknown;
+    const parseStart = performance.now();
+    try {
+      parsed = JSON.parse(data);
+    } catch {
+      this.logger(`BrowserWebSocketTransport: dropped non-JSON frame from ${this.url}`);
+      return;
+    }
+    this.onServerFrame?.({ chars: data.length, parseMillis: performance.now() - parseStart });
+    const message = decodeServerMessage(parsed);
+    if (message === undefined) {
+      this.logger(`BrowserWebSocketTransport: dropped unrecognized server message from ${this.url}`);
+      return;
+    }
+    this.requireListener().handleServerMessage(message);
+  }
+
+  private handleClose(): void {
+    this.socket = undefined;
+    this.requireListener().handleDisconnected(); // → session が offline へ
+    if (!this.closedByUser && this.autoReconnect) {
+      this.reconnectHandle = this.timer.set(() => {
+        this.reconnectHandle = undefined;
+        if (!this.closedByUser) {
+          this.openSocket(); // 再 open → handleConnected → 同一 clientId で再 join（§8.5）
+        }
+      }, this.reconnectDelayMillis);
+    }
+  }
+
+  private handleError(message: string): void {
+    // 予期しないエラーは記録する（P08: 握りつぶさない）。close() 後は抑止。
+    // 'close' が続いて発火し handleClose で切断通知＋再接続する（error 単独では二重処理しない）。
+    if (!this.closedByUser) {
+      this.logger(`BrowserWebSocketTransport: socket error (${this.url}): ${message}`);
+    }
+  }
+
+  private flushOutbox(): void {
+    const socket = this.socket;
+    if (socket === undefined || socket.readyState !== SOCKET_OPEN) {
+      return;
+    }
+    for (const message of this.outbox) {
+      socket.send(JSON.stringify(message));
+    }
+    this.outbox.length = 0;
+  }
+
+  private requireListener(): TransportListener {
+    if (this.listener === undefined) {
+      throw new Error('BrowserWebSocketTransport: listener not set (call setListener before connect)');
+    }
+    return this.listener;
+  }
+}
