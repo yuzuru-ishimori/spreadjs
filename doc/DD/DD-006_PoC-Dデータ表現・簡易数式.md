@@ -51,6 +51,7 @@
 - 成果物（ロードマップ「DD化の原則」3）: 計測レポート `DD-006/measurement-report.md`（方式比較・再計算・replay・合否・既知の制約・Phase 1引き継ぎ）、ADR-011拡充（疎/密比較結果と決定案）、ADR-022ドラフト `doc/adr/0022-zero-runtime-dependency-core.md`（`doc/DOC-MAP.md` 更新含む）。
 - **実装前詳細化トリガー判定（2026-07-12・Phase 0）**: 新規パッケージ＋性能特性が核心のため **Phase 1〜5すべて「要」**。各Phase冒頭の 📐 実装前詳細化タスクで、候補ストア共通I/F・ベンチ項目・データ分布・数式詳細（`DD-006/function-spec.md` 準拠）を確定してから実装に入る。
 - **Phase 0 ドキュメント成果物（2026-07-12・DD-005並行セッション中の独立作業）**: `DD-006/scenarios.md`（Red設計・自然言語・全10節＋AC対応表）と `DD-006/function-spec.md`（資源制限L1〜L6の上限値・5関数の空白/文字列/エラー/範囲/数値変換仕様・6エラー値の発生フェーズと優先）を先行作成。上限値・関数仕様・エラー規則は `function-spec.md` を単一の情報源とし、`scenarios.md`・テストコードが参照する。いずれもワークスペース追加を伴わず `package-lock.json` 非更新（並行 DD-005 と無干渉）。上限値L1〜L6はExcel準拠の提案値で、Phase 2/3実測後に確定余地あり（変更時は本文・function-spec・テストを同時更新）。
+- **外部レビュー第2回（2026-07-12・手動運用）の反映**: DD-005待ち時間の助言7点を doc-only で反映（詳細記録: `DD-006/chatgpt-review-20260712-2.md`）。①**ベンチ規約を結果より先に固定**＝`DD-006/bench-protocol.md` 新設（ウォームアップ/試行回数/集計指標/GC/実行順ローテーション/版数記録/生JSONスキーマ/reseed＋**Node↔ブラウザ乖離の事前判定規則**〔時間2倍超 or メモリ1.5倍超→原因分析必須〕。倍率は Phase 1 で確定し以後は結果を見て変えない） ②**CellStoreは単一の勝者を強制しない**＝用途別選択表を許容（ADR-011拡充・bench-protocol §6.1） ③**データ分布を4種へ**（一様疎/連続密/上部左集中/列型偏り・bench-protocol §4） ④**数式は意味論優先**＝`function-spec.md` に §2.1（非有限は暫定`#VALUE!`〔将来`#NUM!`〕・0除算優先・負の0正規化）と §2.2（ロケール不変）を追加。`function-spec.md` を唯一の正としテスト側に別仕様を作らない ⑤**Worker導入条件を判断表として成果物化**（bench-protocol §6.2・影響式数別実測から） ⑥**snapshot閾値は確定しない**＝素朴JSON計測は「Phase 1で正式snapshot形式を設計するための暫定推奨値・桁感」に留める（§16.3・bench-protocol §6.3） ⑦**`sheet-formula` に env-free typecheck**（`tsconfig.core.json`＋`typecheck:core`・テスト除外・`types:[]`）を追加（DD-005 `sheet-collaboration` の [P2] と同種の環境型混入を予防）。
 
 ## 受け入れ基準
 
@@ -58,11 +59,11 @@
 
 | # | 基準（操作 → 期待結果） | 検証方法 |
 |---|------------------------|---------|
-| 1 | 疎/密×4実装（Map型／チャンク型2実装／列指向配列型の3カテゴリ）でCellStoreベンチ実行 → 生成・読書き・範囲走査時間とメモリの実測表が出力され、カテゴリ別の優劣と決定案をADR-011へ記載できる | Phase 1 ベンチJSON＋report §1／ADR-011拡充（Phase 5） |
+| 1 | **4分布**（一様疎/連続密/上部左集中/列型偏り・`bench-protocol.md` §4）×4実装（Map型／チャンク型2実装／列指向配列型の3カテゴリ）でCellStoreベンチ実行 → 生成・読書き・範囲走査時間とメモリの実測表が**分布別に**出力され、カテゴリ別の優劣と決定案（**単一の勝者を強制せず用途別選択表を許容**）をADR-011へ記載できる | Phase 1 ベンチJSON（`bench-protocol.md` 準拠）＋report §1／ADR-011拡充（Phase 5） |
 | 2 | 10,000 formula cells文書で1セル変更（**影響100式以下=通常入力シナリオ**） → 依存再計算完了がp95 16ms未満・worst 33ms未満〔要確認1回答〕。影響1,000式／全10,000式／10,000行範囲SUM／10,000式チェーンの実測値がレポートに記録され、Worker分離閾値の素材になる（この4系は合否対象外） | Phase 3 計測（シナリオ別の決定論変更列×N回・p95/worst をJSON出力） |
 | 3 | 参照される行の手前に行挿入 → 数式のA1表示は移動後の位置を示し、評価値が変わらない（固定ID参照維持） | Phase 3 ユニットテスト（モックAxisView）＋sheet-core実文書の結合試験（InsertRows適用） |
 | 4 | 参照先の行を削除 → 該当式の評価値が `#REF!` になり、他の式は正常のまま | Phase 3 ユニットテスト＋sheet-core実文書の結合試験（DeleteRows適用） |
-| 5 | 100,000 Operationをreplay → 1,000/5,000/10,000/50,000/100,000点の所要時間が計測され、snapshot閾値（§16.3）の推奨値を報告できる（素朴JSON化のserialize/parse時間・サイズ・復元後メモリの参考計測を含む） | Phase 4 replay計測JSON＋report §3 |
+| 5 | 100,000 Operationをreplay → 1,000/5,000/10,000/50,000/100,000点の所要時間が計測され、snapshot閾値（§16.3）の**暫定推奨値（Phase 1で正式snapshot形式を設計するための桁感。本DDでは確定しない）**を報告できる（素朴JSON化のserialize/parse時間・サイズ・復元後メモリの参考計測を含む） | Phase 4 replay計測JSON＋report §3 |
 | 6 | `=1+2*3`・`=(A1+B2)^2`・`=SUM(A1:B10)`・単項マイナス・文字列を入力 → §14.2文法どおり評価。不正式・未知関数・循環・0除算は対応エラー値〔要確認5回答〕。evalや動的コード実行を使わない | Phase 2/3 ユニットテスト＋lint（`no-eval`相当） |
 | 7 | 計測レポート・ADR-011拡充・ADR-022ドラフト・Phase 1引き継ぎ事項が文書化される | Phase 5 成果物タスク＋`bash scripts/doc-check.sh` エラー0 |
 | 8 | 資源制限境界の入力（最大式長超過・深い括弧ネスト・巨大ASTノード数・過多引数・巨大範囲参照・処理量上限超過）をparse/evaluate → 明示上限で安全に対応エラー値を返し、スタック枯渇・フリーズ・暴走しない | Phase 2/3 ユニットテスト（境界値・超過値。上限値は `DD-006/function-spec.md` に定義） |
@@ -72,7 +73,7 @@
 
 ### Phase 0: 事前精査
 - [x] 📋 **各Phaseのタスク精査・詳細化**（受け入れ基準1〜9と各Phase検証タスクの対応・ファイルパス明記・変更内容の具体性を確認）→ 完了(2026-07-12): AC1〜9とシナリオの対応表を `DD-006/scenarios.md` 付録に作成。各Phaseの新規ファイルパスは本文タスクで明記済み・変更対象は新規のみ（既存package無変更）を再確認
-- [x] 🧪 **テスト設計（Red）**: 文法境界（演算子優先順位・単項連鎖・空白/文字列/エラー伝播・範囲境界）・資源制限境界（式長・ASTノード数・ネスト深さ・引数数・範囲セル数・処理量の各上限値と超過時挙動＝AC8。上限値は `DD-006/function-spec.md` に定義）・バインド境界（挿入/削除/移動・絶対相対）・依存グラフ（diamond依存・range重なり・cycle）・CellStore境界（チャンク境界・空行・密疎切替）のシナリオを `DD-006/scenarios.md` に自然言語で作成（合意済みスコープ内は自動継続ルールで進行）→ 完了(2026-07-12): `DD-006/scenarios.md`（10節＋AC対応表）・`DD-006/function-spec.md`（資源制限L1〜L6・5関数仕様・6エラー値の発生フェーズと優先）を作成
+- [x] 🧪 **テスト設計（Red）**: 文法境界（演算子優先順位・単項連鎖・空白/文字列/エラー伝播・範囲境界）・資源制限境界（式長・ASTノード数・ネスト深さ・引数数・範囲セル数・処理量の各上限値と超過時挙動＝AC8。上限値は `DD-006/function-spec.md` に定義）・バインド境界（挿入/削除/移動・絶対相対）・依存グラフ（diamond依存・range重なり・cycle）・CellStore境界（チャンク境界・空行・密疎切替）のシナリオを `DD-006/scenarios.md` に自然言語で作成（合意済みスコープ内は自動継続ルールで進行）→ 完了(2026-07-12): `DD-006/scenarios.md`（10節＋AC対応表）・`DD-006/function-spec.md`（資源制限L1〜L6・5関数仕様・6エラー値の発生フェーズと優先）を作成。第2回外部レビュー反映で `DD-006/bench-protocol.md`（ベンチ規約・証跡JSONスキーマ・Node↔ブラウザ乖離判定・結論テンプレート）も追加
 - [x] 📐 **実装前詳細化トリガー判定**（新規パッケージ＋性能特性が核心のため全Phase「要」想定。判定結果 `Phase N → 要/不要` を本文へ明記）→ 完了(2026-07-12): **Phase 1〜5すべて「要」**（詳細は「決定事項」へ明記）
 - [x] 🧑‍⚖️ **Codexレビュー要否判定**（起票時暫定: **必須・effort high**〔TDD対象＋parser=入力検証＋新規パッケージ外部I/F〕。実行はPhase 5で全差分1回=DD-004と同運用）→ 完了(2026-07-12): 暫定判定を**確定**（必須・effort high）。実行はPhase 5・全差分1回
 - [x] 😈 **Devil's Advocate調査**（特に「Node計測がブラウザ実態と乖離する」「ベンチのデータ分布が実業務と乖離し方式選定を歪める」「CellReader抽象がPhase 1のsheet-core結合で漏れる」リスク）→ 完了(2026-07-12): 5件を「DA批判レビュー記録」へ記載
@@ -80,8 +81,8 @@
 ### Phase 1: CellStore方式比較（疎/密×4実装・3カテゴリ）
 - [ ] 📐 **実装前詳細化**（候補ストアの共通インターフェイス・ベンチ項目・データ分布を本文/添付へ）
 - [ ] `apps/pocd-bench/src/stores/{map-store,chunked-column-store,chunked-rowslot-store,columnar-store}.ts`（新規）: 共通 `CellStoreCandidate` インターフェイスで4実装（①Map型＝単一Map／②チャンク型2実装＝§6.4列チャンクMap・DD-004行スロット移植／③列指向配列型）＋ユニットテスト（等価性: 同一操作列で4実装の読出結果一致）
-- [ ] `apps/pocd-bench/src/data-gen.ts`（新規）: シード付きPRNGで疎（50,000×200・非空500,000）・密（連続ブロック500,000）・ストレッチ（2,000,000）を決定論生成＋ユニットテスト（件数・再現性）
-- [ ] `apps/pocd-bench/src/bench-cellstore.ts`＋CLIエントリ（新規）: 一括ロード・ランダム読書き（10万回）・範囲走査・メモリ実測→JSON/Markdown出力
+- [ ] `apps/pocd-bench/src/data-gen.ts`（新規）: シード付きPRNGで**4分布**（`uniform-sparse` 50,000×200非空500,000／`dense-block` 連続500,000／`top-left-cluster` 上部左集中／`column-typed` 列型偏り・`bench-protocol.md` §4）＋ストレッチ（2,000,000）を決定論生成。分布パラメータ（非空率・クラスタリング・型混在比）可変＋ユニットテスト（件数・再現性）
+- [ ] `apps/pocd-bench/src/bench-cellstore.ts`＋CLIエントリ（新規）: **`bench-protocol.md` 準拠**（ウォームアップ3・本計測10・中央値/p95/worst・GC明示・実行順ローテーション）で一括ロード・ランダム読書き（10万回）・範囲走査・メモリ実測→生JSON（§3スキーマ）/Markdown出力
 - [ ] 🔬 **機械検証**: `npm run test`/`typecheck`/`lint` green（既存workspace回帰0）＋ベンチCLI実行でJSON出力
 - [ ] 😈 **DA批判レビュー**（GC影響の排除・ウォームアップ・計測順序の偏り）
 
@@ -90,13 +91,14 @@
 - [ ] `packages/sheet-formula/src/{tokenizer,parser,ast}.ts`（新規）: §14.2文法（比較演算は文法上予約のみ・拒否）・canonical AST・エラー値型（6種・要確認5回答）
 - [ ] `packages/sheet-formula/src/limits.ts`（新規）: parser資源制限（最大式長・最大ASTノード数・最大括弧ネスト深さ・最大関数引数数）の実装＋境界/超過ユニットテスト（AC8。上限値は function-spec.md の定義に従う）
 - [ ] `packages/sheet-formula/src/bind.ts`（新規）: A1↔`BoundCellReference` 双方向変換（`$`属性保持）・範囲参照・`AxisView` インターフェイス（RowId/ColumnId⇄表示index）
-- [ ] 🔬 **機械検証**: `test`/`typecheck`/`lint` green。パッケージのランタイム依存ゼロ（package.json `dependencies` なし・DOM lib なしで型検査）を確認
+- [ ] `packages/sheet-formula/tsconfig.core.json`＋`typecheck:core`（新規・助言#7）: 実装ファイル（`src/**/*.ts`・`exclude:*.test.ts`・`types:[]`・DOM lib なし）の env-free 型検査ゲート。probe（環境API一時挿入で core=検出・main=素通りを実測）で実効性確認（DD-005 sheet-collaboration [P2] と同運用）
+- [ ] 🔬 **機械検証**: `test`/`typecheck`/`typecheck:core`/`lint` green。パッケージのランタイム依存ゼロ（package.json `dependencies` なし・env-free 型検査で Node/DOM 型混入なし）を確認
 - [ ] 😈 **DA批判レビュー**（全角/空白トークン・巨大数値・深いネストのスタック）
 
 ### Phase 3: 依存グラフ・差分再計算・評価器（TDD＋計測）
 - [ ] **Red→Green**: `packages/sheet-formula/src/{dep-graph,evaluator}.test.ts`（cycle・diamond・range重なり・#REF!伝播・行挿入/削除の参照維持=AC3/4）
 - [ ] `packages/sheet-formula/src/dep-graph.ts`（新規）: 全展開＋列別interval indexの2実装（§14.4）・dirty集合→topological再計算・DFS coloring cycle検出
-- [ ] `packages/sheet-formula/src/evaluator.ts`（新規）: `CellReader` 抽象上で5関数（SUM/AVERAGE/MIN/MAX/COUNT・要確認2回答）・空白/文字列/エラー伝播規則・評価時資源制限（1範囲の最大参照セル数・処理量上限カウンタ＝AC8）を実装（関数ごとの仕様・上限値を `DD-006/function-spec.md` に明文化）
+- [ ] `packages/sheet-formula/src/evaluator.ts`（新規）: `CellReader` 抽象上で5関数（SUM/AVERAGE/MIN/MAX/COUNT・要確認2回答）・空白/文字列/エラー伝播規則・**特殊値の意味論**（非有限→暫定`#VALUE!`・0除算優先・負の0正規化＝function-spec §2.1／ロケール不変＝§2.2）・評価時資源制限（1範囲の最大参照セル数・処理量上限カウンタ＝AC8）を実装（関数ごとの仕様・上限値を `DD-006/function-spec.md` に明文化。テスト側に別仕様を作らない）
 - [ ] `apps/pocd-bench/src/integration-sheetcore.test.ts`（新規）: sheet-core結合試験（AC3/4の実文書版）— sheet-coreで文書作成→数式をRowId/ColumnIdへbind→`InsertRows`適用→A1表示変化・固定ID評価値維持を確認／`DeleteRows`適用→`#REF!` を確認（sheet-coreは読み取り＋apply利用のみ。Axis情報が外部公開されていない場合は読み取り専用アダプタ）
 - [ ] `apps/pocd-bench/src/bench-recalc.ts`（新規）: 影響式数別シナリオ（**影響100式以下=合否対象**／影響1,000式／全10,000式／10,000行範囲SUM／10,000式チェーン=レポート項目・Worker分離閾値素材）で1セル変更×N回→シナリオ別p95/worst JSON出力（AC2）＋依存表現2方式の構築/更新時間比較
 - [ ] 🔬 **機械検証**: `test`/`typecheck`/`lint` green＋bench-recalc実行でAC2判定値出力
@@ -111,8 +113,8 @@
 
 ### Phase 5: ブラウザ最小確認・計測レポート・ADR-011拡充・ADR-022ドラフト・引き継ぎ・Codexレビュー
 - [ ] `apps/pocd-browser-bench`（新規・最小静的ページ）: 採用候補（決定案）方式の500,000セルロード・代表操作（ランダム読書き・範囲走査）・メモリをChromeまたはEdgeで実測し、Node実測との乖離を確認（AC9。playground非依存・devサーバーはルート既存Vite・新規npm依存なし）
-- [ ] 計測実施→ `doc/DD/DD-006/measurement-report.md`（新規・添付）: AC1〜5・8〜9の実測値・合否・機種情報（ブラウザ版数含む）・既知の制約・Phase 1へ引き継ぐ設計注意事項（CellStoreのsheet-core組込方針・RowIdキー化・Worker分離閾値〔影響式数別実測から〕・サーバーre-parse）
-- [ ] `doc/adr/0011-row-slot-chunked-cell-store.md`（拡充）: 疎/密比較の実測を「結果」へ追記し決定案を記載（Accepted化は要確認4の回答に従う）
+- [ ] 計測実施→ `doc/DD/DD-006/measurement-report.md`（新規・添付）: AC1〜5・8〜9の実測値・合否・機種情報（ブラウザ版数含む）・**結論表**（`bench-protocol.md` §6: CellStore用途別選択表／Worker分離判断表／snapshot暫定推奨）・既知の制約・Phase 1へ引き継ぐ設計注意事項（CellStoreのsheet-core組込方針・RowIdキー化・Worker分離閾値〔影響式数別実測から〕・サーバーre-parse）
+- [ ] `doc/adr/0011-row-slot-chunked-cell-store.md`（拡充）: **4分布**比較の実測を「結果」へ追記し決定案（**単一の勝者を強制せず用途別選択表を許容**・bench-protocol §6.1）を記載（Accepted化は要確認4の回答に従う）
 - [ ] `doc/adr/0022-zero-runtime-dependency-core.md`（新規・ドラフト）: sheet-formula/sheet-core依存ゼロ実績を根拠に背景・選択肢・決定案・再検討条件。`doc/DOC-MAP.md` へADR行を追加
 - [ ] 🔬 **機械検証**: `test`/`typecheck`/`lint`/`build` green・`bash scripts/doc-check.sh` エラー0
 - [ ] 😈 **DA批判レビュー**（計測値の再現性・合否がJSON/レポートから追えるか・ADR決定案が計測に裏付くか）
@@ -130,6 +132,7 @@
 - 外部レビュー（ChatGPT・手動運用方針に基づく）を受領・6指摘を全て反映（詳細記録: `DD-006/chatgpt-review-20260712.md`）: ①4実装3カテゴリ表記統一 ②Node主評価＋採用候補ブラウザ最小確認（`apps/pocd-browser-bench` 追加・AC9） ③AC2を影響式数別に分割（合否=影響100式以下、他4系はWorker分離閾値素材） ④sheet-core実文書との結合試験追加（AC3/4） ⑤parser資源制限をAC8へ昇格 ⑥snapshot参考計測（素朴JSON化）追加。あわせて要確認1〜5をユーザー回答で確定し「決定事項」へ反映
 - スコープ増（②④⑥）への注記: 本DDはPhase 0最後の重量級PoCのため、実装中に肥大化の兆候（1レビューサイクル超過）が出た場合はreplay/snapshot計測（Phase 4）を別DDへ分割する
 - **Phase 0 事前精査を実施**（DD-005を別セッションで並行実施中の独立ドキュメント作業・`package-lock.json` 非更新で無干渉）: `DD-006/scenarios.md`・`DD-006/function-spec.md` を作成、実装前詳細化トリガー判定（Phase 1〜5全「要」）、Codexレビュー要否を確定（必須・effort high）、DA調査5件を記録。Phase 1以降（コード実装・ワークスペース追加）は**着手条件（DD-005完了）未達**かつ**lock衝突回避**のため未着手（DD-005完了後に着手）。本作業はコミットせず作業ツリーに残す（ユーザーレビュー用）
+- **外部レビュー第2回を受領・7指摘を doc-only で反映**（手動運用方針・詳細記録: `DD-006/chatgpt-review-20260712-2.md`）: ①ベンチ規約先行固定（`bench-protocol.md` 新設） ②CellStore用途別選択表を許容 ③データ分布4種 ④数式の意味論を function-spec §2.1/§2.2 へ明文化（非有限・負の0・ロケール不変） ⑤Worker導入条件を判断表として成果物化 ⑥snapshot閾値は暫定推奨に留める ⑦sheet-formula に env-free typecheck 追加。決定事項・AC1/AC5・Phase 1/2/3/5タスクへ還流。コード・workspace・lock は不変（実装はDD-005完了後）
 
 ---
 
