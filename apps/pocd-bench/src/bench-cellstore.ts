@@ -1,16 +1,15 @@
 // CellStore ベンチCLI（DD-006 Phase 1・bench-protocol.md 準拠）。
-// ウォームアップ→本計測（中央値/p95/worst）・GC明示・実行順ローテーション・生JSON出力。
+// ウォームアップ→本計測（中央値/p95/worst）・GC明示・**実行順ローテーション（試行ごとに方式を巡回）**・生JSON出力。
 // 実行: node --expose-gc --import tsx src/bench-cellstore.ts [--rows N --cols N --nonEmpty N --seed N
 //        --warmup N --trials N --dist a,b --stores a,b --pretty]
 // 主評価は Node 22（要確認3）。採用候補のブラウザ確認は Phase 5（pocd-browser-bench）。
-// 本CLIは Phase 1 の計測土台。合否用の 500,000 セル本計測は Phase 5 で実施する。
 
 import os from 'node:os';
 import v8 from 'node:v8';
 import { STORE_CANDIDATES, type StoreCandidate } from './stores/index';
 import { DISTRIBUTIONS, generateCells, type Distribution } from './data-gen';
 import { createPrng } from './prng';
-import type { CellStoreCandidate, CellStoreConfig, GeneratedCell } from './cell-store';
+import type { CellStoreConfig, GeneratedCell } from './cell-store';
 
 interface Args {
   rows: number;
@@ -32,9 +31,8 @@ function parseArgs(argv: readonly string[]): Args {
     if (a !== undefined && a.startsWith('--')) {
       const key = a.slice(2);
       const next = argv[i + 1];
-      if (key === 'pretty') {
-        map.set(key, 'true');
-      } else if (next !== undefined) {
+      if (key === 'pretty') map.set(key, 'true');
+      else if (next !== undefined) {
         map.set(key, next);
         i += 1;
       }
@@ -49,7 +47,6 @@ function parseArgs(argv: readonly string[]): Args {
     return v === undefined ? d : v.split(',').map((s) => s.trim()).filter((s) => s !== '');
   };
   return {
-    // 既定は Phase 1 の smoke 規模。合否用の本計測（50,000×200・非空500,000）は CLI 引数で指定。
     rows: num('rows', 5000),
     cols: num('cols', 50),
     nonEmpty: num('nonEmpty', 20000),
@@ -70,21 +67,18 @@ function median(nums: readonly number[]): number {
   if (sorted.length % 2 === 1) return sorted[mid] ?? 0;
   return ((sorted[mid - 1] ?? 0) + (sorted[mid] ?? 0)) / 2;
 }
-
 function percentile(nums: readonly number[], p: number): number {
   if (nums.length === 0) return 0;
   const sorted = [...nums].sort((a, b) => a - b);
   const idx = Math.min(sorted.length - 1, Math.ceil((p / 100) * sorted.length) - 1);
   return sorted[Math.max(0, idx)] ?? 0;
 }
-
 interface MetricStat {
   median: number;
   p95: number;
   worst: number;
   raw: number[];
 }
-
 function summarize(raw: number[]): MetricStat {
   return {
     median: Number(median(raw).toFixed(4)),
@@ -93,11 +87,9 @@ function summarize(raw: number[]): MetricStat {
     raw: raw.map((x) => Number(x.toFixed(4))),
   };
 }
-
 function forceGc(): void {
   globalThis.gc?.();
 }
-
 /** 計測区間の直前に GC を明示し、fn の所要 ms を返す。 */
 function timed(fn: () => void): number {
   forceGc();
@@ -106,7 +98,6 @@ function timed(fn: () => void): number {
   return performance.now() - t0;
 }
 
-/** ランダム読み取り/書き込みで使う位置列（決定論・ヒット寄り）。 */
 function makeProbes(
   cells: readonly GeneratedCell[],
   rows: number,
@@ -129,6 +120,49 @@ function makeProbes(
   return probes;
 }
 
+interface Sample {
+  loadMs: number;
+  readMs: number;
+  writeMs: number;
+  scanMs: number;
+  nonEmpty: number;
+}
+
+/** 1 試行: 新しいストアで load→read→write→scan を計測する。 */
+function measureOnce(
+  candidate: StoreCandidate,
+  storeConfig: CellStoreConfig,
+  cells: readonly GeneratedCell[],
+  readProbes: ReadonlyArray<{ row: number; col: number }>,
+  writeProbes: ReadonlyArray<{ row: number; col: number }>,
+  scanPrngSeed: number,
+): Sample {
+  const store = candidate.create(storeConfig);
+  const loadMs = timed(() => store.bulkLoad(cells));
+  const nonEmpty = store.nonEmptyCount();
+  const readMs = timed(() => {
+    let sink = 0;
+    for (const p of readProbes) sink += store.get(p.row, p.col).length;
+    if (sink < 0) throw new Error('unreachable');
+  });
+  const writeMs = timed(() => {
+    for (let i = 0; i < writeProbes.length; i += 1) {
+      const p = writeProbes[i];
+      if (p !== undefined) store.set(p.row, p.col, i % 7 === 0 ? '' : `v${i}`);
+    }
+  });
+  const prng = createPrng(scanPrngSeed);
+  const scanMs = timed(() => {
+    let visited = 0;
+    for (let w = 0; w < 200; w += 1) {
+      const r0 = prng.nextInt(Math.max(1, storeConfig.rows - 40));
+      visited += store.queryRange(r0, r0 + 40, 0, storeConfig.cols, () => {});
+    }
+    if (visited < 0) throw new Error('unreachable');
+  });
+  return { loadMs, readMs, writeMs, scanMs, nonEmpty };
+}
+
 interface StoreResult {
   store: string;
   category: string;
@@ -142,88 +176,77 @@ interface StoreResult {
   nonEmptyCount: number;
 }
 
-function benchStore(
-  candidate: StoreCandidate,
+function benchDistribution(
+  distribution: Distribution,
+  candidates: readonly StoreCandidate[],
   storeConfig: CellStoreConfig,
-  cells: readonly GeneratedCell[],
   args: Args,
-): StoreResult {
+): StoreResult[] {
+  const { cells, count } = generateCells({
+    rows: args.rows,
+    cols: args.cols,
+    nonEmpty: args.nonEmpty,
+    seed: args.seed,
+    distribution,
+  });
   const readProbes = makeProbes(cells, storeConfig.rows, storeConfig.cols, args.seed + 1, 100_000);
   const writeProbes = makeProbes(cells, storeConfig.rows, storeConfig.cols, args.seed + 2, 100_000);
-  const windowCount = 200;
 
-  const load: number[] = [];
-  const read: number[] = [];
-  const write: number[] = [];
-  const scan: number[] = [];
-  let nonEmptyCount = 0;
+  const acc = new Map<string, { load: number[]; read: number[]; write: number[]; scan: number[]; nonEmpty: number }>();
+  for (const c of candidates) acc.set(c.label, { load: [], read: [], write: [], scan: [], nonEmpty: 0 });
 
+  // 試行を外側・方式を内側にし、**試行ごとに方式順を巡回**（bench-protocol §2・JIT/GC/キャッシュの順序バイアス排除）。
   const totalRuns = args.warmup + args.trials;
   for (let run = 0; run < totalRuns; run += 1) {
     const isWarmup = run < args.warmup;
-    // ロード計測（毎回新しいストア。store はループブロックスコープで次 run 前に GC 対象）。
-    const store: CellStoreCandidate = candidate.create(storeConfig);
-    const loadMs = timed(() => {
-      store.bulkLoad(cells);
-    });
-    nonEmptyCount = store.nonEmptyCount();
-
-    const readMs = timed(() => {
-      let sink = 0;
-      for (const p of readProbes) sink += store.get(p.row, p.col).length;
-      if (sink < 0) throw new Error('unreachable');
-    });
-
-    const writeMs = timed(() => {
-      for (let i = 0; i < writeProbes.length; i += 1) {
-        const p = writeProbes[i];
-        if (p !== undefined) store.set(p.row, p.col, i % 7 === 0 ? '' : `v${i}`);
+    const offset = run % candidates.length;
+    const rotated = [...candidates.slice(offset), ...candidates.slice(0, offset)];
+    for (const c of rotated) {
+      const s = measureOnce(c, storeConfig, cells, readProbes, writeProbes, args.seed + 3 + run);
+      const a = acc.get(c.label);
+      if (a === undefined) continue;
+      a.nonEmpty = s.nonEmpty;
+      if (!isWarmup) {
+        a.load.push(s.loadMs);
+        a.read.push(s.readMs);
+        a.write.push(s.writeMs);
+        a.scan.push(s.scanMs);
       }
-    });
-
-    // 走査は可視窓（40行×全列）を windowCount 回。
-    const prng = createPrng(args.seed + 3 + run);
-    const scanMs = timed(() => {
-      let visited = 0;
-      for (let w = 0; w < windowCount; w += 1) {
-        const r0 = prng.nextInt(Math.max(1, storeConfig.rows - 40));
-        visited += store.queryRange(r0, r0 + 40, 0, storeConfig.cols, () => {});
-      }
-      if (visited < 0) throw new Error('unreachable');
-    });
-
-    if (!isWarmup) {
-      load.push(loadMs);
-      read.push(readMs);
-      write.push(writeMs);
-      scan.push(scanMs);
     }
   }
 
-  // メモリは新しいストアを1つだけ保持して概算。
-  forceGc();
-  const memStore = candidate.create(storeConfig);
-  memStore.bulkLoad(cells);
-  forceGc();
-  const mu = process.memoryUsage();
-
-  return {
-    store: candidate.label,
-    category: candidate.category,
-    metrics: {
-      loadMs: summarize(load),
-      randomReadMs: summarize(read),
-      randomWriteMs: summarize(write),
-      rangeScanMs: summarize(scan),
-      memoryBytes: {
-        rss: mu.rss,
-        heapUsed: mu.heapUsed,
-        external: mu.external,
-        approxStore: memStore.approxMemoryBytes(),
+  // メモリは方式ごとに新しいストアを1つだけ保持して概算（他方式の割当を含めない）。
+  const results: StoreResult[] = [];
+  for (const c of candidates) {
+    forceGc();
+    const memStore = c.create(storeConfig);
+    memStore.bulkLoad(cells);
+    forceGc();
+    const mu = process.memoryUsage();
+    const a = acc.get(c.label);
+    results.push({
+      store: c.label,
+      category: c.category,
+      metrics: {
+        loadMs: summarize(a?.load ?? []),
+        randomReadMs: summarize(a?.read ?? []),
+        randomWriteMs: summarize(a?.write ?? []),
+        rangeScanMs: summarize(a?.scan ?? []),
+        memoryBytes: {
+          rss: mu.rss,
+          heapUsed: mu.heapUsed,
+          external: mu.external,
+          approxStore: memStore.approxMemoryBytes(),
+        },
       },
-    },
-    nonEmptyCount,
-  };
+      nonEmptyCount: a?.nonEmpty ?? 0,
+    });
+  }
+  results.sort((x, y) => x.store.localeCompare(y.store));
+  if (results.some((r) => r.nonEmptyCount !== count)) {
+    throw new Error(`nonEmpty mismatch for ${distribution}: gen=${count}`);
+  }
+  return results;
 }
 
 function main(): void {
@@ -231,27 +254,10 @@ function main(): void {
   const storeConfig: CellStoreConfig = { rows: args.rows, cols: args.cols, chunkRows: args.chunkRows };
   const candidates = STORE_CANDIDATES.filter((s) => args.stores.includes(s.label));
 
-  const results: Array<{ distribution: Distribution; stores: StoreResult[] }> = [];
-  for (const distribution of args.dists) {
-    const { cells, count } = generateCells({
-      rows: args.rows,
-      cols: args.cols,
-      nonEmpty: args.nonEmpty,
-      seed: args.seed,
-      distribution,
-    });
-    // 実行順ローテーション（分布ごとに開始位置をずらす）。
-    const offset = args.dists.indexOf(distribution) % Math.max(1, candidates.length);
-    const rotated = [...candidates.slice(offset), ...candidates.slice(0, offset)];
-    const storeResults = rotated.map((c) => benchStore(c, storeConfig, cells, args));
-    // 出力はラベル順に整える。
-    storeResults.sort((a, b) => a.store.localeCompare(b.store));
-    results.push({ distribution, stores: storeResults });
-    if (count !== storeResults[0]?.nonEmptyCount) {
-      // 生成件数と非空件数の不一致は異常（等価性の前提崩れ）。
-      throw new Error(`nonEmpty mismatch for ${distribution}: gen=${count}`);
-    }
-  }
+  const results = args.dists.map((distribution) => ({
+    distribution,
+    stores: benchDistribution(distribution, candidates, storeConfig, args),
+  }));
 
   const heap = v8.getHeapStatistics();
   const output = {
@@ -267,6 +273,7 @@ function main(): void {
       },
       warmup: args.warmup,
       trials: args.trials,
+      rotation: 'per-trial（試行ごとに方式順を巡回）',
       gcExposed: typeof globalThis.gc === 'function',
       heapSizeLimit: heap.heap_size_limit,
       acRelevant: args.nonEmpty >= 500_000,
@@ -274,7 +281,6 @@ function main(): void {
     },
     results,
   };
-
   process.stdout.write(JSON.stringify(output, null, args.pretty ? 2 : 0) + '\n');
 }
 

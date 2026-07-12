@@ -113,4 +113,16 @@ describe('循環検出（#CYCLE!）', () => {
     expect(cellValueToString(sheet.valueAt(0, 1))).toBe('#CYCLE!');
     expect(cellValueToString(sheet.valueAt(0, 2))).toBe('#CYCLE!');
   });
+
+  it('SCC全メンバー検出（Codex P1）: A=B+C, B=A, C=COUNT(B) → 全て #CYCLE!', () => {
+    const sheet = new FormulaSheet(COLS);
+    sheet.setFormula(0, 0, ast('=B1+C1')); // A1
+    sheet.setFormula(0, 1, ast('=A1')); // B1
+    sheet.setFormula(0, 2, ast('=COUNT(B1)')); // C1（B へ依存＝SCC {A,B,C}）
+    sheet.recalcAll();
+    // gray-path 方式では C1 が漏れて 0 になっていた。SCC 全メンバーが #CYCLE!。
+    expect(cellValueToString(sheet.valueAt(0, 0))).toBe('#CYCLE!');
+    expect(cellValueToString(sheet.valueAt(0, 1))).toBe('#CYCLE!');
+    expect(cellValueToString(sheet.valueAt(0, 2))).toBe('#CYCLE!');
+  });
 });

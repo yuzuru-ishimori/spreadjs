@@ -2,6 +2,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { parse } from './parser';
+import { DEFAULT_LIMITS } from './limits';
 import {
   blank,
   cellValueToString,
@@ -99,5 +100,49 @@ describe('5関数（範囲・空白・文字列・エラー）', () => {
 describe('エラー発生フェーズの優先', () => {
   it('=1/0+FOO() → #NAME?（parse/bind が eval より先）', () => {
     expect(ev('=1/0+FOO()')).toBe('#NAME?');
+  });
+});
+
+describe('Codexレビュー反映（2026-07-12）', () => {
+  it('P1: MIN/MAX は大範囲（20万件）で RangeError を出さず正しい最小/最大', () => {
+    const bigReader: CellReader = {
+      read: () => blank,
+      readRange: (r0, r1, c0, _c1, visit) => {
+        for (let r = r0; r < r1; r += 1) visit(r, c0, num(r));
+      },
+    };
+    const p = parse('=MIN(A1:A200000)');
+    if (!p.ok) throw new Error(p.error);
+    expect(cellValueToString(evaluate(p.ast, bigReader))).toBe('0');
+    const q = parse('=MAX(A1:A200000)');
+    if (!q.ok) throw new Error(q.error);
+    expect(cellValueToString(evaluate(q.ast, bigReader))).toBe('199999');
+  });
+
+  it('P2: 数値変換は10進数のみ（0x10/1e3/前後空白は #VALUE!）', () => {
+    expect(ev('=SUM("0x10",1)')).toBe('#VALUE!');
+    expect(ev('=SUM("1e3",1)')).toBe('#VALUE!');
+    expect(ev('=SUM(" 12 ",1)')).toBe('#VALUE!');
+    expect(ev('=SUM("12",1)')).toBe('13'); // 正当な10進はOK
+    expect(ev('=SUM("12.5",1)')).toBe('13.5');
+  });
+
+  it('P2: 文字列リテラルのエラー表記は文字列（SUM("#REF!",1) は #VALUE!）', () => {
+    expect(ev('=SUM("#REF!",1)')).toBe('#VALUE!'); // #REF! ではない
+  });
+
+  it('P2: セルの非有限値は #VALUE! に正規化', () => {
+    const inf: Record<string, CellValue> = { '0,0': num(Infinity) };
+    expect(ev('=A1', inf)).toBe('#VALUE!');
+    expect(ev('=A1+1', inf)).toBe('#VALUE!');
+    expect(ev('=COUNT(A1:A1)', inf)).toBe('0'); // 非有限は数えない
+  });
+
+  it('P2: 左辺エラーは右辺を評価せず短絡（低L6でも #DIV/0!）', () => {
+    const p = parse('=1/0+SUM(A1:A100)');
+    if (!p.ok) throw new Error(p.error);
+    const reader: CellReader = { read: () => blank, readRange: () => {} };
+    // maxEvalSteps を極小にしても、左辺 #DIV/0! が先に確定して返る。
+    expect(cellValueToString(evaluate(p.ast, reader, { ...DEFAULT_LIMITS, maxEvalSteps: 5 }))).toBe('#DIV/0!');
   });
 });

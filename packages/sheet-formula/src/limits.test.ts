@@ -43,6 +43,11 @@ describe('L3 ネスト深さ（スタック枯渇防止）', () => {
     const r = parse(deep);
     expect(r.ok).toBe(false); // 例外/スタックオーバーフローで落ちない
   });
+  it('深い単項連鎖でもスタック枯渇せずエラー値（Codex P1）', () => {
+    const r = parse('=' + '-'.repeat(100_000) + '5');
+    expect(r.ok).toBe(false); // parseUnary の反復化で RangeError を出さない
+    if (!r.ok) expect(r.error).toBe('#ERROR!');
+  });
 });
 
 describe('L4 関数引数数', () => {

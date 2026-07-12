@@ -2,7 +2,7 @@
 
 | 作成日 | 更新日 | ステータス | 補足 |
 |--------|--------|-----------|------|
-| 2026-07-12 | 2026-07-12 | 確認待ち | **Phase 1〜5 実装完了**（CellStore 4実装／数式parser・固定IDバインド／依存グラフ・評価器・差分再計算／replay計測／ブラウザページ・計測レポート・ADR-011拡充・ADR-022ドラフト）。test 528件green・**AC1〜6/8 実測合格**（AC2 fanout-100 p95 1.09ms・メモリ全方式300MB内・AC5 replay O(N²)＝snapshot要）・AC9ページ build green。外部レビュー2回反映済み。**残（確認待ち）: ①Codexレビュー〔本セッションCLI不可・依頼書作成済〕 ②AC9ユーザー実機Chrome/Edge run** |
+| 2026-07-12 | 2026-07-12 | 確認待ち | **Phase 1〜5 実装完了＋Codexレビュー反映（P1×6・P2×6 全対応）**。sheet-formula 74＋結合3テスト green・**AC1〜6/8 実測合格**（AC2 fanout-100 p95 1.09ms・メモリ全方式300MB内・AC5 replay O(N²)＝snapshot要・**固定ID数式評価をInsertRows/DeleteRows実文書で実証**）・AC9ページ build green。外部レビュー2回＋Codex反映済み。**残（確認待ち）: AC9ユーザー実機Chrome/Edge run のみ** |
 
 > アプローチ: 標準（計測中心のPoC）＋TDD（parser・固定IDバインド・依存グラフ・CellStore候補のDOM非依存純ロジック）
 
@@ -119,8 +119,8 @@
 - [x] `doc/adr/0022-zero-runtime-dependency-core.md`（新規・ドラフト）: sheet-formula/sheet-core依存ゼロ実績を根拠に背景・選択肢・決定案・再検討条件。`doc/DOC-MAP.md` へADR行を追加 → **完了**（Draft・DD-005/006で実証・DOC-MAP追記）
 - [x] 🔬 **機械検証**: `test`/`typecheck`/`lint`/`build` green・`bash scripts/doc-check.sh` エラー0 → **完了**（test 528件green・typecheck・typecheck:core・lint・build〔playground＋pocd-browser-bench〕・doc-check 全green）
 - [x] 😈 **DA批判レビュー**（計測値の再現性・合否がJSON/レポートから追えるか・ADR決定案が計測に裏付くか）→ **完了**（DA表 #15: 生JSON保存＋レポートで合否追跡可能・ADR決定案は実測裏付け）
-- [ ] Codexレビュー自動実行（依頼書 `DD-006/codex-review-request.md`〔対象は本DDの `packages/sheet-formula`＋`apps/pocd-bench`＋`apps/pocd-browser-bench`＋ADR差分のみ〕→ `bash scripts/codex-review.sh` → `DD-006/codex-review-result.md`）→ **依頼書作成済・未実施**（本セッションで Codex CLI 利用不可。ユーザー／Codex CLIのある環境で実行）
-- [ ] Codexレビュー指摘への対応、または見送り理由をログに記録 → Codex実行後に対応（確認待ち事項）
+- [x] Codexレビュー自動実行（依頼書 `DD-006/codex-review-request.md`→ `bash scripts/codex-review.sh` → `DD-006/codex-review-result.md`）→ **完了**（Codex CLI 0.144.0-alpha.4・effort high・`b2eef32...HEAD`＝Phase 1〜5全差分。**P1×6・P2×6の指摘**）
+- [x] Codexレビュー指摘への対応、または見送り理由をログに記録 → **完了**（**P1×6・P2×6 を全て実装反映**＋回帰テスト追加。下記ログ「Codex反映」）
 
 ## ログ
 
@@ -139,6 +139,16 @@
 - **Phase 3（依存グラフ・差分再計算・評価器）実装**（TDD＋計測）: `sheet-formula` に `evaluator`（5関数・特殊値§2.1/§2.2・エラー伝播・L6処理量上限）・`dep-graph`（2戦略〔expand/interval〕・dirty→topological・**反復DFS coloring cycle検出**〔深いチェーンでスタック枯渇しない〕）・`recalc`（FormulaSheet=値ストア＋CellReader）を追加。`pocd-bench` に `integration-sheetcore.test`（sheet-core 実文書で AC3/4＝行挿入でA1→A2表示・固定ID評価値維持・削除で#REF!。読み取り＋`applyOperation`のみ）・`bench-recalc`（影響式数別 p95/worst・AC2判定・2戦略比較）を追加（pocd-benchへ sheet-formula/sheet-types 依存追加・lock更新）。**test 524件green（Phase 2後499＋新25・回帰0）・typecheck/typecheck:core/lint green**。AC2 smoke: fanout-100 p95 0.76ms/worst 0.76ms=**PASS**（16/33ms基準・本計測10,000式はPhase 5）。DA #11〜#12記録。Phase 4以降未着手
 - **Phase 4（Operation replay計測）実装**: `pocd-bench` に `op-gen`（決定論100,000 Operation列・SetCells/InsertRows/DeleteRows混在・全てvalid＝ApplyError出さず・DD-003 fuzzer踏襲）・`bench-replay`（sheet-core `applyOperation` で checkpoint別replay時間・最終hash・メモリ・**素朴JSON snapshot参考**〔serialize/parse/サイズ/復元後hash一致〕・formula一括再計算参考）を追加。**test 528件green（Phase 3後524＋新4・回帰0）・typecheck/lint green**。smoke実測: replay 1,000=86ms/5,000=948ms/10,000=4,379ms＝**O(N²)**（apply が immutable clone のため）→ snapshot が必要な直接根拠（AC5・§16.3）。snapshot round-trip hash一致。DA #13〜#14記録。Phase 5（ブラウザ確認/レポート/ADR/Codex）のみ未着手
 - **Phase 5（ブラウザ確認・計測レポート・ADR・完了処理）実装**: 本計測（500kセル・recalc 10,000式・replay）を実行し生JSONを `DD-006/measurements/` へ保存。`measurement-report.md`（AC1〜9実測・**用途別選択表**・Worker判断表・snapshot暫定）・ADR-011拡充（用途別選択表・Accepted化DD-007）・ADR-022ドラフト（ゼロランタイム依存・DOC-MAP追記）・`apps/pocd-browser-bench`（AC9・**vite build green**）・Codex依頼書を作成。**test 528件green・typecheck・typecheck:core・lint・build（playground＋browser-bench）・doc-check 全green**。ステータス 進行中→**確認待ち**。**残: ①Codexレビュー実行〔本セッションで Codex CLI 利用不可＝`codex: NOT available`・依頼書作成済〕 ②AC9ユーザー実機Chrome/Edge run**。DA #15記録
+
+**Codex反映（2026-07-12・effort high・`b2eef32...HEAD`）**: Codex CLI は `bash scripts/codex-review.sh --check` で利用可（私の初回 `command -v codex` 誤判定。実体は `%LocalAppData%/OpenAI/Codex/bin/.../codex.exe`）。結果 `DD-006/codex-review-result.md`。**P1×6・P2×6 を全て実装反映**（見送りゼロ）:
+- **P1① 固定ID参照が評価未統合**（結合テストが束縛セル直読のみ）→ `bind.ts` に `bindExpr`/`resolveExpr`（AST↔固定ID・削除で式全体#REF!伝播）を追加。結合テストで **`=A1*2` を bind→実InsertRows後も評価値20維持／参照行削除で#REF!** を数式評価で実証。
+- **P1② 循環SCC全メンバー検出漏れ**（gray-path方式）→ `dep-graph.ts` を**反復Tarjan SCC**へ置換。`A=B+C,B=A,C=COUNT(B)` の全3セルが#CYCLE!（回帰テスト追加）。
+- **P1③ 単項連鎖で再帰スタック枯渇**（AC8違反）→ `parser.ts` `parseUnary` を**反復収集**化＋L3深さ制限。深さ10万でエラー値（回帰テスト追加）。
+- **P1④ MIN/MAX の spread で RangeError**→ `evaluator.ts` を**反復集計**化。20万件で正しい最小/最大（回帰テスト追加）。
+- **P1⑤ AC5 100k実測なし**（10kのみ・外挿）→ `bench-replay --full`（100,000）を実測し `replay-node-full.json` を保存・レポート更新。
+- **P1⑥ bench試行ローテーション非準拠**→ `bench-cellstore.ts` を**試行外側・方式内側の毎試行ローテーション**へ改修し AC1 を再計測（結論不変・chunked-rowslot 総合最良）。
+- **P2**: 空セル走査のL6計上（範囲を矩形セル数でtick）／数値変換を10進数のみ（`0x10`/`1e3`/空白は#VALUE!）／左辺エラー短絡／同順位を固定ID昇順／文字列リテラルのエラー表記は文字列（`SUM("#REF!",1)`=#VALUE!）／セルの非有限値を#VALUE!正規化。すべて回帰テスト追加。
+- 反映後: **sheet-formula 74テスト・結合3テスト green**。ステータスは確認待ち継続（残: AC9ユーザー実機run）。
 
 ---
 

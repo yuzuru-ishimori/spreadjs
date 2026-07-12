@@ -7,7 +7,7 @@
 | DD | 件名 | ステータス | 補足 |
 |----|------|-----------|------|
 | DD-007 | Phase0GoNoGo判定 | 検討中 | 要確認1〜4回答済み。外部レビュー第2回反映（証拠レベルA〜E・技術Go/Phase1前提の分離・ADR非自動Accepted・SDK Alpha完了条件案）。判定材料テンプレート先出し済み。着手条件=DD-002〜006全完了（現状: DD-002完了・DD-004完了・DD-005進行中〔Phase 1完了〕・DD-006 Phase 0事前精査済〔検討中〕） |
-| DD-006 | PoC-Dデータ表現・簡易数式 | 確認待ち | **Phase 1〜5 実装完了**（CellStore 4実装／数式parser・固定IDバインド／依存グラフ・評価器・差分再計算／replay計測／ブラウザページ・計測レポート・ADR-011拡充・ADR-022ドラフト）。test 528件green・**AC1〜6/8 実測合格**（AC2 fanout-100 p95 1.09ms・メモリ全方式300MB内・AC5 replay O(N²)＝snapshot要）・AC9ページ build green。外部レビュー2回反映済み。**残（確認待ち）: ①Codexレビュー〔本セッションCLI不可・依頼書作成済〕 ②AC9ユーザー実機Chrome/Edge run** |
+| DD-006 | PoC-Dデータ表現・簡易数式 | 確認待ち | **Phase 1〜5 実装完了＋Codexレビュー反映（P1×6・P2×6 全対応）**。sheet-formula 74＋結合3テスト green・**AC1〜6/8 実測合格**（AC2 fanout-100 p95 1.09ms・メモリ全方式300MB内・AC5 replay O(N²)＝snapshot要・**固定ID数式評価をInsertRows/DeleteRows実文書で実証**）・AC9ページ build green。外部レビュー2回＋Codex反映済み。**残（確認待ち）: AC9ユーザー実機Chrome/Edge run のみ** |
 
 ## 保留・見送り
 

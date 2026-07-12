@@ -105,12 +105,19 @@ export function parse(formula: string, limits: FormulaLimits = DEFAULT_LIMITS): 
   }
 
   function parseUnary(): Expr {
-    const op = matchOp(['+', '-']);
-    if (op !== undefined) {
-      const operand = parseUnary();
-      return node({ kind: 'unary', op: op as UnaryOp, operand });
+    // 単項演算子列は反復収集する（`----…5` の深い再帰でスタック枯渇しない・AC8/Codex P1）。
+    const ops: UnaryOp[] = [];
+    for (;;) {
+      const op = matchOp(['+', '-']);
+      if (op === undefined) break;
+      ops.push(op as UnaryOp);
+      if (ops.length > limits.maxNestDepth) throw new ParseError('#ERROR!'); // L3: 単項連鎖も深さ制限
     }
-    return parsePrimary();
+    let expr = parsePrimary();
+    for (let i = ops.length - 1; i >= 0; i -= 1) {
+      expr = node({ kind: 'unary', op: ops[i] ?? '-', operand: expr });
+    }
+    return expr;
   }
 
   function parseFunctionCall(name: string): Expr {

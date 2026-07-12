@@ -1,7 +1,8 @@
 # DD-006 計測レポート（PoC-D データ表現・簡易数式）
 
 > 成果物（ロードマップ「DD化の原則」3）。AC1〜9 の実測値・合否・既知の制約・Phase 1 引き継ぎ・結論表を集約する。
-> 生計測 JSON: `DD-006/measurements/`（`cellstore-node-500k.json`・`recalc-node-full.json`・`replay-node-10k.json`）。
+> 生計測 JSON: `DD-006/measurements/`（`cellstore-node-500k.json`・`recalc-node-full.json`・`replay-node-full.json`〔100k実測〕・`replay-node-10k.json`）。
+> ※ Codexレビュー（2026-07-12・effort high）を反映済み: 固定ID数式評価の統合・循環SCC全検出・単項/MIN/MAXの例外防止・AC1の毎試行ローテーション・AC5の100k実測（詳細は DD 本文ログ「Codex反映」）。
 > 計測手続きは `bench-protocol.md`、数式仕様は `function-spec.md`、検証シナリオは `scenarios.md`。
 
 ## 計測環境
@@ -18,29 +19,29 @@
 
 ## AC1: CellStore方式比較（4分布×4実装・3カテゴリ）
 
-500,000非空・warmup 2/trials 5。中央値（ms）。approxMB=方式別概算メモリ（主指標）、heapMB=`process.heapUsed`（補助・粗い）。
+500,000非空・warmup 2/trials 5・**試行ごとに方式順を巡回**（bench-protocol §2・Codex P1⑥反映）。中央値（ms）。approxMB=方式別概算メモリ（主指標）、heapMB=`process.heapUsed`（補助・粗い）。生JSON `cellstore-node-500k.json`。
 
 ### uniform-sparse（一様疎）
 | 方式 | load | read | write | scan | approxMB |
 |------|-----:|-----:|------:|-----:|---------:|
-| chunked-rowslot | 116 | 46 | 78 | **8.8** | **16.7** |
-| chunked-column | 202 | 78 | 94 | 38 | 90 |
-| columnar | 210 | **31** | 46 | 21 | 88 |
-| map（基準線） | 252 | 37 | 104 | **175** | 32 |
+| chunked-rowslot | 96 | 33 | 54 | **3.6** | **16.7** |
+| chunked-column | 139 | 39 | 64 | 34 | 90 |
+| columnar | 110 | **20** | 32 | 13 | 88 |
+| map（基準線） | 194 | 31 | 71 | **100** | 32 |
 
 ### dense-block（連続密）
 | 方式 | load | read | write | scan | approxMB |
 |------|-----:|-----:|------:|-----:|---------:|
-| chunked-column | **42** | 27 | 62 | 22 | **12.5** |
-| chunked-rowslot | 41 | 36 | 78 | **7.6** | 16.3 |
-| columnar | 95 | **22** | **32** | 18 | 88 |
-| map | 146 | 42 | 81 | 137 | 32 |
+| chunked-column | **20** | 17 | 48 | 15 | **12.5** |
+| chunked-rowslot | 29 | 32 | 57 | **3.9** | 16.3 |
+| columnar | 69 | 19 | **26** | 12 | 88 |
+| map | 87 | 29 | 66 | 101 | 32 |
 
 ### top-left-cluster（業務集中）／column-typed（列型偏り）
-- top-left-cluster: chunked-rowslot が最良（mem 16.7MB・scan 8.3ms）。map は scan 128ms。
-- column-typed: chunked-rowslot が最小メモリ（16MB）。columnar は read 速いが**write 192ms**（数値列→文字列列の変換コスト）。
+- top-left-cluster: chunked-rowslot が最良（mem 16.7MB・scan 3.2ms）。map は scan 88ms。
+- column-typed: chunked-rowslot が最小メモリ（16MB・scan 3.1ms）。columnar は read 速いが**load 228ms**（数値列→文字列列の変換・列型混在コスト）。
 
-**判定（AC1 合格）**: 4分布×4実装で生成・読書き・範囲走査・メモリの実測表が**分布別に**出力され、カテゴリ別優劣と決定案（用途別選択表・下記）を ADR-011 へ記載できる。**メモリは全方式で §21 目標300MB未満**（heap 最大約138MB）＝**§18.6 No-Go「ブラウザーメモリ上限超過」は Node 実測では非該当**（ブラウザ最終確認は AC9）。
+**判定（AC1 合格）**: 4分布×4実装で生成・読書き・範囲走査・メモリの実測表が**分布別に**出力され、カテゴリ別優劣と決定案（用途別選択表・下記）を ADR-011 へ記載できる。**メモリは全方式で §21 目標300MB未満**（heap 最大約160MB）＝**§18.6 No-Go「ブラウザーメモリ上限超過」は Node 実測では非該当**（ブラウザ最終確認は AC9）。
 
 ---
 
@@ -74,19 +75,21 @@ warmup 3/trials 15。**合否対象＝影響100式以下**（通常入力）: p9
 
 ## AC5: Operation replay 計測
 
-100,000 Operation列（op-gen・全て valid）を sheet-core `applyOperation` で replay。checkpoint別累積時間（ms）:
+100,000 Operation列（op-gen・全て valid）を sheet-core `applyOperation` で replay。**5 checkpoint を実測**（生JSON `replay-node-full.json`・Codex P1⑤反映で外挿を廃し全点実測）:
 
-| ops | 累積(ms) |
+| ops | 累積時間 |
 |----:|---------:|
-| 1,000 | 109 |
-| 5,000 | 1,012 |
-| 10,000 | 3,514 |
+| 1,000 | 0.1秒 |
+| 5,000 | 1.2秒 |
+| 10,000 | 3.8秒 |
+| 50,000 | **163秒** |
+| 100,000 | **847秒（約14分）** |
 
-**replay は O(N²)**（5倍ops→約9倍・10倍ops→約32倍時間）。原因は sheet-core `applyOperation` の **immutable 契約（毎回全文書 clone）**。50,000/100,000点は O(N²) ゆえ本機で分単位（50k≈90秒・100k≈6分の桁）となり、**snapshot 無しの長大 replay は非現実的**であることを実証。
+**replay は O(N²) を超える増加**（10倍ops→約223倍時間）。原因は sheet-core `applyOperation` の **immutable 契約（毎回全文書 clone）**＋文書が挿入で肥大（100k時点で14,379行）＝1操作あたりの clone コストも増大。**snapshot 無しの長大 replay は非現実的**（100k で14分）であることを**実測で確定**。
 
-snapshot 参考（素朴JSON化・合否対象外・桁感）: 文書1,905行で JSON 666KB・serialize 3.4ms・parse 4.6ms・**復元後 hash 一致**（round-trip 健全）。formula 一括再計算参考: 1,000式 26ms。
+snapshot 参考（素朴JSON化・合否対象外・桁感）: 文書14,379行で JSON 5.7MB・serialize 32ms・parse 46ms・**復元後 hash 一致**（round-trip 健全）。formula 一括再計算参考: **10,000式 2.1秒**。
 
-**判定（AC5 合格）**: 1,000〜10,000点の所要時間・最終 hash（決定論）・メモリ・snapshot 参考を計測し、snapshot 閾値の**暫定推奨**（下記）を報告できる。
+**判定（AC5 合格）**: 1,000〜100,000点の全所要時間・最終 hash（決定論）・メモリ・snapshot 参考を実測し、snapshot 閾値の**暫定推奨**（下記）を報告できる。
 
 ---
 
@@ -134,8 +137,8 @@ snapshot 参考（素朴JSON化・合否対象外・桁感）: 文書1,905行で
 
 ### snapshot 閾値（§16.3・確定しない）
 
-- replay は O(N²)（immutable clone 由来）。**文書が大きくなる前に snapshot を取る**判断に帰着。
-- §16.3 の暫定「1,000〜5,000 Operation」は妥当な出発点。素朴JSON化の桁感（666KB/serialize3.4ms/parse4.6ms）は正式形式より軽い方に振れうる。
+- replay は O(N²)超（immutable clone＋文書肥大）。**100,000 Operation で14分**＝実運用の再接続（§21: 1,000 Operation差分2秒以内）に耐えるには **snapshot が必須**。「文書が大きくなる前に snapshot を取る」判断に帰着。
+- §16.3 の暫定「1,000〜5,000 Operation」は妥当な出発点（1,000点で0.1秒・再接続目標2秒に十分収まる）。素朴JSON化の桁感（14k行で5.7MB/serialize32ms/parse46ms）は正式形式より軽い方に振れうる。
 - **本DDでは確定しない**。正式 snapshot 形式（差分・圧縮・スキーマ版・formulaEngineVersion）の設計と閾値確定は **Phase 1**。
 
 ---

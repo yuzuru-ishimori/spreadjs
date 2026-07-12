@@ -3,7 +3,7 @@
 // 参照先が削除されていれば #REF!。DOM/Node 非依存（AxisView 経由で index↔ID を解決）。
 
 import type { ColumnId, RowId, SheetId } from '@nanairo-sheet/sheet-types';
-import type { A1Ref } from './ast';
+import type { A1Ref, BinaryOp, Expr, FunctionName, UnaryOp } from './ast';
 import { refToA1 } from './ast';
 
 /** RowId/ColumnId ⇄ 表示 index の読み取りビュー（sheet-core Axis の抽象）。 */
@@ -90,4 +90,96 @@ export function resolveBoundToRef(bound: BoundCellReference, axis: AxisView): A1
 export function boundToA1String(bound: BoundCellReference, axis: AxisView): string {
   const ref = resolveBoundToRef(bound, axis);
   return ref === '#REF!' ? '#REF!' : refToA1(ref);
+}
+
+// ---- 数式ASTの固定IDバインド（AC3/4 の評価統合・Codex P1）----
+// 解析時 AST（A1Ref index）を固定ID化した BoundExpr へ束縛し、構造変更後は現在の Axis で
+// index-AST へ解決し直して評価する。参照先が削除されていれば式全体を '#REF!'（エラー伝播）。
+
+export type BoundExpr =
+  | { readonly kind: 'number'; readonly value: number }
+  | { readonly kind: 'string'; readonly value: string }
+  | { readonly kind: 'cell'; readonly ref: BoundCellReference }
+  | { readonly kind: 'range'; readonly range: BoundRange }
+  | { readonly kind: 'unary'; readonly op: UnaryOp; readonly operand: BoundExpr }
+  | { readonly kind: 'binary'; readonly op: BinaryOp; readonly left: BoundExpr; readonly right: BoundExpr }
+  | { readonly kind: 'func'; readonly name: FunctionName; readonly args: readonly BoundExpr[] };
+
+/** 解析時 AST を固定ID BoundExpr へ束縛する。参照が範囲外なら '#REF!'。 */
+export function bindExpr(ast: Expr, axis: AxisView, sheetId: SheetId): BoundExpr | '#REF!' {
+  switch (ast.kind) {
+    case 'number':
+      return { kind: 'number', value: ast.value };
+    case 'string':
+      return { kind: 'string', value: ast.value };
+    case 'cell': {
+      const ref = bindCellRef(ast.ref, axis, sheetId);
+      return ref === '#REF!' ? '#REF!' : { kind: 'cell', ref };
+    }
+    case 'range': {
+      const range = bindRange(ast.start, ast.end, axis, sheetId);
+      return range === '#REF!' ? '#REF!' : { kind: 'range', range };
+    }
+    case 'unary': {
+      const operand = bindExpr(ast.operand, axis, sheetId);
+      return operand === '#REF!' ? '#REF!' : { kind: 'unary', op: ast.op, operand };
+    }
+    case 'binary': {
+      const left = bindExpr(ast.left, axis, sheetId);
+      if (left === '#REF!') return '#REF!';
+      const right = bindExpr(ast.right, axis, sheetId);
+      return right === '#REF!' ? '#REF!' : { kind: 'binary', op: ast.op, left, right };
+    }
+    case 'func': {
+      const args: BoundExpr[] = [];
+      for (const a of ast.args) {
+        const b = bindExpr(a, axis, sheetId);
+        if (b === '#REF!') return '#REF!';
+        args.push(b);
+      }
+      return { kind: 'func', name: ast.name, args };
+    }
+  }
+}
+
+/**
+ * BoundExpr を現在の Axis 上の index-AST へ解決する。参照先が削除されていれば式全体を '#REF!'
+ * （どこか1つでも削除参照があれば式は #REF! に伝播する＝Excel と同旨）。
+ */
+export function resolveExpr(be: BoundExpr, axis: AxisView): Expr | '#REF!' {
+  switch (be.kind) {
+    case 'number':
+      return { kind: 'number', value: be.value };
+    case 'string':
+      return { kind: 'string', value: be.value };
+    case 'cell': {
+      const ref = resolveBoundToRef(be.ref, axis);
+      return ref === '#REF!' ? '#REF!' : { kind: 'cell', ref };
+    }
+    case 'range': {
+      const start = resolveBoundToRef(be.range.start, axis);
+      if (start === '#REF!') return '#REF!';
+      const end = resolveBoundToRef(be.range.end, axis);
+      return end === '#REF!' ? '#REF!' : { kind: 'range', start, end };
+    }
+    case 'unary': {
+      const operand = resolveExpr(be.operand, axis);
+      return operand === '#REF!' ? '#REF!' : { kind: 'unary', op: be.op, operand };
+    }
+    case 'binary': {
+      const left = resolveExpr(be.left, axis);
+      if (left === '#REF!') return '#REF!';
+      const right = resolveExpr(be.right, axis);
+      return right === '#REF!' ? '#REF!' : { kind: 'binary', op: be.op, left, right };
+    }
+    case 'func': {
+      const args: Expr[] = [];
+      for (const a of be.args) {
+        const r = resolveExpr(a, axis);
+        if (r === '#REF!') return '#REF!';
+        args.push(r);
+      }
+      return { kind: 'func', name: be.name, args };
+    }
+  }
 }

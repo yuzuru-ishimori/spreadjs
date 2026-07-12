@@ -4,7 +4,6 @@
 
 import type { A1Ref, BinaryOp, Expr, FunctionName } from './ast';
 import type { ErrorValue } from './errors';
-import { isErrorValue } from './errors';
 import type { FormulaLimits } from './limits';
 import { DEFAULT_LIMITS } from './limits';
 
@@ -45,7 +44,23 @@ function finiteOrValueError(n: number): CellValue {
   return Number.isFinite(n) ? num(normZero(n)) : err('#VALUE!');
 }
 
-/** 算術オペランドを数値へ強制（blank→0・文字列→数値変換・error→伝播）。 */
+/**
+ * ロケール非依存の10進数パース（function-spec §2.2）。ASCII の `[+-]?(d+(.d*)?|.d+)` のみ受理。
+ * `Number` が受ける 16進(`0x10`)・指数(`1e3`)・前後空白・`Infinity` 等は**受理しない**（null を返す）。
+ */
+function parseDecimal(s: string): number | null {
+  if (!/^[+-]?(\d+(\.\d*)?|\.\d+)$/.test(s)) return null;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+}
+
+/** セルから読んだ number の健全化（非有限→#VALUE!・-0 正規化）。§2.1。 */
+function normalizeCell(v: CellValue): CellValue {
+  if (v.kind === 'number') return Number.isFinite(v.value) ? num(normZero(v.value)) : err('#VALUE!');
+  return v;
+}
+
+/** 算術オペランドを数値へ強制（blank→0・文字列→10進変換・error→伝播）。 */
 function toNumber(v: CellValue): { readonly n: number } | { readonly error: ErrorValue } {
   switch (v.kind) {
     case 'number':
@@ -55,9 +70,8 @@ function toNumber(v: CellValue): { readonly n: number } | { readonly error: Erro
     case 'error':
       return { error: v.error };
     case 'string': {
-      if (v.value === '') return { error: '#VALUE!' };
-      const n = Number(v.value);
-      return Number.isFinite(n) ? { n } : { error: '#VALUE!' };
+      const n = parseDecimal(v.value);
+      return n === null ? { error: '#VALUE!' } : { n };
     }
   }
 }
@@ -80,14 +94,14 @@ export function evaluate(
   limits: FormulaLimits = DEFAULT_LIMITS,
 ): CellValue {
   let steps = 0;
-  const tick = (): void => {
-    steps += 1;
+  const tick = (n = 1): void => {
+    steps += n;
     if (steps > limits.maxEvalSteps) throw new EvalError('#ERROR!');
   };
 
   const readCell = (ref: A1Ref): CellValue => {
     tick();
-    return reader.read(ref.row, ref.col);
+    return normalizeCell(reader.read(ref.row, ref.col));
   };
 
   /** 関数の引数列から数値を収集（範囲は非空のみ走査・文字列/空白/日付は無視）。 */
@@ -102,12 +116,14 @@ export function evaluate(
         const r1 = Math.max(arg.start.row, arg.end.row) + 1;
         const c0 = Math.min(arg.start.col, arg.end.col);
         const c1 = Math.max(arg.start.col, arg.end.col) + 1;
+        // L6: 範囲走査は矩形セル数分の処理量として計上（空セル走査も含め有界化・Codex P2）。
+        tick((r1 - r0) * (c1 - c0));
         let rangeError: ErrorValue | undefined;
         reader.readRange(r0, r1, c0, c1, (_row, _col, value) => {
-          tick();
           if (rangeError !== undefined) return;
-          if (value.kind === 'number') numbers.push(value.value);
-          else if (value.kind === 'error' && spec.propagateError) rangeError = value.error;
+          const nv = normalizeCell(value);
+          if (nv.kind === 'number') numbers.push(nv.value);
+          else if (nv.kind === 'error' && spec.propagateError) rangeError = nv.error;
           // 範囲内の文字列・空白は無視（COUNT のエラーも無視）。
         });
         if (rangeError !== undefined) return { error: rangeError };
@@ -119,8 +135,8 @@ export function evaluate(
           if (spec.propagateError) return { error: v.error };
         } else if (v.kind === 'string') {
           if (spec.coerceScalarString) {
-            const n = v.value === '' ? NaN : Number(v.value);
-            if (Number.isFinite(n)) numbers.push(n);
+            const n = parseDecimal(v.value);
+            if (n !== null) numbers.push(n);
             else return { error: '#VALUE!' };
           }
           // COUNT はスカラー文字列を無視。
@@ -141,12 +157,48 @@ export function evaluate(
         return finiteOrValueError(nums.reduce((a, b) => a + b, 0));
       case 'AVERAGE':
         return nums.length === 0 ? err('#DIV/0!') : finiteOrValueError(nums.reduce((a, b) => a + b, 0) / nums.length);
-      case 'MIN':
-        return nums.length === 0 ? num(0) : finiteOrValueError(Math.min(...nums));
-      case 'MAX':
-        return nums.length === 0 ? num(0) : finiteOrValueError(Math.max(...nums));
+      case 'MIN': {
+        if (nums.length === 0) return num(0);
+        let m = nums[0] ?? 0;
+        for (const x of nums) if (x < m) m = x; // spread しない（大範囲で RangeError を出さない・Codex P1）
+        return finiteOrValueError(m);
+      }
+      case 'MAX': {
+        if (nums.length === 0) return num(0);
+        let m = nums[0] ?? 0;
+        for (const x of nums) if (x > m) m = x;
+        return finiteOrValueError(m);
+      }
       case 'COUNT':
         return num(nums.length);
+    }
+  }
+
+  function ev(e: Expr): CellValue {
+    tick();
+    switch (e.kind) {
+      case 'number':
+        return num(normZero(e.value));
+      case 'string':
+        // 文字列リテラルは常に文字列（エラー表記もそのまま文字列。セル由来エラーは CellValue.kind==='error'）。
+        return str(e.value);
+      case 'cell':
+        return readCell(e.ref);
+      case 'range':
+        return err('#VALUE!'); // 範囲はスカラー文脈では使えない。
+      case 'unary': {
+        const operand = toNumber(ev(e.operand));
+        if ('error' in operand) return err(operand.error);
+        return finiteOrValueError(e.op === '-' ? -operand.n : operand.n);
+      }
+      case 'binary': {
+        // 左辺を先に評価し、エラーなら短絡（右辺の資源超過等より左辺エラーを優先・Codex P2）。
+        const left = ev(e.left);
+        if (left.kind === 'error') return left;
+        return evalBinary(e.op, left, ev(e.right));
+      }
+      case 'func':
+        return callFunction(e.name, e.args);
     }
   }
 
@@ -166,30 +218,6 @@ export function evaluate(
         return b.n === 0 ? err('#DIV/0!') : finiteOrValueError(a.n / b.n);
       case '^':
         return finiteOrValueError(Math.pow(a.n, b.n));
-    }
-  }
-
-  function ev(e: Expr): CellValue {
-    tick();
-    switch (e.kind) {
-      case 'number':
-        return num(normZero(e.value));
-      case 'string':
-        // 文字列リテラルがエラー値表記なら、エラー値として扱う（例 セルに #REF! が入っていた等の伝播）。
-        return isErrorValue(e.value) ? err(e.value) : str(e.value);
-      case 'cell':
-        return readCell(e.ref);
-      case 'range':
-        return err('#VALUE!'); // 範囲はスカラー文脈では使えない。
-      case 'unary': {
-        const operand = toNumber(ev(e.operand));
-        if ('error' in operand) return err(operand.error);
-        return finiteOrValueError(e.op === '-' ? -operand.n : operand.n);
-      }
-      case 'binary':
-        return evalBinary(e.op, ev(e.left), ev(e.right));
-      case 'func':
-        return callFunction(e.name, e.args);
     }
   }
 

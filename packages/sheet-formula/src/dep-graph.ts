@@ -177,66 +177,98 @@ export class DependencyGraph {
     return this.topoSort(new Set(this.formulas.keys()));
   }
 
-  private topoSort(affected: Set<CellKey>): { order: CellKey[]; cycle: Set<CellKey> } {
-    const WHITE = 0;
-    const GRAY = 1;
-    const BLACK = 2;
-    const color = new Map<CellKey, number>();
-    const order: CellKey[] = [];
-    const cycle = new Set<CellKey>();
-
-    // affected 内の precedent formula を返す（cell 参照は集合照合・範囲は affected を走査）。
-    // g===f も含める（自己参照 A1=A1+1・範囲自己包含 A1=SUM(A1:A3) は自己ループ＝循環）。
-    const precedentsIn = (f: CellKey): CellKey[] => {
-      const entry = this.formulas.get(f);
-      if (entry === undefined) return [];
-      const result: CellKey[] = [];
-      for (const c of entry.cells) if (affected.has(c)) result.push(c);
-      if (entry.ranges.length > 0) {
-        for (const g of affected) {
-          const row = this.rowOf(g);
-          const col = this.colOf(g);
-          if (
-            entry.ranges.some(
-              (r) => row >= r.rowStart && row <= r.rowEnd && col >= r.colStart && col <= r.colEnd,
-            )
-          ) {
-            result.push(g);
-          }
+  // affected 内の precedent formula を固定ID昇順で返す（function-spec §5・Codex P2）。
+  // cell 参照は集合照合・範囲は affected を走査。f 自身も含める（自己参照・範囲自己包含＝自己ループ）。
+  private precedentsIn(affected: Set<CellKey>, f: CellKey): CellKey[] {
+    const entry = this.formulas.get(f);
+    if (entry === undefined) return [];
+    const result = new Set<CellKey>();
+    for (const c of entry.cells) if (affected.has(c)) result.add(c);
+    if (entry.ranges.length > 0) {
+      for (const g of affected) {
+        const row = this.rowOf(g);
+        const col = this.colOf(g);
+        if (
+          entry.ranges.some(
+            (r) => row >= r.rowStart && row <= r.rowEnd && col >= r.colStart && col <= r.colEnd,
+          )
+        ) {
+          result.add(g);
         }
       }
-      return result;
-    };
+    }
+    return [...result].sort((a, b) => a - b);
+  }
 
-    // 反復 DFS（深い依存チェーンでもスタック枯渇しない＝AC8 の系）。
-    for (const start of affected) {
-      if ((color.get(start) ?? WHITE) !== WHITE) continue;
-      const frames: Array<{ node: CellKey; preds: CellKey[]; i: number }> = [];
-      const path: CellKey[] = [];
-      color.set(start, GRAY);
-      frames.push({ node: start, preds: precedentsIn(start), i: 0 });
-      path.push(start);
-      while (frames.length > 0) {
-        const top = frames[frames.length - 1];
-        if (top === undefined) break;
-        if (top.i < top.preds.length) {
-          const g = top.preds[top.i];
-          top.i += 1;
-          if (g === undefined) continue;
-          const gc = color.get(g) ?? WHITE;
-          if (gc === WHITE) {
-            color.set(g, GRAY);
-            frames.push({ node: g, preds: precedentsIn(g), i: 0 });
-            path.push(g);
-          } else if (gc === GRAY) {
-            const idx = path.lastIndexOf(g);
-            if (idx >= 0) for (let k = idx; k < path.length; k += 1) cycle.add(path[k] ?? g);
+  /**
+   * 反復 Tarjan で SCC を求め、precedent 先の順序と循環集合を返す。
+   * - **強連結成分の全メンバー**を検出し循環へ含める（gray-path 方式の検出漏れを解消・Codex P1）。
+   * - SCC は完了順＝precedent 先で order へ並べる（sink SCC が先＝依存されない側が先）。
+   * - 循環＝SCCサイズ>1 または自己ループ。開始順・precedent 順は固定ID昇順で安定（function-spec §5）。
+   * - 反復実装で深い依存チェーンでもスタック枯渇しない（AC8 の系）。
+   */
+  private topoSort(affected: Set<CellKey>): { order: CellKey[]; cycle: Set<CellKey> } {
+    const order: CellKey[] = [];
+    const cycle = new Set<CellKey>();
+    const index = new Map<CellKey, number>();
+    const low = new Map<CellKey, number>();
+    const onStack = new Set<CellKey>();
+    const selfLoop = new Set<CellKey>();
+    const tarjanStack: CellKey[] = [];
+    let counter = 0;
+
+    const starts = [...affected].sort((a, b) => a - b); // 固定ID昇順で開始（決定性）
+    for (const start of starts) {
+      if (index.has(start)) continue;
+      interface Frame { node: CellKey; preds: CellKey[]; i: number }
+      const work: Frame[] = [];
+      const push = (v: CellKey): void => {
+        index.set(v, counter);
+        low.set(v, counter);
+        counter += 1;
+        tarjanStack.push(v);
+        onStack.add(v);
+        const preds = this.precedentsIn(affected, v);
+        if (preds.includes(v)) selfLoop.add(v);
+        work.push({ node: v, preds, i: 0 });
+      };
+      push(start);
+      while (work.length > 0) {
+        const frame = work[work.length - 1];
+        if (frame === undefined) break;
+        if (frame.i < frame.preds.length) {
+          const w = frame.preds[frame.i];
+          frame.i += 1;
+          if (w === undefined) continue;
+          if (!index.has(w)) {
+            push(w);
+          } else if (onStack.has(w)) {
+            low.set(frame.node, Math.min(low.get(frame.node) ?? 0, index.get(w) ?? 0));
           }
         } else {
-          color.set(top.node, BLACK);
-          order.push(top.node);
-          frames.pop();
-          path.pop();
+          const v = frame.node;
+          if ((low.get(v) ?? 0) === (index.get(v) ?? 0)) {
+            // SCC 根: v まで pop（完了順＝precedent 先）。
+            const scc: CellKey[] = [];
+            for (;;) {
+              const w = tarjanStack.pop();
+              if (w === undefined) break;
+              onStack.delete(w);
+              scc.push(w);
+              if (w === v) break;
+            }
+            const isCycle = scc.length > 1 || selfLoop.has(v);
+            // SCC 内も固定ID昇順で order へ（決定性）。
+            for (const w of scc.sort((a, b) => a - b)) {
+              order.push(w);
+              if (isCycle) cycle.add(w);
+            }
+          }
+          work.pop();
+          const parent = work[work.length - 1];
+          if (parent !== undefined) {
+            low.set(parent.node, Math.min(low.get(parent.node) ?? 0, low.get(v) ?? 0));
+          }
         }
       }
     }
