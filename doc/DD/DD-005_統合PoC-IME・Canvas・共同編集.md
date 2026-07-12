@@ -2,7 +2,7 @@
 
 | 作成日 | 更新日 | ステータス | 補足 |
 |--------|--------|-----------|------|
-| 2026-07-12 | 2026-07-12 | 検討中 | 起票済み・要確認1〜3確定（案A/Codex2回/初期約10万セル）。着手条件=DD-002・003・004完了。実装前にクリーンアップ先行（DD-004実機run→DD-003/004アーカイブ）→その後Phase 1着手 |
+| 2026-07-12 | 2026-07-12 | 進行中 | 起票済み・要確認1〜3確定（案A/Codex2回/初期約10万セル）。**Phase 1（案A: sheet-collaboration 抽出）実装・Codex xhigh レビュー済（挙動一致確認・[P2]1件対応）**。Phase 2 以降は未着手。着手条件=DD-002・003・004完了 |
 
 > アプローチ: E2E駆動（統合シナリオ＝操作→結果の検証が中心）＋TDD（sheet-collaboration 抽出は DD-003 既存テストを green 維持する挙動保存リファクタ）＋標準（実機IMEゲート・証跡）
 
@@ -84,13 +84,13 @@ DD-002（IME・常駐textarea）・DD-004（Canvas仮想スクロール・Viewpo
 - [ ] 😈 **Devil's Advocate調査**（§11.9 違反の再混入経路／移設リファクタの挙動改変／文書ブリッジの RowId 安定／「synthetic だけで実IME未検証のまま成立を主張する」穴）
 
 ### Phase 1: sheet-collaboration 抽出（案A・挙動保存リファクタ。要確認1の回答後に着手）
-- [ ] 📐 **実装前詳細化**（移設対象の同定: `apps/collaboration-server/src/client-session/{session,deps,test-support,inprocess-transport}.ts`＋session/catchup/reconnect/inprocess-transport 各テスト。`ws-transport.ts` は collaboration-server に残す。公開APIと import 経路を確定→ユーザーレビュー）
-- [ ] `packages/sheet-collaboration/`（新規）: package.json・tsconfig（sheet-core 同型・ランタイム依存ゼロ・`@nanairo-sheet/sheet-collaboration`）。ClientSession 本体・ClientTransport/TransportListener 抽象・inprocess-transport＋各テストを移設
-- [ ] `apps/collaboration-server/`: client-session への参照を `@nanairo-sheet/sheet-collaboration` import へ差し替え（`ws-transport.ts`・`server.smoke.test.ts` 等）。挙動変更なし
-- [ ] 🔬 **機械検証**: `npm run test`（DD-003 由来テスト全件 green・件数一致）／`typecheck`／`lint`／`bash scripts/doc-check.sh` → green。sheet-collaboration の dependencies が空（ランタイム依存ゼロ）であることを確認
-- [ ] 😈 **DA批判レビュー**（移設時の挙動改変・テスト間引き・循環依存の混入。基準: da-method.md §3.4）
-- [ ] Codexレビュー自動実行（抽出差分のみ・挙動一致観点。依頼書→`bash scripts/codex-review.sh --effort xhigh`→`DD-005/codex-review-phase1-result.md`）
-- [ ] Codexレビュー指摘への対応、または見送り理由をログに記録
+- [x] 📐 **実装前詳細化**（移設対象の同定: `apps/collaboration-server/src/client-session/{session,deps,test-support,inprocess-transport}.ts`＋session/catchup/reconnect/inprocess-transport 各テスト。`ws-transport.ts` は collaboration-server に残す。公開APIと import 経路を確定→ユーザーレビュー）→ 2026-07-12 完了。`message-codec.ts` は「トランスポート非依存・ランタイム依存ゼロ（純粋・sheet-core 型のみ）」ゆえ移設対象へ追加確定。`ws-frame.ts`（Buffer・Node）は残置。公開API/import 経路は下記ログ参照
+- [x] `packages/sheet-collaboration/`（新規）: package.json・tsconfig（sheet-core 同型・ランタイム依存ゼロ・`@nanairo-sheet/sheet-collaboration`）。ClientSession 本体・ClientTransport/TransportListener 抽象・inprocess-transport＋各テストを移設 → 2026-07-12 完了（9 ファイル verbatim 移設＋`src/index.ts` バレル＋`/test-support`・`/inprocess-transport` サブパス export）
+- [x] `apps/collaboration-server/`: client-session への参照を `@nanairo-sheet/sheet-collaboration` import へ差し替え（`ws-transport.ts`・`server.smoke.test.ts` 等）。挙動変更なし → 2026-07-12 完了（src 3・test 4・計7ファイルの import 差替。`ws-transport.ts`/`server.ts`＋`test/*` 4本）
+- [x] 🔬 **機械検証**: `npm run test`（DD-003 由来テスト全件 green・件数一致）／`typecheck`／`lint`／`bash scripts/doc-check.sh` → green。sheet-collaboration の dependencies が空（ランタイム依存ゼロ）であることを確認 → 2026-07-12 全 green（test 36 files/362 tests＝移設前と同数・typecheck〔types:[] env-free 含む〕・lint・build・doc-check・`dependencies:{}`）
+- [x] 😈 **DA批判レビュー**（移設時の挙動改変・テスト間引き・循環依存の混入。基準: da-method.md §3.4）→ 2026-07-12 実施（下記 DA 表 #1〜#3）
+- [x] Codexレビュー自動実行（抽出差分のみ・挙動一致観点。依頼書→`bash scripts/codex-review.sh --effort xhigh`→`DD-005/codex-review-phase1-result.md`）→ 2026-07-12 実行（xhigh・依頼書 `DD-005/codex-review-phase1-request.md`）
+- [x] Codexレビュー指摘への対応、または見送り理由をログに記録 → 2026-07-12 [P2]1件対応（下記ログ）。挙動一致は Codex が確認
 
 ### Phase 2: 統合ページ土台（トランスポート・文書ブリッジ・50,000行描画）
 - [ ] 📐 **実装前詳細化**（ブリッジのデータフロー: welcome/snapshot→SheetDocument→Axis 構築→可視範囲描画→operations 差分反映。再接続時の描画方針→ユーザーレビュー）
@@ -144,6 +144,16 @@ DD-002（IME・常駐textarea）・DD-004（Canvas仮想スクロール・Viewpo
 - 要確認1〜3 を記載。ユーザー回答後に「決定事項」へ反映する
 - **仕様確認ゲート（dd-auto Step 2・2026-07-12）**: 要確認1=**案A**（sheet-collaboration 抽出）・2=**Codex 2回**（Phase 1＋4）・3=**初期約10万セル**で確定。実装前ワークフローは**「クリーンアップ先行」**（DD-004 実機run→DD-003/004 アーカイブ→DD-INDEX 再生成→Phase 1）を選択。本起票をスコープ指定でコミット
 
+**Phase 1 実装（案A: sheet-collaboration 抽出・挙動保存リファクタ・2026-07-12）**:
+- **移設境界の確定**: `apps/collaboration-server/src/client-session/{session,deps,test-support,inprocess-transport}.ts`＋4テスト（session/catchup/reconnect/inprocess-transport）＋`src/message-codec.ts` を `packages/sheet-collaboration/src/` へ **verbatim（byte-identical）移設**（計9ファイル）。移設ファイルは非相対 import が sheet-core/sheet-types（＋ inprocess のみ sheet-server-core）で完結し、相対 import は同ディレクトリ内で閉じるため**内容無改変で移設可能**。`ws-transport.ts`（Node ws）・`ws-frame.ts`（Node Buffer）・`server.ts`・`server.smoke.test.ts`・`test/*` は collaboration-server 残置。`message-codec.ts` は「純粋・Node/DOM 非参照・sheet-core 型のみ＝トランスポート非依存・ランタイム依存ゼロ」の基準に合致ゆえ移設（Phase 2 の browser-transport が `decodeServerMessage` を app 間結合なしに再利用できる）。`ws-frame.ts` は Buffer/RawData の Node 固有ゆえ残置。
+- **新パッケージ公開API**（ユーザーレビュー用）: 本体 `@nanairo-sheet/sheet-collaboration`（`src/index.ts` バレル）= session（`ClientSession`・`ClientTransport`・`TransportListener`・`SessionConfig`・`ConflictQueueEntry`・`ConflictReason`・`PresenceUpdate`・`applyInverseSeed`）／deps（`Clock`・`IdGenerator`・`createCounterIdGenerator`）／message-codec（`isRecord`・`decodeClientMessage`・`decodeServerMessage`）。サブパス `/test-support`（`ManualClock`・`createManualClock`・`RecordingTransport`・`col`/`row`/`str`/`num`・`COLUMNS`・`setCells`/`insertRows`/`deleteRows`・`serverEnvelope`・`operationsMessage`）と `/inprocess-transport`（`InProcessHub`・`InProcessTransport`・`FaultProbabilities`・`FaultCounters`）。**本体バレルは server-core 非依存**（ブラウザー安全）＝Room 依存の InProcessHub はサブパスのみで隔離。
+- **依存**: `packages/sheet-collaboration/package.json` は `dependencies` 無し（空）・`devDependencies` は内部 `@nanairo-sheet/{sheet-core,sheet-server-core,sheet-types}` のみ＝**外部ランタイム依存ゼロ（ADR-022）**。tsconfig は sheet-core 同型（lib:ES2022・types:[]）。
+- **import 差替（collaboration-server・挙動変更なし）**: `ws-transport.ts`（decodeServerMessage・ClientTransport/TransportListener を package へ／rawDataToString は `../ws-frame` 残置）・`server.ts`（decodeClientMessage を package へ）・`server.smoke.test.ts`・`test/{convergence,protocol-contract,restart-restore,ws-convergence}.test.ts`（deps/session/test-support/inprocess を package・サブパスへ／ws-transport は local 残置）の計7ファイル。`package.json`（sheet-collaboration を devDep 追加・`typecheck:core` は下記で新設し直し）・`tsconfig.json`（コメント更新）を更新。旧 `apps/collaboration-server/tsconfig.core.json` は**削除**（env-free 検査の責務を新パッケージへ移管）。
+- **🔬 機械検証（全 green）**: `npm run test`=**36 files / 362 tests**（移設前と**同数**＝件数一致・間引き0。移設4テストは `packages/sheet-collaboration/src/` から実行）／`npm run typecheck`（新パッケージ含む全 workspace・new pkg は types:[] で env-free 検査）／`npm run lint`／`npm run build`（playground）／`bash scripts/doc-check.sh`＝いずれもエラー0。`sheet-collaboration` の `dependencies` は空（外部ランタイム依存ゼロ）を確認。
+- **😈 DA 批判レビュー**: DA 表 #1〜#3（env-free ゲート失効→復旧・message-codec 移設判断・移設健全性〔循環なし/件数不変/依存ゼロ〕）。
+- **🧑‍⚖️ Codex レビュー（必須・xhigh）**: 依頼書 `DD-005/codex-review-phase1-request.md`→`bash scripts/codex-review.sh --uncommitted --effort xhigh`→結果 `DD-005/codex-review-phase1-result.md`。**挙動一致を Codex が確認**（「移設された実装・テスト9ファイルは旧HEADと完全一致し、import差し替えにも挙動変更はありません」）。**findings 1件 [P2] を対応**: 新パッケージの唯一 tsconfig が `*.test.ts` を含むため vitest→@types/node が混入し、実装ファイルの env-free 純度検査が実効を失う指摘。→ `packages/sheet-collaboration/tsconfig.core.json`（`include:src/**/*.ts`＋`exclude:*.test.ts`・types:[]）＋`typecheck:core` を新設して DD-003 の旧ゲートを復旧。probe（`process` 参照を実装ファイルへ一時挿入）で **main typecheck=exit0（素通り＝指摘の再現）／typecheck:core=exit2（検出）** を実測し、ゲート実効性を確認（probe は削除済み）。見送り findings 無し。
+- **スコープ・コミット**: 触れたのは `packages/sheet-collaboration/`（新規）・`apps/collaboration-server/`（import差替＋config）・本DD本文＋`DD-005/`（Codex 依頼/結果）・ルート `package-lock.json`（新ワークスペース登録の `npm install`）のみ。**コミットはしない**（オーケストレータが実施）。実装中、並行セッション由来の untracked `doc/DD/DD-006/*.md` を作業ツリーに一時観測（**本 Phase 1 の成果物ではない**。最終確認時は status から解消済み）。並行運用のため `git add -A` は避け、Phase 1 成果物のみを add することを推奨。**Phase 1 で停止・Phase 2 以降は未着手**。
+
 ---
 
 ## DA批判レビュー記録
@@ -156,3 +166,6 @@ DD-002（IME・常駐textarea）・DD-004（Canvas仮想スクロール・Viewpo
 
 | # | Phase | 発見した問題/改善点 | 重要度 | 再現手順（高/中は必須） | DA観点 | 対応 |
 |---|-------|-------------------|--------|----------------------|--------|------|
+| 1 | 1 | 新パッケージの唯一の tsconfig（types:[]・*.test.ts 同梱）では、テストの `vitest` import が @types/node を program へ持ち込み、実装ファイル（session/message-codec 等）に Node/DOM API が混入しても typecheck が素通りする。DD-003 の旧 `tsconfig.core.json`（テスト除外）が担っていた env-free 回帰ゲートが移設で失効していた | 中 | `packages/sheet-collaboration/src/_probe.ts` に `export const _p: unknown = process;` を置き `npm run typecheck --workspace packages/sheet-collaboration` → exit 0（素通り） | 移設に伴う品質ゲートの後退（挙動改変ではないが env-free 回帰検査の喪失） | `packages/sheet-collaboration/tsconfig.core.json`（`include:src/**/*.ts`＋`exclude:*.test.ts`・types:[]）＋`typecheck:core` を新設。同 probe で core=exit 2（Node API 検出）を確認し復旧。Codex [P2] と同一指摘 |
+| 2 | 1 | `message-codec.ts` は server（server.ts）と client（ws-transport）双方が import する共有 JSON codec。基準（トランスポート非依存・ランタイム依存ゼロ＝純粋・sheet-core 型のみ）を満たすため sheet-collaboration へ移設したが、「client 中心パッケージ」に server も依存する構図になる | 低 | —（設計判断） | パッケージ責務境界（過剰移設の疑い） | 基準合致ゆえ移設は妥当。Phase 2 の browser-transport が `decodeServerMessage` を app 間結合なしに再利用できる利点あり。公開API/依存として報告・本ログに明記しユーザーレビューへ回す（挙動・依存ゼロは不変ゆえ要判断ではない） |
+| 3 | 1 | 移設で循環依存の混入・テスト件数減・外部ランタイム依存の混入が起きていないか（挙動保存リファクタの健全性） | 低 | —（確認項目） | 移設健全性（挙動改変・テスト間引き・依存逸脱の否定） | 循環なし（`index→session/deps/message-codec` の一方向・server-core は本体バレル非経由でサブパス `/inprocess-transport` のみ）。テスト 362→362（不変・Codex も移設9ファイルが旧HEADと byte-identical と確認）。`dependencies:{}`（外部ランタイム依存ゼロ） |

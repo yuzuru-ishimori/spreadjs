@@ -1,0 +1,23 @@
+{
+  "name": "@nanairo-sheet/sheet-collaboration",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "共同編集クライアント（ClientSession・楽観適用/rollback・replay・Conflict Queue・トランスポート抽象・JSON境界codec）。トランスポート非依存・外部ランタイム依存ゼロ（ADR-022）",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./test-support": "./src/test-support.ts",
+    "./inprocess-transport": "./src/inprocess-transport.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "typecheck:core": "tsc --noEmit -p tsconfig.core.json"
+  },
+  "devDependencies": {
+    "@nanairo-sheet/sheet-core": "*",
+    "@nanairo-sheet/sheet-server-core": "*",
+    "@nanairo-sheet/sheet-types": "*"
+  }
+}

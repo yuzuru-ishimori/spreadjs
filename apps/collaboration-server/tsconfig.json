@@ -3,8 +3,10 @@
   // Node API（http/fs/timers）と ws/hono を使うため、Phase 3 までの types:[] を "node" へ緩める
   // （tsconfig.base の DOM 無し方針は維持＝lib は ES2022 のみ）。
   //
-  // 【重要】client-session コア（session.ts/deps.ts/inprocess-transport.ts）の環境非依存（Node/DOM 非参照）は
-  // tsconfig.core.json（types:[]）で別途機械検証する（`npm run typecheck:core`）。ws import は ws-transport.ts のみ。
+  // 【重要】client-session コア（session.ts/deps.ts/inprocess-transport.ts）は DD-005 Phase 1 で
+  // @nanairo-sheet/sheet-collaboration へ移設済み。その環境非依存（Node/DOM 非参照）は同パッケージの
+  // tsconfig（types:[]）で回帰検証する（旧 tsconfig.core.json はコードと共に責務を移管し削除）。
+  // このアプリに残る ws import は ws-transport.ts のみ。
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "lib": ["ES2022"],

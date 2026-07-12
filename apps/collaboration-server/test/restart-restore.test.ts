@@ -12,10 +12,9 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import { verifySnapshotIntegrity } from '@nanairo-sheet/sheet-server-core';
 import { createDocumentId } from '@nanairo-sheet/sheet-types';
+import { ClientSession, createCounterIdGenerator } from '@nanairo-sheet/sheet-collaboration';
+import { COLUMNS, col, row, setCells, str } from '@nanairo-sheet/sheet-collaboration/test-support';
 
-import { createCounterIdGenerator } from '../src/client-session/deps';
-import { ClientSession } from '../src/client-session/session';
-import { COLUMNS, col, row, setCells, str } from '../src/client-session/test-support';
 import { WsClientTransport } from '../src/client-session/ws-transport';
 import { startServer } from '../src/server';
 import type { RunningServer } from '../src/server';

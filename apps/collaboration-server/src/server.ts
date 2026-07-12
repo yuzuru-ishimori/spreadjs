@@ -35,8 +35,8 @@ import {
   createTransactionId,
 } from '@nanairo-sheet/sheet-types';
 import type { RowId } from '@nanairo-sheet/sheet-types';
+import { decodeClientMessage } from '@nanairo-sheet/sheet-collaboration';
 
-import { decodeClientMessage } from './message-codec';
 import { rawDataToString } from './ws-frame';
 
 const DEFAULT_PORT = 8787; // playground(5173) と非衝突（指示 3）

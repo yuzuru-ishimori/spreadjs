@@ -1,8 +1,9 @@
 // 実 WebSocket トランスポート（phase3-design §4 の ClientTransport 実装）。ClientSession に注入され、
 // join/submit/presence/heartbeat/requestCatchup を JSON でサーバーへ送り、サーバーメッセージを ClientSession へ配る。
 //
-// 【依存境界】client-session ディレクトリで **ws（Node client）を import するのはこのファイルだけ**。
-// session.ts / deps.ts / inprocess-transport.ts の依存ゼロ（Node/DOM 非参照）は不変（tsconfig.core.json で回帰検証）。
+// 【依存境界】このファイルは Node ws（client）を使う実 WS トランスポートで、collaboration-server 側に残す。
+// ClientSession コア（session/deps/inprocess-transport）は @nanairo-sheet/sheet-collaboration へ移設済みで、
+// その依存ゼロ（Node/DOM 非参照）は同パッケージの tsconfig（types:[]）で回帰検証する（DD-005 Phase 1）。
 // heartbeat はトランスポートの責務にしない（session/デモ/smoke が sendHeartbeat を実タイマーで駆動）＝送受信・接続イベント・
 // 再接続のみを担う。時刻依存は再接続 setTimeout のみ（アダプター層ゆえ実タイマー可・後始末は close で解除）。
 
@@ -10,11 +11,10 @@ import { WebSocket } from 'ws';
 import type { RawData } from 'ws';
 
 import type { ClientMessage } from '@nanairo-sheet/sheet-core';
+import { decodeServerMessage } from '@nanairo-sheet/sheet-collaboration';
+import type { ClientTransport, TransportListener } from '@nanairo-sheet/sheet-collaboration';
 
-import { decodeServerMessage } from '../message-codec';
 import { rawDataToString } from '../ws-frame';
-
-import type { ClientTransport, TransportListener } from './session';
 
 export interface WsClientTransportOptions {
   /** 予期しない切断後の自動再接続を有効にする（既定 true）。close() で無効化。 */

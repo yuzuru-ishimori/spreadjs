@@ -36,14 +36,13 @@ import {
 } from '@nanairo-sheet/sheet-server-core';
 import { createDocumentId, createOperationId, createRowId, createTransactionId } from '@nanairo-sheet/sheet-types';
 import type { ColumnId, RowId } from '@nanairo-sheet/sheet-types';
+import { ClientSession, createCounterIdGenerator } from '@nanairo-sheet/sheet-collaboration';
+import type { ClientTransport, TransportListener } from '@nanairo-sheet/sheet-collaboration';
+import { InProcessHub } from '@nanairo-sheet/sheet-collaboration/inprocess-transport';
+import type { FaultCounters, FaultProbabilities } from '@nanairo-sheet/sheet-collaboration/inprocess-transport';
+import { COLUMNS, createManualClock, num, setCells, str } from '@nanairo-sheet/sheet-collaboration/test-support';
+import type { ManualClock } from '@nanairo-sheet/sheet-collaboration/test-support';
 
-import { createCounterIdGenerator } from '../src/client-session/deps';
-import { InProcessHub } from '../src/client-session/inprocess-transport';
-import type { FaultCounters, FaultProbabilities } from '../src/client-session/inprocess-transport';
-import { ClientSession } from '../src/client-session/session';
-import type { ClientTransport, TransportListener } from '../src/client-session/session';
-import { COLUMNS, createManualClock, num, setCells, str } from '../src/client-session/test-support';
-import type { ManualClock } from '../src/client-session/test-support';
 import { normalizeDocument } from './doc-compare';
 
 // ---- 決定論 PRNG（試験用・実装コードでは使わない）----

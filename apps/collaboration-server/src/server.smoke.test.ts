@@ -6,10 +6,9 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { createDocumentId } from '@nanairo-sheet/sheet-types';
+import { ClientSession, createCounterIdGenerator } from '@nanairo-sheet/sheet-collaboration';
+import { COLUMNS, col, row, setCells, str } from '@nanairo-sheet/sheet-collaboration/test-support';
 
-import { createCounterIdGenerator } from './client-session/deps';
-import { ClientSession } from './client-session/session';
-import { COLUMNS, col, row, setCells, str } from './client-session/test-support';
 import { WsClientTransport } from './client-session/ws-transport';
 import { startServer } from './server';
 import type { RunningServer } from './server';
