@@ -2,7 +2,7 @@
 
 | 作成日 | 更新日 | ステータス | 補足 |
 |--------|--------|-----------|------|
-| 2026-07-12 | 2026-07-12 | 進行中 | DD-005完了→着手。**Phase 1〜3実装済**（CellStore 4実装／数式parser・固定IDバインド／依存グラフ・評価器・差分再計算。test 524件green・回帰0・typecheck:core green・AC2 smoke PASS・AC3/4 sheet-core結合green）。外部レビュー2回反映済み。Phase 4（replay計測）・Phase 5（ブラウザ確認/レポート/ADR/Codex）未着手 |
+| 2026-07-12 | 2026-07-12 | 進行中 | DD-005完了→着手。**Phase 1〜4実装済**（CellStore 4実装／parser・固定IDバインド／依存グラフ・評価器・差分再計算／Operation replay計測。test 528件green・回帰0・typecheck:core green・AC2 smoke PASS・AC3/4結合green・AC5素材=replay O(N²)取得）。外部レビュー2回反映済み。Phase 5（ブラウザ確認/計測レポート/ADR/Codex/完了）のみ未着手 |
 
 > アプローチ: 標準（計測中心のPoC）＋TDD（parser・固定IDバインド・依存グラフ・CellStore候補のDOM非依存純ロジック）
 
@@ -104,12 +104,12 @@
 - [x] 🔬 **機械検証**: `test`/`typecheck`/`typecheck:core`/`lint` green＋bench-recalc実行でAC2判定値出力 → **完了**（test **524件green＝Phase 2後499＋新25・回帰0**／typecheck・typecheck:core・lint green／bench-recalc `ac2Judgment.pass=true`）
 - [x] 😈 **DA批判レビュー**（再計算順の非決定性・interval indexの境界off-by-one・エラー伝播の抜け）→ **完了**（DA表 #11〜#12: 深いチェーンのスタック安全〔反復DFS〕・2戦略の dependents 等価性）
 
-### Phase 4: Operation replay計測
-- [ ] `apps/pocd-bench/src/op-gen.ts`（新規）: シード付きPRNGで100,000 Operation列（SetCells/InsertRows/DeleteRows混在比率は決定論・DD-003 fuzzer踏襲）＋ユニットテスト（再現性）
-- [ ] `apps/pocd-bench/src/bench-replay.ts`（新規）: `@nanairo-sheet/sheet-core` の `apply` で1,000〜100,000点の所要時間・最終document hash・メモリを計測（AC5）。formula付きSetCells→一括再計算の参考計測を含む
-- [ ] 同 bench-replay に**snapshot参考計測**を追加: 各計測点のreplay後文書を素朴にJSON化し、serialize/parse時間・JSONサイズ・復元後メモリを記録（合否対象外・snapshot閾値判断の桁感素材。圧縮時間は任意）
-- [ ] 🔬 **機械検証**: `test`/`typecheck`/`lint` green＋bench-replay実行でJSON出力（hash一致=DD-003結果と整合）
-- [ ] 😈 **DA批判レビュー**（Operation分布の偏りでreplayが軽く出る・InsertRows多発時のAxis再構築コスト）
+### Phase 4: Operation replay計測 ★実装済（2026-07-12）
+- [x] `apps/pocd-bench/src/op-gen.ts`（新規）: シード付きPRNGで100,000 Operation列（SetCells/InsertRows/DeleteRows混在比率は決定論・DD-003 fuzzer踏襲）＋ユニットテスト（再現性）→ **完了**（全Operationがvalid〔ApplyError出さず live 行のみ参照〕・同一seedでreplay hash一致・3種混在をテスト）
+- [x] `apps/pocd-bench/src/bench-replay.ts`（新規）: `@nanairo-sheet/sheet-core` の `applyOperation` で1,000〜100,000点の所要時間・最終document hash・メモリを計測（AC5）。formula付きSetCells→一括再計算の参考計測を含む → **完了**（`npm run bench:replay`〔`--full`で100,000〕。smoke: 1,000=86ms/5,000=948ms/10,000=4,379ms＝**O(N²)を実測**〔apply が immutable clone のため〕→ snapshot が必要な根拠。formula参考: 1,000式一括45ms）
+- [x] 同 bench-replay に**snapshot参考計測**を追加: 各計測点のreplay後文書を素朴にJSON化し、serialize/parse時間・JSONサイズ・復元後メモリを記録（合否対象外・snapshot閾値判断の桁感素材）→ **完了**（素朴JSON 665KB・serialize 6ms/parse 8ms・復元後hash一致＝round-trip健全）
+- [x] 🔬 **機械検証**: `test`/`typecheck`/`lint` green＋bench-replay実行でJSON出力（hash一致=DD-003結果と整合）→ **完了**（test **528件green＝Phase 3後524＋新4・回帰0**／typecheck/lint green／bench-replay JSON出力・hash決定論）
+- [x] 😈 **DA批判レビュー**（Operation分布の偏りでreplayが軽く出る・InsertRows多発時のAxis再構築コスト）→ **完了**（DA表 #13〜#14: replay の O(N²) は clone 由来で分布に依存しにくい・snapshot閾値は「Phase 1正式形式向け暫定推奨」に留める）
 
 ### Phase 5: ブラウザ最小確認・計測レポート・ADR-011拡充・ADR-022ドラフト・引き継ぎ・Codexレビュー
 - [ ] `apps/pocd-browser-bench`（新規・最小静的ページ）: 採用候補（決定案）方式の500,000セルロード・代表操作（ランダム読書き・範囲走査）・メモリをChromeまたはEdgeで実測し、Node実測との乖離を確認（AC9。playground非依存・devサーバーはルート既存Vite・新規npm依存なし）
@@ -136,6 +136,7 @@
 - **Phase 1（CellStore 4実装比較）実装**（DD-005完了→着手。ゲート確認で「現行計画で即着手」・プロセス密度レビューは Phase 0残り現状維持で無ブロック）: 新規ワークスペース `apps/pocd-bench`（Node計測CLI・製品昇格しない）を追加し `package-lock.json` を更新（並行DDなしのタイミングで実施＝DD本文の制約どおり）。`cell-store.ts`（共通契約）・4ストア（map／chunked-column〔§6.4列チャンク〕／chunked-rowslot〔DD-004移植〕／columnar〔密向け・数値列 Float64Array〕）・`data-gen.ts`（4分布・正準数値）・`bench-cellstore.ts`（bench-protocol準拠CLI）・等価性/data-genテストを実装。**test 455件green（既存438＋新17・回帰0）・typecheck/lint 全workspace green・bench CLI JSON出力確認**。PRNG/行スロットは pocb を再実装（apps間 import なし＝憲章§25）。既存 playground/packages/collaboration-server は無変更。ステータス 検討中→進行中。Phase 2以降（parser/固定IDバインド/依存グラフ/replay/レポート/ADR/Codex）未着手
 - **Phase 2（数式parser・固定IDバインド）実装**（TDD・一気通貫指示で継続）: 新規製品パッケージ `packages/sheet-formula`（外部ランタイム依存ゼロ・DOM/Node非依存・env-freeゲート `tsconfig.core.json`＋`typecheck:core`）を追加。`errors`（6エラー値）・`limits`（L1〜L5＝function-spec §1）・`a1`（列↔index）・`ast`（canonical＋`serialize`）・`tokenizer`（ASCIIのみ・全角/未定義文字拒否）・`parser`（§14.2再帰下降・演算子優先順位・べき乗左結合・単項・比較演算子拒否・#NAME?・資源制限）・`bind`（A1↔`BoundCellReference`・`AxisView`・行挿入でRowId不変/削除で#REF!）を実装。**test 499件green（Phase 1後455＋新44・回帰0）・typecheck/typecheck:core/lint green・`dependencies:{}`**。L6（評価時処理量）はPhase 3評価器で実装。Phase 3以降未着手
 - **Phase 3（依存グラフ・差分再計算・評価器）実装**（TDD＋計測）: `sheet-formula` に `evaluator`（5関数・特殊値§2.1/§2.2・エラー伝播・L6処理量上限）・`dep-graph`（2戦略〔expand/interval〕・dirty→topological・**反復DFS coloring cycle検出**〔深いチェーンでスタック枯渇しない〕）・`recalc`（FormulaSheet=値ストア＋CellReader）を追加。`pocd-bench` に `integration-sheetcore.test`（sheet-core 実文書で AC3/4＝行挿入でA1→A2表示・固定ID評価値維持・削除で#REF!。読み取り＋`applyOperation`のみ）・`bench-recalc`（影響式数別 p95/worst・AC2判定・2戦略比較）を追加（pocd-benchへ sheet-formula/sheet-types 依存追加・lock更新）。**test 524件green（Phase 2後499＋新25・回帰0）・typecheck/typecheck:core/lint green**。AC2 smoke: fanout-100 p95 0.76ms/worst 0.76ms=**PASS**（16/33ms基準・本計測10,000式はPhase 5）。DA #11〜#12記録。Phase 4以降未着手
+- **Phase 4（Operation replay計測）実装**: `pocd-bench` に `op-gen`（決定論100,000 Operation列・SetCells/InsertRows/DeleteRows混在・全てvalid＝ApplyError出さず・DD-003 fuzzer踏襲）・`bench-replay`（sheet-core `applyOperation` で checkpoint別replay時間・最終hash・メモリ・**素朴JSON snapshot参考**〔serialize/parse/サイズ/復元後hash一致〕・formula一括再計算参考）を追加。**test 528件green（Phase 3後524＋新4・回帰0）・typecheck/lint green**。smoke実測: replay 1,000=86ms/5,000=948ms/10,000=4,379ms＝**O(N²)**（apply が immutable clone のため）→ snapshot が必要な直接根拠（AC5・§16.3）。snapshot round-trip hash一致。DA #13〜#14記録。Phase 5（ブラウザ確認/レポート/ADR/Codex）のみ未着手
 
 ---
 
@@ -161,3 +162,5 @@
 | 10 | 2 | エラー分類の一貫性（function-spec §4 との一致）。比較演算子・裸識別子・未知関数・引数0・範囲超過のエラー値が仕様どおりか | 中 | 各境界式を parse しエラー値を照合 | 正しさ | 比較演算子→#ERROR!（予約拒否）／未知関数・裸識別子→#NAME?／引数0・構文→#ERROR!／範囲L5超過→#REF!。parser.test/limits.test で網羅。指数表記 `1e3` は #ERROR!（MVP未対応・scenarios §1 既知の制約） |
 | 11 | 3 | **深い依存チェーンの再計算順で再帰DFSがスタック枯渇**（10,000式チェーンはレポート項目）。数式は外部入力・AC8の系 | 高 | chain-10,000 を recalcAll | 正しさ（安全性） | topoSort を**再帰→反復DFS**へ変更（明示 frame スタック＋gray path）。chain-2,000 の再計算・cycle検出がクラッシュせず動作（bench-recalc chain シナリオ green）。深いチェーンでもエラーにならず正しい順序で収束 |
 | 12 | 3 | 依存表現2方式（expand/interval）で **dependents 集合が食い違う**と方式比較が無意味＋再計算漏れ | 中 | 範囲重なり・連鎖のグラフで両戦略の affectedSet を比較 | 計測の妥当性／正しさ | `dep-graph.test` で両戦略の `affectedSet` 等価性を検証（`SUM(A1:A50)`＋`SUM(A25:A75)`重なり＋連鎖 D=A1+B1・複数変更点）。bench-recalc は同一結果前提で構築/更新時間のみ比較 |
+| 13 | 4 | Operation分布の偏りで replay が軽く/重く出て snapshot 閾値を誤る | 中 | 分布を変えて replay 時間を比較 | 計測の妥当性 | replay の支配項は apply の immutable **全文書clone**（O(N²)＝実測で確認）で、Operation 種別分布より文書サイズに依存する。op-gen は valid ops のみ（reject 分岐なし）で clone コストを純粋計測。snapshot 閾値は「文書が大きくなる前に取る」判断に帰着し、Phase 1 正式形式設計向けの**暫定推奨**に留める（確定しない・§16.3） |
+| 14 | 4 | snapshot 参考が素朴JSONゆえ本番形式と乖離（過小/過大評価） | 中 | 素朴JSON と正式形式の差 | 計測の妥当性 | 素朴JSON は Map→配列の桁感把握用と明記（合否対象外）。復元後 hash 一致で round-trip 健全性のみ担保。正式 snapshot 形式（差分・圧縮・スキーマ版）は Phase 1。レポートに「暫定・桁感」と明記 |
