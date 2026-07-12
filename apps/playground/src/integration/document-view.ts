@@ -17,7 +17,7 @@
 //   - InsertRows/DeleteRows → `row-structure` dirty。flush で rowAxis を displayRowOrder から再構築
 //     （構造Op時の Axis 全再構築は PoC 許容）。scroll anchor 補正は DOM を持つ呼び出し側（main）が行う。
 
-import { displayRowOrder, getCell } from '@nanairo-sheet/sheet-core';
+import { displayRowOrder, getCell, slotOf } from '@nanairo-sheet/sheet-core';
 import type { CellScalar, DocumentOperation, SheetDocument } from '@nanairo-sheet/sheet-core';
 import type { ColumnId, RowId } from '@nanairo-sheet/sheet-types';
 
@@ -229,12 +229,14 @@ export class DocumentView {
     const cEnd = Math.min(colEnd, colAxis.count());
     let visited = 0;
     for (let ri = rStart; ri < rEnd; ri += 1) {
-      const rowCells = doc.cells.get(rowAxis.getId(ri));
-      if (rowCells === undefined || rowCells.size === 0) {
+      const rowId = rowAxis.getId(ri);
+      // 空行は列走査前にスキップ（疎な業務表で O(行×列) 回帰を避ける・DD-010 Codex[P2]）。
+      const slot = slotOf(doc, rowId);
+      if (slot === undefined || !doc.cells.hasRow(slot)) {
         continue;
       }
       for (let ci = cStart; ci < cEnd; ci += 1) {
-        const record = rowCells.get(colAxis.getId(ci));
+        const record = getCell(doc, rowId, colAxis.getId(ci));
         if (record === undefined) {
           continue;
         }
@@ -269,13 +271,7 @@ export class DocumentView {
       bulkLoad: readOnly,
       queryRange: (rowStart, rowEnd, colStart, colEnd, visit) =>
         this.queryRange(rowStart, rowEnd, colStart, colEnd, visit),
-      nonEmptyCount: () => {
-        let total = 0;
-        for (const rowCells of this.getDocument().cells.values()) {
-          total += rowCells.size;
-        }
-        return total;
-      },
+      nonEmptyCount: () => this.getDocument().cells.nonEmptyCount(),
       approxMemoryBytes: () => 0, // アダプターは文書を複製しない（メモリは ClientSession 側が保持）
     };
   }

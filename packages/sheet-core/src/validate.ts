@@ -21,6 +21,7 @@ export type OperationViolation =
   | { code: 'unknown-row'; rowId: RowId }
   | { code: 'target-row-deleted'; rowId: RowId }
   | { code: 'unknown-anchor'; afterRowId: RowId }
+  | { code: 'unknown-column'; rowId: RowId; columnId: ColumnId }
   | { code: 'duplicate-row'; rowId: RowId }
   | {
       code: 'stale-cell-revision';
@@ -58,6 +59,12 @@ function validateSetCells(
     }
     if (meta.tombstone) {
       violations.push({ code: 'target-row-deleted', rowId: change.rowId });
+      continue;
+    }
+    // 列は固定 columnOrder（PoC）。columnOrder 外の列は構造 reject（apply の unknown-column と対応・DD-010 Codex[P1]）。
+    // これで「validateOperation===[] ⇒ applyOperation は throw しない」契約を保つ（setCell の fail-fast へ落とさない）。
+    if (!doc.columnOrder.includes(change.columnId)) {
+      violations.push({ code: 'unknown-column', rowId: change.rowId, columnId: change.columnId });
       continue;
     }
     // stale 判定: beforeRevision 定義済みかつ現在セル revision と不一致（§10.2）。

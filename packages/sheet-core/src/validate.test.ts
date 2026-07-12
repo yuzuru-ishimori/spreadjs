@@ -73,6 +73,13 @@ describe('validateOperation — 共有バリデーター（構造 3 種）', () 
     ).toEqual([{ code: 'target-row-deleted', rowId: row('row-1') }]);
   });
 
+  it('columnOrder 外の列への SetCells → unknown-column（validate===[] ⇒ apply 非 throw 契約の保持・DD-010 Codex[P1]）', () => {
+    const doc = baseDoc(['row-1']); // columnOrder=[col-a,col-b]
+    expect(
+      validateOperation(doc, setCells([{ rowId: row('row-1'), columnId: col('col-z'), value: str('x') }])),
+    ).toEqual([{ code: 'unknown-column', rowId: row('row-1'), columnId: col('col-z') }]);
+  });
+
   it('未知アンカーへの InsertRows → unknown-anchor（null 先頭挿入は違反なし）', () => {
     const doc = baseDoc(['row-1']);
     expect(validateOperation(doc, insertRows(row('row-never'), ['row-new']))).toEqual([

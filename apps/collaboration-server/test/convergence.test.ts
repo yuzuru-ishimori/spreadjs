@@ -19,7 +19,7 @@ import process from 'node:process';
 
 import { describe, expect, it } from 'vitest';
 
-import { displayRowOrder, documentHash, getCell } from '@nanairo-sheet/sheet-core';
+import { displayRowOrder, documentHash, forEachCellInRow, getCell } from '@nanairo-sheet/sheet-core';
 import type {
   ClientMessage,
   ClientOperationEnvelope,
@@ -380,12 +380,12 @@ function runInProcessConvergence(opts: ConvergenceOptions): ConvergenceRun {
   const log = snapshot.operationLog;
   const liveRows = displayRowOrder(serverDoc).length;
   let nonEmptyCells = 0;
-  for (const rowCells of serverDoc.cells.values()) {
-    for (const record of rowCells.values()) {
+  for (const rowId of serverDoc.rowMeta.keys()) {
+    forEachCellInRow(serverDoc, rowId, (_columnId, record) => {
       if (record.value.kind !== 'blank') {
         nonEmptyCells += 1;
       }
-    }
+    });
   }
   const conflicts = clients.flatMap((c) => [...c.session.conflictQueue]);
   const finalRevision = sequencer.currentRevision;

@@ -10,8 +10,11 @@ import v8 from 'node:v8';
 import {
   applyOperation,
   canonicalSerialize,
+  createCellStore,
   createDocument,
   documentHash,
+  forEachCellInRow,
+  setCell,
   type CellRecord,
   type DocumentOperation,
   type RowMeta,
@@ -62,10 +65,10 @@ function toPlainSnapshot(doc: SheetDocument): PlainSnapshot {
   const rowMeta: Array<[string, RowMeta]> = [];
   for (const [id, m] of doc.rowMeta) rowMeta.push([id, m]);
   const cells: Array<[string, Array<[string, CellRecord]>]> = [];
-  for (const [rid, cm] of doc.cells) {
+  for (const rowId of doc.rowMeta.keys()) {
     const row: Array<[string, CellRecord]> = [];
-    for (const [cid, rec] of cm) row.push([cid, rec]);
-    cells.push([rid, row]);
+    forEachCellInRow(doc, rowId, (columnId, rec) => row.push([String(columnId), rec]));
+    if (row.length > 0) cells.push([String(rowId), row]);
   }
   return {
     revision: doc.revision,
@@ -77,15 +80,17 @@ function toPlainSnapshot(doc: SheetDocument): PlainSnapshot {
 }
 function fromPlainSnapshot(s: PlainSnapshot): SheetDocument {
   const rowMeta = new Map<RowId, RowMeta>(s.rowMeta as Array<[RowId, RowMeta]>);
-  const cells = new Map<RowId, Map<ColumnId, CellRecord>>();
-  for (const [rid, cm] of s.cells) cells.set(rid as RowId, new Map(cm as Array<[ColumnId, CellRecord]>));
-  return {
+  const doc: SheetDocument = {
     revision: s.revision,
     rowOrder: s.rowOrder as RowId[],
     rowMeta,
     columnOrder: s.columnOrder as ColumnId[],
-    cells,
+    cells: createCellStore(),
   };
+  for (const [rid, cm] of s.cells) {
+    for (const [cid, rec] of cm) setCell(doc, rid as RowId, cid as ColumnId, rec);
+  }
+  return doc;
 }
 
 function ast(formula: string): Expr {

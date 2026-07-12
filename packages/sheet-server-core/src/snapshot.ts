@@ -3,7 +3,13 @@
 // （指示 5）。no-op の ACK はログから再構築できないため ackCache の明示エクスポートが必須（DA D17）。
 // Presence は非永続（§9）ゆえ含めない。SheetDocument の Map/二段 Map は JSON セーフな配列へ変換する。
 
-import { applyOperation, createDocument, documentHash } from '@nanairo-sheet/sheet-core';
+import {
+  applyOperation,
+  createCellStore,
+  createDocument,
+  documentHash,
+  forEachCellInRow,
+} from '@nanairo-sheet/sheet-core';
 import type {
   CellScalar,
   RowMeta,
@@ -33,9 +39,16 @@ interface SerializedDocument {
   cells: SerializedRowCells[];
 }
 
-/** JSON セーフなスナップショット表現（Map→配列・二段 cells→配列）。 */
+/**
+ * SnapshotData の版数。DD-010（安定 slot キー CellStore・CG-2）で形式世代を 2 に更新した。
+ * PoC 形式で永続データは実在しない（互換層・migration なし）。不一致 version は fail-fast する
+ * （ADR-0015 方針・要確認2 の決定）。正式 versioned snapshot・tail replay は DD-014 スコープ。
+ */
+export const SNAPSHOT_VERSION = 2 as const;
+
+/** JSON セーフなスナップショット表現（Map→配列・cells→行×列配列。SerializedDocument の wire 形は不変）。 */
 export interface SnapshotData {
-  version: 1;
+  version: typeof SNAPSHOT_VERSION;
   document: SerializedDocument;
   operationLog: ServerOperationEnvelope[]; // 平坦オブジェクト（RowId 等は実行時 string）でそのまま JSON セーフ
   currentRevision: number;
@@ -46,7 +59,7 @@ export interface SnapshotData {
 /** Sequencer 状態を JSON セーフな SnapshotData へ直列化する。 */
 export function serializeSnapshot(state: SequencerState): SnapshotData {
   return {
-    version: 1,
+    version: SNAPSHOT_VERSION,
     document: serializeDocument(state.document),
     operationLog: [...state.operationLog],
     currentRevision: state.currentRevision,
@@ -60,6 +73,12 @@ export function serializeSnapshot(state: SequencerState): SnapshotData {
 
 /** SnapshotData を Sequencer 復元入力（SequencerState）へ復元する（S-K2）。revision も復元し継続する（S-K4）。 */
 export function deserializeSnapshot(data: SnapshotData): SequencerState {
+  if (data.version !== SNAPSHOT_VERSION) {
+    // 互換層・migration は作らない（PoC 形式・永続データ非実在）。不一致は fail-fast（ADR-0015・要確認2）。
+    throw new Error(
+      `deserializeSnapshot: 非対応の snapshot version ${String(data.version)}（対応=${SNAPSHOT_VERSION}）`,
+    );
+  }
   const ackCache = new Map<ReturnType<typeof createOperationId>, number>();
   for (const entry of data.ackCache) {
     ackCache.set(createOperationId(entry.operationId), entry.revision);
@@ -144,17 +163,21 @@ function serializeDocument(doc: SheetDocument): SerializedDocument {
       lastChangedRevision: meta.lastChangedRevision,
     });
   }
+  // 全行（tombstone 含む）を rowMeta 順に走査し、非空セルを持つ行だけを直列化する（slot キー CellStore を
+  // rowId で読み直す）。列は colIndex 昇順。tombstone 行のセルも保全される（S-B3・round-trip 一致）。
   const cells: SerializedRowCells[] = [];
-  for (const [rowId, rowCells] of doc.cells) {
+  for (const rowId of doc.rowMeta.keys()) {
     const columns: SerializedRowCells['columns'] = [];
-    for (const [columnId, record] of rowCells) {
+    forEachCellInRow(doc, rowId, (columnId, record) => {
       columns.push({
         columnId,
         value: record.value,
         lastChangedRevision: record.lastChangedRevision,
       });
+    });
+    if (columns.length > 0) {
+      cells.push({ rowId, columns });
     }
-    cells.push({ rowId, columns });
   }
   return {
     revision: doc.revision,
@@ -166,8 +189,18 @@ function serializeDocument(doc: SheetDocument): SerializedDocument {
 }
 
 function deserializeDocument(data: SerializedDocument): SheetDocument {
+  // rowMeta を構築しつつ slot の健全性を検証する（DD-010 Codex[P2]・安定 ID 復元の fail-fast）:
+  // slot は非負整数・**一意**であること（重複 slot は複数 RowId が同一物理行を共有＝サイレント上書き経路）。
   const rowMeta = new Map<RowId, RowMeta>();
+  const seenSlots = new Set<number>();
   for (const meta of data.rowMeta) {
+    if (!Number.isInteger(meta.slot) || meta.slot < 0) {
+      throw new Error(`deserializeSnapshot: 不正な slot ${String(meta.slot)}（行 ${meta.id}）`);
+    }
+    if (seenSlots.has(meta.slot)) {
+      throw new Error(`deserializeSnapshot: slot ${meta.slot} が重複（安定 ID 破損・行 ${meta.id}）`);
+    }
+    seenSlots.add(meta.slot);
     const id = createRowId(meta.id);
     rowMeta.set(id, {
       id,
@@ -176,23 +209,35 @@ function deserializeDocument(data: SerializedDocument): SheetDocument {
       lastChangedRevision: meta.lastChangedRevision,
     });
   }
-  const cells = new Map<RowId, Map<ColumnId, { value: CellScalar; lastChangedRevision: number }>>();
+  // ColumnId→colIndex は columnOrder、RowId→slot は rowMeta で解決して安定 slot キー CellStore へ復元する。
+  // 解決不能なセル参照（rowMeta に無い行・columnOrder 外の列）は黙って捨てず fail-fast（データ欠落を検知）。
+  const columnOrder: ColumnId[] = data.columnOrder.map((c) => createColumnId(c));
+  const colIndexById = new Map<string, number>();
+  columnOrder.forEach((columnId, index) => colIndexById.set(String(columnId), index));
+  const cells = createCellStore();
   for (const rowCells of data.cells) {
-    const rowId = createRowId(rowCells.rowId);
-    const inner = new Map<ColumnId, { value: CellScalar; lastChangedRevision: number }>();
+    const slot = rowMeta.get(createRowId(rowCells.rowId))?.slot;
+    if (slot === undefined) {
+      throw new Error(`deserializeSnapshot: rowMeta に無い行 ${rowCells.rowId} のセル（安定 ID 破損）`);
+    }
     for (const cell of rowCells.columns) {
-      inner.set(createColumnId(cell.columnId), {
+      const colIndex = colIndexById.get(cell.columnId);
+      if (colIndex === undefined) {
+        throw new Error(
+          `deserializeSnapshot: columnOrder 外の列 ${cell.columnId}（行 ${rowCells.rowId}・安定 ID 破損）`,
+        );
+      }
+      cells.set(slot, colIndex, {
         value: cell.value,
         lastChangedRevision: cell.lastChangedRevision,
       });
     }
-    cells.set(rowId, inner);
   }
   return {
     revision: data.revision,
     rowOrder: data.rowOrder.map((r) => createRowId(r)),
     rowMeta,
-    columnOrder: data.columnOrder.map((c) => createColumnId(c)),
+    columnOrder,
     cells,
   };
 }

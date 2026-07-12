@@ -2,7 +2,7 @@
 // 収束判定（AC1/AC5）の基盤。Node/ブラウザー間で同一 hash になることが要件のため、
 // crypto に依存せず・コードポイントではなく UTF-8 バイト列で計算する。
 
-import { displayRowOrder } from './document';
+import { displayRowOrder, slotOf } from './document';
 import type { SheetDocument } from './document';
 
 /**
@@ -18,15 +18,18 @@ import type { SheetDocument } from './document';
 export function canonicalSerialize(doc: SheetDocument): string {
   const parts: string[] = [];
   for (const rowId of displayRowOrder(doc)) {
-    const rowCells = doc.cells.get(rowId);
-    if (rowCells === undefined) {
+    const slot = slotOf(doc, rowId);
+    if (slot === undefined || !doc.cells.hasRow(slot)) {
       continue;
     }
-    for (const columnId of doc.columnOrder) {
-      const record = rowCells.get(columnId);
+    // 列は columnOrder 配列順（colIndex）で列挙する。rowId/columnId 文字列を出力するため
+    // 正準形は内部表現（slot/colIndex）に非依存＝表現変更前後で hash 不変（AC5）。
+    for (let colIndex = 0; colIndex < doc.columnOrder.length; colIndex += 1) {
+      const record = doc.cells.get(slot, colIndex);
       if (record === undefined) {
         continue;
       }
+      const columnId = doc.columnOrder[colIndex]!;
       const value = record.value;
       if (value.kind === 'blank') {
         continue; // 非空セルのみ（blank は不在と同一視）

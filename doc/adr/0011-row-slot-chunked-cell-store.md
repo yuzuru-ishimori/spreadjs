@@ -1,6 +1,7 @@
 # ADR-0011: 行スロット＋チャンク化セルストア
 
-- **Status**: Draft（PoC-B/DD-004 で起票。**DD-006/PoC-D で4分布×4実装の本格比較を実測・反映済み**＝下記「DD-006 拡充」。Accepted 化は DD-007〔要確認4〕）
+- **Status**: **Accepted**（2026-07-13）。DD-010 で RowId キー（slot 間接）へ移行し製品 CellStore として `packages/sheet-core` へ統合・CG-2 を解除し、実装・自動試験・性能再計測を反映済み。**ADR 転換＝External Review 対象だが、本件は Codex レビュー（xhigh・1回・findings 4件全対応）をもって承認とする**（ユーザー判断 2026-07-13＝ChatGPT ではなく Codex レビューで十分・DD-010 ログ参照）。AC6 の性能 baseline 解釈（真の従来製品表現＝二段 Map+CellRecord 比では改善）も本承認に含む。
+  - 履歴: Draft（PoC-B/DD-004 起票）→ DD-006/PoC-D で4分布×4実装の本格比較を実測・反映（下記「DD-006 拡充」）→ DD-010 で RowId キー移行を実装・**Codex レビュー承認で Accepted 確定**（2026-07-13）。
 - **関連**: 計画書 §18.2（PoC-B）・§18.4（PoC-D）・§12（Canvas 描画）・§13（仮想スクロール）・§21（性能目標）／
   リスク R-03（データ密度でメモリ超過）／DD-004（PoC-B）／DD-006（PoC-D・本 ADR を拡充予定）
 
@@ -63,6 +64,35 @@
 | 再検討条件 | 非空率・列型の均一度・範囲走査頻度・密ブロック比率 |
 
 **Phase 1 方針**: (A) を既定とし、**index キー→RowId キー**へ移行（DD-004 の簡略化解消・共同編集の InsertRows/DeleteRows と整合）。密領域は用途別に (C′) を選べる拡張点を残す。Accepted 化は DD-007 の Go 判定で行う（要確認4）。
+
+## DD-010 移行: index キー → RowId キー（slot 間接）＝製品 CellStore へ（CG-2 解除）
+
+**決定**: (A) 行スロット＋チャンク構造を **RowId キー（slot 間接方式）** へ移行し、`packages/sheet-core` の
+文書表現（`SheetDocument.cells`）の正本 CellStore として統合する（`packages/sheet-core/src/cell-store.ts`）。
+
+- **slot 間接（A案）**: RowMeta.slot（§6.3・安定整数・単調採番・tombstone でも保持・回収なし）を**チャンクキー**に
+  使う。RowId→slot は rowMeta、ColumnId→colIndex は columnOrder で解決（document.ts の純ヘルパーへ集約）。
+  チャンク×行スロット×列昇順並列配列＋二分探索は DD-004/DD-006 の構造をそのまま流用する。
+- **効果**: InsertRows/DeleteRows でセルデータが物理移動しない（slot 不変）＝**index ずれ・サイレント上書きが
+  構造的に発生しない**（DD-004 の既知簡略化「index キー」を解消）。ADR-0011 の実測優位（O(可視) 走査・省メモリ・
+  昇順 append ロード）は維持。
+- **値モデル**: 製品は生文字列でなく CellRecord（`{value: CellScalar, lastChangedRevision}`）を格納する（§6.4 収束判定）。
+- **serialization**: `SnapshotData` を version 1→2 に更新（wire 形式 SerializedDocument は不変・RowId 直列化）。
+  互換層・migration は作らず version 不一致は fail-fast（PoC・永続データ非実在・ADR-0015 方針）。
+- **A/B/C 比較の結論**: A案採用（B=RowId 直接 Map は範囲走査 O(非空) で DD-006 劣位・C=二段 Map 正本維持は
+  500k 文書表現性能が予算未担保のまま DD-014 へ）。記録は `doc/DD/DD-010/scenarios.md`。
+
+**検証（自動試験・green）**: index ずれ 0（AC1）／二段 Map リファレンス差分試験 seed×6・1,200 op 完全一致（AC2）／
+serialize→deserialize round-trip・全 replay 整合（AC3/AC4・CG-2 証拠）／documentHash 正準性不変（AC5）。
+証拠所在: `doc/DD/DD-010/replay-evidence.md`。
+
+**性能（AC6・`doc/DD/DD-010/perf-report.md`）**: 移行前の製品表現（二段 Map×CellRecord）に対しメモリ heap -22〜31%・
+範囲走査 -33〜49%（**非回帰・改善**）。DD-006 の生文字列 PoC ストア基準（16.7MB/8ms）に対する名目超過（メモリ約2倍・
+走査約2倍）は **CellRecord 値モデル由来（既存の内在コスト）** であり slot キー化（CG-2）由来ではない。slot キー化の
+構造コストは ≒0（chunked-rowslot と同一構造）。heap 最大 135MB＝§21 目標 300MB 未満（R-03 非該当）。
+
+**用途別選択（DD-006 決定案）は維持**: 疎な業務表の既定＝(A) chunked-rowslot（slot 間接）。高密度数値領域は
+(C′) chunked-column を選べる拡張点を残す（本DDでは (A) のみ製品統合）。
 
 ## 再検討条件
 

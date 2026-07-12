@@ -1,0 +1,779 @@
+{
+  "meta": {
+    "seed": 20260712,
+    "runtime": "node",
+    "runtimeVersion": "v22.20.0",
+    "host": {
+      "os": "Windows_NT 10.0.26200",
+      "cpu": "AMD Ryzen 7 PRO 8840HS w/ Radeon 780M Graphics ",
+      "cpus": 16,
+      "ramGB": 60
+    },
+    "warmup": 2,
+    "trials": 5,
+    "rotation": "per-trial（試行ごとに方式順を巡回）",
+    "gcExposed": true,
+    "heapSizeLimit": 4345298944,
+    "acRelevant": true,
+    "config": {
+      "rows": 50000,
+      "cols": 200,
+      "nonEmpty": 500000,
+      "chunkRows": 256
+    }
+  },
+  "results": [
+    {
+      "distribution": "uniform-sparse",
+      "stores": [
+        {
+          "store": "chunked-rowslot",
+          "category": "chunked",
+          "metrics": {
+            "loadMs": {
+              "median": 74.7261,
+              "p95": 86.3014,
+              "worst": 86.3014,
+              "raw": [
+                86.3014,
+                74.7261,
+                84.0395,
+                72.5822,
+                71.6962
+              ]
+            },
+            "randomReadMs": {
+              "median": 25.2457,
+              "p95": 31.5646,
+              "worst": 31.5646,
+              "raw": [
+                23.5345,
+                31.5646,
+                24.8707,
+                26.4328,
+                25.2457
+              ]
+            },
+            "randomWriteMs": {
+              "median": 41.904,
+              "p95": 47.9926,
+              "worst": 47.9926,
+              "raw": [
+                47.9926,
+                41.904,
+                46.9913,
+                38.663,
+                38.8418
+              ]
+            },
+            "rangeScanMs": {
+              "median": 2.8993,
+              "p95": 3.3123,
+              "worst": 3.3123,
+              "raw": [
+                2.7505,
+                3.3123,
+                2.8993,
+                2.9741,
+                2.8177
+              ]
+            },
+            "memoryBytes": {
+              "rss": 278474752,
+              "heapUsed": 74937720,
+              "external": 2552497,
+              "approxStore": 16668534
+            }
+          },
+          "nonEmptyCount": 500000
+        },
+        {
+          "store": "chunked-rowslot-stable",
+          "category": "chunked",
+          "metrics": {
+            "loadMs": {
+              "median": 112.9733,
+              "p95": 125.471,
+              "worst": 125.471,
+              "raw": [
+                110.3181,
+                112.9733,
+                106.1868,
+                125.471,
+                114.5806
+              ]
+            },
+            "randomReadMs": {
+              "median": 33.7247,
+              "p95": 38.313,
+              "worst": 38.313,
+              "raw": [
+                32.9501,
+                37.2864,
+                38.313,
+                33.7247,
+                31.4216
+              ]
+            },
+            "randomWriteMs": {
+              "median": 56.4077,
+              "p95": 77.7877,
+              "worst": 77.7877,
+              "raw": [
+                77.7877,
+                56.8715,
+                50.1594,
+                56.4077,
+                49.8272
+              ]
+            },
+            "rangeScanMs": {
+              "median": 6.6352,
+              "p95": 8.1847,
+              "worst": 8.1847,
+              "raw": [
+                6.9932,
+                6.6352,
+                8.1847,
+                6.2796,
+                6.5898
+              ]
+            },
+            "memoryBytes": {
+              "rss": 278372352,
+              "heapUsed": 136036096,
+              "external": 2552537,
+              "approxStore": 32668534
+            }
+          },
+          "nonEmptyCount": 500000
+        },
+        {
+          "store": "map-record",
+          "category": "map",
+          "metrics": {
+            "loadMs": {
+              "median": 102.7562,
+              "p95": 138.9461,
+              "worst": 138.9461,
+              "raw": [
+                94.8812,
+                110.0017,
+                138.9461,
+                98.7758,
+                102.7562
+              ]
+            },
+            "randomReadMs": {
+              "median": 41.5507,
+              "p95": 47.2643,
+              "worst": 47.2643,
+              "raw": [
+                40.7788,
+                34.3036,
+                47.2643,
+                41.5507,
+                42.8552
+              ]
+            },
+            "randomWriteMs": {
+              "median": 40.9866,
+              "p95": 60.6949,
+              "worst": 60.6949,
+              "raw": [
+                49.1887,
+                40.9866,
+                60.6949,
+                40.6319,
+                35.4957
+              ]
+            },
+            "rangeScanMs": {
+              "median": 9.9829,
+              "p95": 10.1678,
+              "worst": 10.1678,
+              "raw": [
+                9.9649,
+                9.8371,
+                10.1678,
+                10.0597,
+                9.9829
+              ]
+            },
+            "memoryBytes": {
+              "rss": 280940544,
+              "heapUsed": 179510520,
+              "external": 2552537,
+              "approxStore": 43467062
+            }
+          },
+          "nonEmptyCount": 500000
+        }
+      ]
+    },
+    {
+      "distribution": "dense-block",
+      "stores": [
+        {
+          "store": "chunked-rowslot",
+          "category": "chunked",
+          "metrics": {
+            "loadMs": {
+              "median": 22.909,
+              "p95": 24.1189,
+              "worst": 24.1189,
+              "raw": [
+                20.1852,
+                21.5033,
+                24.1189,
+                23.4342,
+                22.909
+              ]
+            },
+            "randomReadMs": {
+              "median": 19.0916,
+              "p95": 22.7842,
+              "worst": 22.7842,
+              "raw": [
+                17.3548,
+                19.0916,
+                22.7842,
+                21.3294,
+                15.7602
+              ]
+            },
+            "randomWriteMs": {
+              "median": 43.8104,
+              "p95": 56.235,
+              "worst": 56.235,
+              "raw": [
+                37.1811,
+                35.8845,
+                56.235,
+                43.8104,
+                49.1866
+              ]
+            },
+            "rangeScanMs": {
+              "median": 3.708,
+              "p95": 5.6487,
+              "worst": 5.6487,
+              "raw": [
+                2.1764,
+                3.708,
+                4.6756,
+                5.6487,
+                3.5315
+              ]
+            },
+            "memoryBytes": {
+              "rss": 319184896,
+              "heapUsed": 63366424,
+              "external": 2552537,
+              "approxStore": 16298226
+            }
+          },
+          "nonEmptyCount": 500000
+        },
+        {
+          "store": "chunked-rowslot-stable",
+          "category": "chunked",
+          "metrics": {
+            "loadMs": {
+              "median": 50.1536,
+              "p95": 90.1807,
+              "worst": 90.1807,
+              "raw": [
+                46.4999,
+                47.5142,
+                90.1807,
+                51.4365,
+                50.1536
+              ]
+            },
+            "randomReadMs": {
+              "median": 39.965,
+              "p95": 58.3135,
+              "worst": 58.3135,
+              "raw": [
+                39.4798,
+                42.5321,
+                58.3135,
+                39.965,
+                30.7247
+              ]
+            },
+            "randomWriteMs": {
+              "median": 61.4523,
+              "p95": 84.4247,
+              "worst": 84.4247,
+              "raw": [
+                65.9596,
+                54.0387,
+                84.4247,
+                61.4523,
+                52.7081
+              ]
+            },
+            "rangeScanMs": {
+              "median": 5.3532,
+              "p95": 5.9461,
+              "worst": 5.9461,
+              "raw": [
+                4.5427,
+                5.3532,
+                5.9461,
+                4.8404,
+                5.4651
+              ]
+            },
+            "memoryBytes": {
+              "rss": 316559360,
+              "heapUsed": 112820088,
+              "external": 2552537,
+              "approxStore": 32298226
+            }
+          },
+          "nonEmptyCount": 500000
+        },
+        {
+          "store": "map-record",
+          "category": "map",
+          "metrics": {
+            "loadMs": {
+              "median": 29.3826,
+              "p95": 37.1319,
+              "worst": 37.1319,
+              "raw": [
+                26.5725,
+                28.0228,
+                29.3826,
+                31.3601,
+                37.1319
+              ]
+            },
+            "randomReadMs": {
+              "median": 30.5106,
+              "p95": 38.2984,
+              "worst": 38.2984,
+              "raw": [
+                26.8055,
+                30.5106,
+                38.2984,
+                36.3022,
+                27.9982
+              ]
+            },
+            "randomWriteMs": {
+              "median": 39.5161,
+              "p95": 70.248,
+              "worst": 70.248,
+              "raw": [
+                30.5349,
+                70.248,
+                51.0541,
+                39.5161,
+                29.5743
+              ]
+            },
+            "rangeScanMs": {
+              "median": 9.8634,
+              "p95": 15.3639,
+              "worst": 15.3639,
+              "raw": [
+                6.7542,
+                15.3639,
+                10.5715,
+                9.8634,
+                9.4619
+              ]
+            },
+            "memoryBytes": {
+              "rss": 316821504,
+              "heapUsed": 161588432,
+              "external": 2552537,
+              "approxStore": 40437746
+            }
+          },
+          "nonEmptyCount": 500000
+        }
+      ]
+    },
+    {
+      "distribution": "top-left-cluster",
+      "stores": [
+        {
+          "store": "chunked-rowslot",
+          "category": "chunked",
+          "metrics": {
+            "loadMs": {
+              "median": 83.2995,
+              "p95": 100.192,
+              "worst": 100.192,
+              "raw": [
+                83.2995,
+                100.192,
+                77.9516,
+                82.5404,
+                84.1052
+              ]
+            },
+            "randomReadMs": {
+              "median": 26.6893,
+              "p95": 68.0989,
+              "worst": 68.0989,
+              "raw": [
+                21.6548,
+                26.6893,
+                23.2858,
+                28.2318,
+                68.0989
+              ]
+            },
+            "randomWriteMs": {
+              "median": 44.031,
+              "p95": 64.4186,
+              "worst": 64.4186,
+              "raw": [
+                36.24,
+                47.9751,
+                40.4295,
+                44.031,
+                64.4186
+              ]
+            },
+            "rangeScanMs": {
+              "median": 2.9782,
+              "p95": 5.4465,
+              "worst": 5.4465,
+              "raw": [
+                2.4742,
+                5.4465,
+                2.9782,
+                2.6698,
+                5.0725
+              ]
+            },
+            "memoryBytes": {
+              "rss": 318775296,
+              "heapUsed": 77810824,
+              "external": 2552537,
+              "approxStore": 16680424
+            }
+          },
+          "nonEmptyCount": 500000
+        },
+        {
+          "store": "chunked-rowslot-stable",
+          "category": "chunked",
+          "metrics": {
+            "loadMs": {
+              "median": 111.1572,
+              "p95": 113.6861,
+              "worst": 113.6861,
+              "raw": [
+                111.1572,
+                113.6861,
+                112.0539,
+                110.0313,
+                107.9032
+              ]
+            },
+            "randomReadMs": {
+              "median": 41.8374,
+              "p95": 42.9023,
+              "worst": 42.9023,
+              "raw": [
+                42.9023,
+                42.1421,
+                38.2224,
+                41.8374,
+                37.4417
+              ]
+            },
+            "randomWriteMs": {
+              "median": 56.804,
+              "p95": 64.8481,
+              "worst": 64.8481,
+              "raw": [
+                64.8481,
+                56.6573,
+                56.804,
+                57.8907,
+                56.5267
+              ]
+            },
+            "rangeScanMs": {
+              "median": 7.0216,
+              "p95": 9.1419,
+              "worst": 9.1419,
+              "raw": [
+                5.8934,
+                6.3209,
+                7.0216,
+                9.1419,
+                8.9364
+              ]
+            },
+            "memoryBytes": {
+              "rss": 316960768,
+              "heapUsed": 141702208,
+              "external": 2552537,
+              "approxStore": 32680424
+            }
+          },
+          "nonEmptyCount": 500000
+        },
+        {
+          "store": "map-record",
+          "category": "map",
+          "metrics": {
+            "loadMs": {
+              "median": 110.333,
+              "p95": 124.5294,
+              "worst": 124.5294,
+              "raw": [
+                99.2743,
+                110.333,
+                124.5294,
+                96.6829,
+                111.6509
+              ]
+            },
+            "randomReadMs": {
+              "median": 36.1665,
+              "p95": 48.0315,
+              "worst": 48.0315,
+              "raw": [
+                36.0951,
+                35.766,
+                36.1665,
+                40.4135,
+                48.0315
+              ]
+            },
+            "randomWriteMs": {
+              "median": 44.3436,
+              "p95": 51.1329,
+              "worst": 51.1329,
+              "raw": [
+                50.3594,
+                38.1715,
+                37.6763,
+                51.1329,
+                44.3436
+              ]
+            },
+            "rangeScanMs": {
+              "median": 10.2099,
+              "p95": 11.3074,
+              "worst": 11.3074,
+              "raw": [
+                9.3878,
+                10.2757,
+                9.6964,
+                10.2099,
+                11.3074
+              ]
+            },
+            "memoryBytes": {
+              "rss": 318992384,
+              "heapUsed": 182662664,
+              "external": 2552537,
+              "approxStore": 43472680
+            }
+          },
+          "nonEmptyCount": 500000
+        }
+      ]
+    },
+    {
+      "distribution": "column-typed",
+      "stores": [
+        {
+          "store": "chunked-rowslot",
+          "category": "chunked",
+          "metrics": {
+            "loadMs": {
+              "median": 76.6183,
+              "p95": 102.3916,
+              "worst": 102.3916,
+              "raw": [
+                76.6183,
+                83.4781,
+                73.5543,
+                102.3916,
+                74.0764
+              ]
+            },
+            "randomReadMs": {
+              "median": 27.2899,
+              "p95": 32.1371,
+              "worst": 32.1371,
+              "raw": [
+                25.0666,
+                27.2899,
+                21.5612,
+                32.1371,
+                31.1068
+              ]
+            },
+            "randomWriteMs": {
+              "median": 44.8572,
+              "p95": 47.6471,
+              "worst": 47.6471,
+              "raw": [
+                37.4884,
+                41.9318,
+                47.6471,
+                44.8572,
+                47.3656
+              ]
+            },
+            "rangeScanMs": {
+              "median": 2.9259,
+              "p95": 4.113,
+              "worst": 4.113,
+              "raw": [
+                4.113,
+                2.7965,
+                2.7425,
+                2.9259,
+                3.0012
+              ]
+            },
+            "memoryBytes": {
+              "rss": 326037504,
+              "heapUsed": 75162648,
+              "external": 2552537,
+              "approxStore": 16048532
+            }
+          },
+          "nonEmptyCount": 500000
+        },
+        {
+          "store": "chunked-rowslot-stable",
+          "category": "chunked",
+          "metrics": {
+            "loadMs": {
+              "median": 113.0478,
+              "p95": 116.7573,
+              "worst": 116.7573,
+              "raw": [
+                113.0478,
+                109.1428,
+                116.7573,
+                115.4749,
+                112.7142
+              ]
+            },
+            "randomReadMs": {
+              "median": 37.1419,
+              "p95": 48.9621,
+              "worst": 48.9621,
+              "raw": [
+                37.1419,
+                31.4143,
+                34.0626,
+                39.0381,
+                48.9621
+              ]
+            },
+            "randomWriteMs": {
+              "median": 57.3585,
+              "p95": 68.0356,
+              "worst": 68.0356,
+              "raw": [
+                68.0356,
+                58.0703,
+                49.2167,
+                57.3585,
+                54.728
+              ]
+            },
+            "rangeScanMs": {
+              "median": 6.5433,
+              "p95": 7.047,
+              "worst": 7.047,
+              "raw": [
+                7.047,
+                6.5433,
+                6.5351,
+                6.5364,
+                6.9627
+              ]
+            },
+            "memoryBytes": {
+              "rss": 324317184,
+              "heapUsed": 136233312,
+              "external": 2552537,
+              "approxStore": 32048532
+            }
+          },
+          "nonEmptyCount": 500000
+        },
+        {
+          "store": "map-record",
+          "category": "map",
+          "metrics": {
+            "loadMs": {
+              "median": 116.4103,
+              "p95": 141.3903,
+              "worst": 141.3903,
+              "raw": [
+                102.1956,
+                116.4103,
+                132.8421,
+                100.7095,
+                141.3903
+              ]
+            },
+            "randomReadMs": {
+              "median": 42.4326,
+              "p95": 96.949,
+              "worst": 96.949,
+              "raw": [
+                40.2182,
+                42.4326,
+                37.8615,
+                96.949,
+                51.4164
+              ]
+            },
+            "randomWriteMs": {
+              "median": 49.6465,
+              "p95": 71.2642,
+              "worst": 71.2642,
+              "raw": [
+                49.6465,
+                38.0286,
+                43.351,
+                71.2642,
+                49.9284
+              ]
+            },
+            "rangeScanMs": {
+              "median": 11.1465,
+              "p95": 11.4385,
+              "worst": 11.4385,
+              "raw": [
+                11.4385,
+                10.4866,
+                10.567,
+                11.1465,
+                11.3195
+              ]
+            },
+            "memoryBytes": {
+              "rss": 326275072,
+              "heapUsed": 179690848,
+              "external": 2552537,
+              "approxStore": 42847060
+            }
+          },
+          "nonEmptyCount": 500000
+        }
+      ]
+    }
+  ]
+}

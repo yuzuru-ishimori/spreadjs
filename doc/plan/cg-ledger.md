@@ -28,7 +28,7 @@
 | CG | 内容 | 主担当DD | 解除証拠（何をもって解除とするか） | 期限 | 未解除時の扱い | 現在状態 |
 |---|---|---|---|---|---|---|
 | **CG-1** | 実機IME（日本語連続入力の正しさ） | DD-012 単一利用者IME縦切りDD ＋ **最終consumer統合後（DD-016）の Tier 1 実機スモーク** | 実機 trace・確定Enter順序A/B・先頭欠落0（Win Chrome/Edge **両方**）。証拠採取は `event-recorder`/`trace-panel`（DD-009台帳 C 参照） | **Facade公開前** | **Alpha不可** | 未着手 |
-| **CG-2** | 安定ID（index→RowId） | DD-010 安定ID・CellStore移行DD | RowId serialization・replay 整合試験 green | **永続化DD（DD-014）より前** | **Alpha不可** | 未着手 |
+| **CG-2** | 安定ID（index→RowId） | DD-010 安定ID・CellStore移行DD | RowId serialization・replay 整合試験 green | **永続化DD（DD-014）より前** | **Alpha不可** | **解除済**（DD-010・証拠 `doc/DD/DD-010/replay-evidence.md`〔AC1〜5〕・`perf-report.md`〔AC6〕。RowId キー slot 間接 CellStore を sheet-core へ統合・round-trip/全replay/differential green。DD-014 より前に完了。ADR-0011 Accepted 化の手動 ChatGPT 外部レビュー待ち） |
 | **CG-3** | snapshot 正式形式 | DD-014 永続化・snapshot復元DD | versioned snapshot・snapshot+tail replay 一致・100k で log 全replay 非依存・O(N²)回避測定・corrupt/version fail-fast | reconnect DD（DD-015）前 | **Alpha不可** | 未着手 |
 | **CG-4** | Tier 1 環境 | **DD-009 基盤判断（確定）＋全DD共通（実証）** | Tier 1 compatibility matrix（枠＝ADR-0015・`package-boundary.md` §6。実測記入 DD-017・合否 DD-018） | **Phase開始時に確定・exit で実証** | 対象外環境を明示（境界化で可） | **枠確定（DD-009）／実測待ち** |
 | **CG-5** | reconnect 境界（D27/D34 完全再整列のデータ損失） | DD-015 reconnect/catch-up/idempotency DD | fault injection・再送・収束（障害種別ごと保証/非保証を分離） | Alpha exit 前 | **Alpha不可** | 未着手 |
@@ -38,7 +38,7 @@
 
 ```text
 CG-1 実機IME        → DD-012（＋DD-016 統合後スモーク）   期限: Facade公開前   未解除: Alpha不可
-CG-2 安定ID         → DD-010                             期限: DD-014 前      未解除: Alpha不可
+CG-2 安定ID         → DD-010【解除済】                    期限: DD-014 前      未解除: Alpha不可
 CG-3 snapshot形式   → DD-014                             期限: DD-015 前      未解除: Alpha不可
 CG-4 Tier 1         → DD-009（確定）＋DD-017/018（実証）  期限: 開始時/exit    未解除: 対象外明示で可
 CG-5 reconnect境界  → DD-015                             期限: Alpha exit前   未解除: Alpha不可

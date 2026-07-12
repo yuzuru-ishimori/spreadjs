@@ -4,13 +4,14 @@
 // 入力文書は破壊しない（cloneDocument バッファで二相適用）。
 //
 // 検査の分担: apply が投げる ApplyError は「文書だけで判定できる構造エラー」= unknown-row /
-// target-row-deleted / unknown-anchor の3種のみ（phase1-design §4・protocol-subset §3。S-A6〜A8）。
+// target-row-deleted / unknown-anchor / unknown-column（DD-010・列固定違反）。すべて validateOperation が
+// 先に検出でき「validate===[] ⇒ apply は throw しない」契約を保つ（phase1-design §4・protocol-subset §3。S-A6〜A8）。
 // SetCells の beforeRevision による stale 検査（stale-cell-revision）は Room 現在 revision との
 // 照合が要るため Phase 2 サーバー（sequencer）の責務とし、apply 層では beforeRevision を参照しない。
 
 import type { ColumnId, RowId } from '@nanairo-sheet/sheet-types';
 
-import { cloneCellScalar, cloneDocument, resolveAnchorIndex } from './document';
+import { cloneCellScalar, cloneDocument, columnIndexOf, getCell, resolveAnchorIndex, setCell } from './document';
 import type { RowMeta, SheetDocument } from './document';
 import type {
   CellScalar,
@@ -58,7 +59,11 @@ export interface ApplyResult {
   formulaInvalidations: never[]; // PoC はスコープ外（常に []）
 }
 
-export type ApplyErrorCode = 'unknown-row' | 'target-row-deleted' | 'unknown-anchor';
+export type ApplyErrorCode =
+  | 'unknown-row'
+  | 'target-row-deleted'
+  | 'unknown-anchor'
+  | 'unknown-column';
 
 export class ApplyError extends Error {
   readonly code: ApplyErrorCode;
@@ -93,12 +98,16 @@ function applySetCells(doc: SheetDocument, op: SetCellsOperation, revision: numb
   // Phase 1: 全件を構造検証（部分適用しない＝原子性・I-5）。違反は種別ごとに収集し全件 reject。
   const unknownRows: RowId[] = [];
   const deletedRows: RowId[] = [];
+  const unknownColumns: ColumnId[] = [];
   for (const change of op.changes) {
     const meta = doc.rowMeta.get(change.rowId);
     if (meta === undefined) {
       unknownRows.push(change.rowId);
     } else if (meta.tombstone) {
       deletedRows.push(change.rowId);
+    } else if (columnIndexOf(doc, change.columnId) < 0) {
+      // columnOrder 外の列は構造エラー（DD-010・列固定 PoC）。setCell の raw throw ではなく ApplyError で reject。
+      unknownColumns.push(change.columnId);
     }
   }
   if (unknownRows.length > 0) {
@@ -106,6 +115,9 @@ function applySetCells(doc: SheetDocument, op: SetCellsOperation, revision: numb
   }
   if (deletedRows.length > 0) {
     throw new ApplyError('target-row-deleted', deletedRows);
+  }
+  if (unknownColumns.length > 0) {
+    throw new ApplyError('unknown-column', unknownColumns);
   }
 
   // Phase 2: clone 上で確定（入力 doc は不変）。before は working clone から読み、
@@ -118,12 +130,7 @@ function applySetCells(doc: SheetDocument, op: SetCellsOperation, revision: numb
 
   for (const change of op.changes) {
     const before = readCellValueOrBlank(next, change.rowId, change.columnId);
-    let rowCells = next.cells.get(change.rowId);
-    if (rowCells === undefined) {
-      rowCells = new Map();
-      next.cells.set(change.rowId, rowCells);
-    }
-    rowCells.set(change.columnId, {
+    setCell(next, change.rowId, change.columnId, {
       value: cloneCellScalar(change.value),
       lastChangedRevision: revision,
     });
@@ -229,7 +236,7 @@ function applyDeleteRows(
 
 // 既存セル値を返し、無ければ blank を返す（before/inverse 値を CellScalar に正規化する）。
 function readCellValueOrBlank(doc: SheetDocument, rowId: RowId, columnId: ColumnId): CellScalar {
-  const record = doc.cells.get(rowId)?.get(columnId);
+  const record = getCell(doc, rowId, columnId);
   return record === undefined ? { kind: 'blank' } : record.value;
 }
 

@@ -10,7 +10,10 @@ import {
   cloneCellScalar,
   cloneDocument,
   createDocument,
+  deleteCell,
+  deleteRowCells,
   documentHash,
+  setCell,
   validateOperation,
 } from '@nanairo-sheet/sheet-core';
 import type {
@@ -646,8 +649,8 @@ export function applyInverseSeed(doc: SheetDocument, seed: InverseSeed): SheetDo
     if (index !== -1) {
       next.rowOrder.splice(index, 1);
     }
+    deleteRowCells(next, rowId); // slot 解決に rowMeta を使うため rowMeta.delete より前に消す
     next.rowMeta.delete(rowId);
-    next.cells.delete(rowId);
   }
   for (const deleted of seed.deletedRows) {
     const meta = next.rowMeta.get(deleted.rowId);
@@ -660,16 +663,11 @@ export function applyInverseSeed(doc: SheetDocument, seed: InverseSeed): SheetDo
     const change = seed.cells[i];
     const before = change.value;
     if (before === undefined || before.kind === 'blank') {
-      next.cells.get(change.rowId)?.delete(change.columnId); // 前値=空 → 不在へ（hash 上等価・S-B3）
+      deleteCell(next, change.rowId, change.columnId); // 前値=空 → 不在へ（hash 上等価・S-B3）
       continue;
     }
-    let rowCells = next.cells.get(change.rowId);
-    if (rowCells === undefined) {
-      rowCells = new Map();
-      next.cells.set(change.rowId, rowCells);
-    }
     // before-revision 不明（D22）。値のみ復元し revision は 0（既存セル上書きの rollback は非厳密）。
-    rowCells.set(change.columnId, { value: cloneCellScalar(before), lastChangedRevision: 0 });
+    setCell(next, change.rowId, change.columnId, { value: cloneCellScalar(before), lastChangedRevision: 0 });
   }
   return next;
 }

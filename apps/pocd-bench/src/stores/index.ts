@@ -4,7 +4,9 @@ import type { CellStoreFactory } from '../cell-store';
 import { createMapStore } from './map-store';
 import { createChunkedColumnStore } from './chunked-column-store';
 import { createChunkedRowslotStore } from './chunked-rowslot-store';
+import { createChunkedRowslotStableStore } from './chunked-rowslot-stable-store';
 import { createColumnarStore } from './columnar-store';
+import { createMapRecordStore } from './map-record-store';
 
 export type StoreCategory = 'map' | 'chunked' | 'columnar';
 
@@ -14,11 +16,13 @@ export interface StoreCandidate {
   readonly create: CellStoreFactory;
 }
 
-/** 4実装・3カテゴリ（§6.4・ADR-011）。 */
+/** 5実装・3カテゴリ（§6.4・ADR-011）。chunked-rowslot-stable は DD-010 の製品 CellStore（slot キー）。 */
 export const STORE_CANDIDATES: readonly StoreCandidate[] = [
   { label: 'map', category: 'map', create: createMapStore },
   { label: 'chunked-column', category: 'chunked', create: createChunkedColumnStore },
   { label: 'chunked-rowslot', category: 'chunked', create: createChunkedRowslotStore },
+  { label: 'chunked-rowslot-stable', category: 'chunked', create: createChunkedRowslotStableStore },
+  { label: 'map-record', category: 'map', create: createMapRecordStore },
   { label: 'columnar', category: 'columnar', create: createColumnarStore },
 ];
 
@@ -26,5 +30,7 @@ export {
   createMapStore,
   createChunkedColumnStore,
   createChunkedRowslotStore,
+  createChunkedRowslotStableStore,
+  createMapRecordStore,
   createColumnarStore,
 };

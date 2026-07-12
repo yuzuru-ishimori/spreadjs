@@ -1,10 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
-import { documentHash } from '@nanairo-sheet/sheet-core';
+import { documentHash, getCell, isTombstoned } from '@nanairo-sheet/sheet-core';
 
 import { Sequencer, freshSequencerState } from './sequencer';
 import type { SequencerState } from './sequencer';
-import { deserializeSnapshot, serializeSnapshot, verifySnapshotIntegrity } from './snapshot';
+import {
+  SNAPSHOT_VERSION,
+  deserializeSnapshot,
+  serializeSnapshot,
+  verifySnapshotIntegrity,
+} from './snapshot';
 import type { SnapshotData } from './snapshot';
 import {
   COLUMNS,
@@ -33,6 +38,24 @@ function buildSequencer(): Sequencer {
 function jsonRoundTrip(data: SnapshotData): SnapshotData {
   const restored: SnapshotData = JSON.parse(JSON.stringify(data));
   return restored;
+}
+
+// DD-010 CG-2 証拠用: tombstone 行が **セルを保持**した状態・削除済みアンカーへの挿入を含む Sequencer。
+// InsertRows/DeleteRows/tombstone/削除済みアンカー挿入を全て通し、round-trip・replay の安定 ID 整合を検証する。
+function buildStableIdSequencer(): Sequencer {
+  const seq = new Sequencer(freshSequencerState(COLUMNS), createManualClock(1000));
+  seq.submit(envelope({ clientId: 'cA', clientSequence: 1, operationId: 'i1', operation: insertRows(null, ['row-1']) }));
+  seq.submit(envelope({ clientId: 'cA', clientSequence: 2, operationId: 'i2', operation: insertRows(row('row-1'), ['row-2']) }));
+  seq.submit(envelope({ clientId: 'cA', clientSequence: 3, operationId: 'i3', operation: insertRows(row('row-2'), ['row-3']) }));
+  seq.submit(envelope({ clientId: 'cA', clientSequence: 4, operationId: 's1', operation: setCells([{ rowId: row('row-1'), columnId: col('col-a'), value: str('one') }]) }));
+  seq.submit(envelope({ clientId: 'cA', clientSequence: 5, operationId: 's2', operation: setCells([{ rowId: row('row-2'), columnId: col('col-a'), value: str('two') }]) }));
+  seq.submit(envelope({ clientId: 'cA', clientSequence: 6, operationId: 's3', operation: setCells([{ rowId: row('row-3'), columnId: col('col-b'), value: str('three') }]) }));
+  // row-2 を tombstone（row-2 はセル 'two' を保持したまま）。
+  seq.submit(envelope({ clientId: 'cB', clientSequence: 1, operationId: 'd1', operation: deleteRows([row('row-2')]) }));
+  // 削除済みアンカー row-2 の直後へ新行 row-new を挿入（S-D2）。
+  seq.submit(envelope({ clientId: 'cB', clientSequence: 2, operationId: 'i4', operation: insertRows(row('row-2'), ['row-new']) }));
+  seq.submit(envelope({ clientId: 'cB', clientSequence: 3, operationId: 's4', operation: setCells([{ rowId: row('row-new'), columnId: col('col-c'), value: str('new') }]) }));
+  return seq;
 }
 
 describe('K. スナップショット export/import（S-K1/K2）', () => {
@@ -87,6 +110,78 @@ describe('K. 復元後の継続（S-K3/K4）', () => {
     const data = jsonRoundTrip(serializeSnapshot(seq.exportState()));
     const restored = new Sequencer(deserializeSnapshot(data), createManualClock());
     expect(restored.operationsSince(2).map((e) => e.revision)).toEqual([3, 4]);
+  });
+});
+
+describe('CG-2 証拠（DD-010）: 安定 ID serialization round-trip・replay 整合', () => {
+  it('[AC3] serialize→JSON→deserialize round-trip で hash・構造（rowOrder/tombstone/slot/revision）一致', () => {
+    const seq = buildStableIdSequencer();
+    const hashBefore = documentHash(seq.document);
+    const before = seq.document;
+    const data = jsonRoundTrip(serializeSnapshot(seq.exportState()));
+    expect(data.version).toBe(SNAPSHOT_VERSION);
+    const restored = new Sequencer(deserializeSnapshot(data), createManualClock());
+    const after = restored.document;
+
+    // hash 一致
+    expect(documentHash(after)).toBe(hashBefore);
+    // 構造一致: rowOrder（tombstone 含む全行）
+    expect(after.rowOrder.map(String)).toEqual(before.rowOrder.map(String));
+    // rowMeta: slot / tombstone / lastChangedRevision
+    for (const rowId of before.rowOrder) {
+      const b = before.rowMeta.get(rowId)!;
+      const a = after.rowMeta.get(rowId)!;
+      expect(a.slot).toBe(b.slot);
+      expect(a.tombstone).toBe(b.tombstone);
+      expect(a.lastChangedRevision).toBe(b.lastChangedRevision);
+    }
+    // 全セル一致（tombstone 行 row-2 のセル 'two' も保全されていること＝安定 ID 保全の核）
+    for (const rowId of before.rowOrder) {
+      for (const columnId of before.columnOrder) {
+        expect(getCell(after, rowId, columnId)).toEqual(getCell(before, rowId, columnId));
+      }
+    }
+    expect(isTombstoned(after, row('row-2'))).toBe(true);
+    expect(getCell(after, row('row-2'), col('col-a'))).toEqual({ value: str('two'), lastChangedRevision: 5 });
+    expect(after.revision).toBe(before.revision);
+  });
+
+  it('[AC4] 空文書から operationLog 全 replay → 復元文書と hash・構造一致・revision 連番・二重適用なし', () => {
+    const seq = buildStableIdSequencer();
+    const data = jsonRoundTrip(serializeSnapshot(seq.exportState()));
+    const result = verifySnapshotIntegrity(data);
+    expect(result.ok).toBe(true);
+    expect(result.documentHash).toBe(result.replayHash);
+    // revision 連番（1..N・currentRevision===N）
+    expect(data.operationLog.map((e) => e.revision)).toEqual(
+      Array.from({ length: data.operationLog.length }, (_v, i) => i + 1),
+    );
+    expect(data.currentRevision).toBe(data.operationLog.length);
+    expect(data.document.revision).toBe(data.currentRevision);
+  });
+
+  it('[要確認2] version 不一致の snapshot は deserialize で fail-fast（互換層なし・ADR-0015）', () => {
+    const seq = buildStableIdSequencer();
+    const data = jsonRoundTrip(serializeSnapshot(seq.exportState()));
+    const legacy = { ...data, version: 1 } as unknown as SnapshotData;
+    expect(() => deserializeSnapshot(legacy)).toThrow(/version/);
+  });
+
+  it('[Codex P2] 重複 slot の snapshot は deserialize で fail-fast（安定 ID 破損検知）', () => {
+    const seq = buildStableIdSequencer();
+    const data = jsonRoundTrip(serializeSnapshot(seq.exportState()));
+    // 2 行に同一 slot を割り当てて安定 ID を破損させる。
+    if (data.document.rowMeta.length >= 2) {
+      data.document.rowMeta[1]!.slot = data.document.rowMeta[0]!.slot;
+    }
+    expect(() => deserializeSnapshot(data)).toThrow(/slot/);
+  });
+
+  it('[Codex P2] rowMeta に無い行のセルを含む snapshot は deserialize で fail-fast（データ欠落を黙認しない）', () => {
+    const seq = buildStableIdSequencer();
+    const data = jsonRoundTrip(serializeSnapshot(seq.exportState()));
+    data.document.cells.push({ rowId: 'ghost-row', columns: [{ columnId: 'col-a', value: str('x'), lastChangedRevision: 1 }] });
+    expect(() => deserializeSnapshot(data)).toThrow(/rowMeta/);
   });
 });
 

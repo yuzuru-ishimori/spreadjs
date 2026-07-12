@@ -5,7 +5,15 @@ import type { ColumnId, RowId } from '@nanairo-sheet/sheet-types';
 
 import { ApplyError, applyOperation } from './apply';
 import type { ApplyErrorCode } from './apply';
-import { createDocument, displayRowOrder, getCell, isTombstoned } from './document';
+import { createCellStore } from './cell-store';
+import {
+  createDocument,
+  displayRowOrder,
+  forEachCellInRow,
+  getCell,
+  isTombstoned,
+  setCell,
+} from './document';
 import type { CellRecord, RowMeta, SheetDocument } from './document';
 import { canonicalSerialize, documentHash } from './hash';
 import type {
@@ -176,6 +184,21 @@ describe('A. 決定論的適用（apply）— AC1/AC2 基盤・Phase 1', () => {
       () => applyOperation(doc, insertRows(row('row-unknown'), ['row-2']), { revision: 2 }),
       'unknown-anchor',
     );
+  });
+
+  it('S-A6b: columnOrder 外の列への SetCells は ApplyError(unknown-column)・文書不変（DD-010 Codex[P1]）', () => {
+    const doc = baseDoc(['row-1']); // columnOrder=[col-a,col-b]
+    const before = documentHash(doc);
+    expectApplyError(
+      () =>
+        applyOperation(
+          doc,
+          setCells([{ rowId: row('row-1'), columnId: col('col-z'), value: str('x') }]),
+          { revision: 2 },
+        ),
+      'unknown-column',
+    );
+    expect(documentHash(doc)).toBe(before);
   });
 
   it('S-A9: 同値上書きでも lastChangedRevision を付与rev に更新（no-op 特別扱いしない・Q-1）', () => {
@@ -425,29 +448,30 @@ function generateOps(seed: number, count: number): DocumentOperation[] {
   return ops;
 }
 
-// Map の挿入順を反転して同一論理状態を再構築する（正準化の Map 反復順非依存を規模で検証する）。
+// rowMeta 挿入順・セル投入順を反転して同一論理状態を再構築する（正準化が内部順に非依存であることを規模で検証）。
+// CellStore は slot/colIndex で決定的に整列するため、逆順で setCell しても documentHash は不変であるべき。
 function rebuildWithReversedMaps(doc: SheetDocument): SheetDocument {
   const rowMeta = new Map<RowId, RowMeta>();
   for (const rowId of [...doc.rowMeta.keys()].reverse()) {
     rowMeta.set(rowId, { ...doc.rowMeta.get(rowId)! });
   }
-  const cells = new Map<RowId, Map<ColumnId, CellRecord>>();
-  for (const rowId of [...doc.cells.keys()].reverse()) {
-    const sub = doc.cells.get(rowId)!;
-    const newSub = new Map<ColumnId, CellRecord>();
-    for (const columnId of [...sub.keys()].reverse()) {
-      const record = sub.get(columnId)!;
-      newSub.set(columnId, { value: record.value, lastChangedRevision: record.lastChangedRevision });
-    }
-    cells.set(rowId, newSub);
-  }
-  return {
+  const rebuilt: SheetDocument = {
     revision: doc.revision,
     rowOrder: [...doc.rowOrder],
     rowMeta,
     columnOrder: [...doc.columnOrder],
-    cells,
+    cells: createCellStore(),
   };
+  for (const rowId of [...doc.rowMeta.keys()].reverse()) {
+    const entries: Array<[ColumnId, CellRecord]> = [];
+    forEachCellInRow(doc, rowId, (columnId, record) => {
+      entries.push([columnId, { value: record.value, lastChangedRevision: record.lastChangedRevision }]);
+    });
+    for (const [columnId, record] of entries.reverse()) {
+      setCell(rebuilt, rowId, columnId, record);
+    }
+  }
+  return rebuilt;
 }
 
 describe('apply — 決定論プロパティ（シード付きランダム Operation 列・DA D4 / S-A3 / S-M2）', () => {

@@ -17,6 +17,7 @@ export type RejectCode =
   | 'target-row-deleted'
   | 'unknown-anchor'
   | 'unknown-row'
+  | 'unknown-column'
   | 'invalid-base-revision'
   | 'client-sequence-violation'
   | 'duplicate-row';

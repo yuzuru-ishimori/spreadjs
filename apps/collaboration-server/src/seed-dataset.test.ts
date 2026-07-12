@@ -58,11 +58,7 @@ describe('seed-dataset（DD-005 統合シード・決定論）', () => {
     const sequencer = seed(SMALL);
     const doc = sequencer.document;
     expect(displayRowOrder(doc).length).toBe(SMALL.rows);
-    let nonEmpty = 0;
-    for (const rowCells of doc.cells.values()) {
-      nonEmpty += rowCells.size;
-    }
-    expect(nonEmpty).toBe(SMALL.nonEmpty);
+    expect(doc.cells.nonEmptyCount()).toBe(SMALL.nonEmpty);
   });
 
   it('二重 seed は同一 documentHash（サーバー/クライアント replay の決定論）', () => {

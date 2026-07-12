@@ -177,6 +177,7 @@ function primaryRejectCode(violations: OperationViolation[]): RejectCode {
     'unknown-anchor',
     'duplicate-row',
     'target-row-deleted',
+    'unknown-column',
     'stale-cell-revision',
   ];
   for (const code of order) {
