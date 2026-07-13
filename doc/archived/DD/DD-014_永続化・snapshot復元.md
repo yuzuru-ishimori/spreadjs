@@ -2,7 +2,7 @@
 
 | 作成日 | 更新日 | ステータス | 補足 |
 |--------|--------|-----------|------|
-| 2026-07-13 | 2026-07-13 | 確認待ち | サーバー側達成（durable ACK・snapshot format v1・100k復旧≦1s・O(N²)回避・fail-fast）。**Codex xhigh で P1 findings 検出＝CG-3 未解除・要判断**（クライアント snapshot bootstrap 未実装＝AC4/AC8 未達・durable frontier/poisoning）。ADR-0023 Proposed。roadmap §4/§5 |
+| 2026-07-13 | 2026-07-14 | 完了 | サーバー側（durable ACK・snapshot format v1・100k復旧≦1s・O(N²)回避・fail-fast）＋**子DD DD-014-1 でクライアント snapshot bootstrap・durable frontier/poisoning を実装し CG-3 解除**（AC1〜9 充足・ADR-0023 Accepted）。P2-1（行操作Θ(N²)=DD-021）・P2-3/P2-4（異常構成エッジ）は既知制約。roadmap §4/§5 |
 
 ```text
 Risk Class: A
