@@ -28,21 +28,21 @@ node scripts/cg1/judge-ime-trace.mjs scripts/cg1/fixtures/synthetic-headdrop.jso
 
 | # | 基準 | 状態 | 証跡 |
 |---|------|------|------|
-| 1 | 日本語連続入力・順序A/B・先頭欠落0・既存E2E回帰 | 部分（不変条件で充足／E2E実機は Phase 4） | invariant 4（順序A/B・先頭欠落0）・invariant 3（instance不変）。E2E 11本は build green・実機採取は Phase 4 |
+| 1 | 日本語連続入力・順序A/B・先頭欠落0・既存E2E回帰 | ✅（順序B=実機／順序A=自動） | 順序B は実機20セッションで実証（AC8）・順序A は invariant 4/6＋E2E〔synthetic〕で担保（実機 Chromium 150 で不発）。先頭欠落0=実機 judge PASS。E2E 11本 build green・再構成は DD-016 |
 | 2 | selection/navigation・composition中 grid 不動 | ✅ | invariant 6「composition 中は矢印/Tab で grid 不動」・navigation.test 既存 green |
-| 3 | 型変換（標準セット）・受理書式表・canonical分離 | ✅ | `cell-input.test.ts`（39ケース・全角/桁区切り/西暦/否定ケース）・`commit-bridge.test.ts` 標準セット委譲 |
-| 4 | CellScalar date 拡張後 codec/hash/apply/validate green・往復一致 | ✅ | `packages/core` 全 green（hash/apply/cell-store/document）・`local-operation.test.ts` JSON往復一致 |
+| 3 | 型変換（標準セット）・受理書式表・canonical分離 | ✅ | `cell-input.test.ts`（40ケース・全角/桁区切り/西暦/全角スラッシュ/否定ケース）・`commit-bridge.test.ts` 標準セット委譲 |
+| 4 | CellScalar date 拡張後 codec/hash/apply/validate green・往復一致 | ✅ | `packages/core` 全 green（hash/apply/cell-store/document）・`local-operation.test.ts` JSON往復一致・`snapshot.test.ts` date round-trip |
 | 5 | ローカル Operation・documentHash 決定的 | ✅ | `local-operation.test.ts`（同一入力列→同一hash・date≠string・サーバー接続なし） |
-| 6 | IME 不変条件 6 項目 実カバー・green | ✅ | `tests/invariants/ime/ime.invariant.test.ts`（11 tests・6 describe） |
-| 7 | ADR-012 ドラフト→Codex 承認で Accepted | ⏳ | `doc/adr/0012-local-date-cell-value.md`（Draft）。Codex 結果で Accepted 化 |
-| 8 | CG-1 解除証拠（実機 trace・順序A/B・先頭欠落0 機械判定） | ⏳ Phase 4 | 判定スクリプト `scripts/cg1/judge-ime-trace.mjs`＋手順 `cg1-realmachine-procedure.md` を用意済み。実機採取は人手 |
-| 9 | baseline 縮退・新規違反0・test/typecheck/lint/build green | 部分 | 新規違反0・lint green（baseline=41 不変）。**縮退は DD-016(grid Facade)/DD-012-2(render) 依存**（下記） |
+| 6 | IME 不変条件 6 項目 実カバー・green | ✅ | `tests/invariants/ime/ime.invariant.test.ts`（13 tests・6項目＋実セッション+fake port の DOM 実駆動） |
+| 7 | ADR-012 ドラフト→Codex 承認で Accepted | ✅ | `doc/adr/0012-local-date-cell-value.md`（**Accepted**・Codex 中核異議なし・findings 5件全対応） |
+| 8 | CG-1 解除証拠（実機 trace・先頭欠落0＋順序B×Chrome/Edge 機械判定） | ✅ PASS | 実機20セッション（Chrome/Edge）→ `judge-ime-trace.mjs` verdict **PASS**（`cg1-judge-result.json`）。順序A は Chromium 150 で構造的に不発→自動テスト担保。実機セクション（下記） |
+| 9 | 新規違反0・test/typecheck/lint/build green | ✅（縮退は DD-016） | 新規違反0・lint green（baseline=41 不変）。**ime/grid/integration 由来 R1 の縮退は DD-016(grid Facade)/DD-012-2(render) 依存**（ユーザー決定 2026-07-13） |
 
 ## テスト結果（最終一括）
 
-- `npm run test`: **623 passed / 1 failed**。失敗は `ws-convergence.smoke`（実 WS 実測・`waitFor timeout`＝環境依存の既知flaky。
-  hash 内容不一致ではない。同じ documentHash を大量に検証する `convergence.test.ts`〔in-process 10,000 op〕と
-  `cell-store-differential`〔1,200 op×6 seed〕は green＝hash ロジックは正しい）。
+- `npm run test`: **627 passed / 1 failed**（Codex 対応の追加テスト＝全角スラッシュ・snapshot date round-trip・IME DOM 実駆動×2 を含む）。失敗は `ws-convergence.smoke`
+  （実 WS 実測・`waitFor timeout`＝環境依存の既知flaky。hash 内容不一致ではない。同じ documentHash を大量に検証する
+  `convergence.test.ts`〔in-process 10,000 op〕と `cell-store-differential`〔1,200 op×6 seed〕は green＝hash ロジックは正しい）。
 - `npm run typecheck`: 全 workspace green。
 - `npm run lint`（eslint + boundary）: green。boundary `baselined=41 new=0 stale-baseline=0`（新規違反0・回帰なし）。
 - `npm run build`: green（editor-state-machine/viewport/integration チャンク生成）。
@@ -74,3 +74,38 @@ node scripts/cg1/judge-ime-trace.mjs scripts/cg1/fixtures/synthetic-headdrop.jso
     （公開シグネチャへの内部型漏洩）に阻まれる。DD-012-1 の順序（DD-012-2 より先行）では成立しない。
 - よって本DDは baseline を**増やさない**選択（現位置の状態機械を不変条件で検証）を採り、`new=0`（lint green）を維持。
   IME 不変条件テストの import 先差し替え（`@nanairo-sheet/ime`）は抽出完了時（DD-016）に行う。
+
+## Phase 4: CG-1 実機ゲート（2026-07-13・PASS・人手実施）
+
+### 実機環境
+
+| 項目 | 内容 |
+|------|------|
+| OS | Windows |
+| ブラウザー | Chrome 150（Chromium）／Edge 150（Chromium）＝Tier-1 |
+| 実 IME | **Microsoft IME**（Windows 標準）。※trace-panel の手入力欄 `ime:"Google"` は**ラベル誤記**（採取者のスクショで実 IME=Microsoft IME を確認）。raw JSON は改変せず本欄で訂正する |
+| trace | `cg1-chrome-msime.json`（6セッション）・`cg1-edge-msime-1.json`（5）・`cg1-edge-msime-2.json`（9）＝計 **20 セッション** |
+
+### 判定コマンドと結果
+
+```bash
+node scripts/cg1/judge-ime-trace.mjs \
+  doc/DD/DD-012-1/cg1-chrome-msime.json \
+  doc/DD/DD-012-1/cg1-edge-msime-1.json \
+  doc/DD/DD-012-1/cg1-edge-msime-2.json
+# → verdict: PASS（保存: doc/DD/DD-012-1/cg1-judge-result.json）
+```
+
+- **verdict = PASS**: `headDropSessions=0`（**先頭欠落0**）・`orderBPresent=true`（順序B確定）・`tier1Browsers.bothCovered=true`（Chrome/Edge 両方）・`sessionTotal=20`。
+- `orderAPresent_informational=false`（**順序A=0**）。
+
+### 知見: Chromium 150 で確定Enter順序Aが構造的に発生しない
+
+- 実機20セッションで**順序A（`keydown Enter` かつ `isComposing:true`）は 1 件も観測されず**。現行 Tier-1（Windows Chromium 150・Chrome/Edge）では、確定 Enter は **`key=Process`(keyCode 229)＋`compositionend` 先行**（＝順序B）に統一されている。
+- したがって CG-1 実機ゲートは「**先頭欠落0＋順序B確定を Chrome/Edge 両実機で実証**」と再定義（ユーザー承認 2026-07-13）。**順序Aのハンドリングは自動不変条件（`invariant/ime 4`・`6`）＋E2E〔synthetic〕で担保**（実機では出ないため自動テストが唯一の防御線）。
+- 将来 Tier-1 に順序A発生ブラウザが加わった場合は CG-1 を再ゲートする（roadmap §0 注記の条件付き）。
+
+### AC8/AC1 の充足
+
+- **AC8: 充足（PASS）**。実機 trace 3本＋`cg1-judge-result.json` を `doc/DD/DD-012-1/` へ格納。CG台帳 CG-1「解除済」。
+- **AC1: 充足**。順序B＝実機実証・先頭欠落0＝実機 judge PASS・順序A＝自動テスト担保。

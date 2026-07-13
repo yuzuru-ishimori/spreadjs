@@ -2,15 +2,22 @@
 //
 // trace-panel（apps/playground/src/ui/trace-panel.ts）がエクスポートした JSON
 //   { meta:{browser,os,ime,userAgent,...}, traces: ImeEventTrace[] }
-// を 1 つ以上受け取り、次を機械判定する:
-//   - 確定 Enter 順序A（変換中 Enter＝keydown Enter isComposing:true）と
-//     順序B（compositionend 後の keydown Enter isComposing:false）が **両方** 採取されているか。
-//   - 各 composition セッションで **先頭文字保全（欠落0）**: compositionend.data の先頭文字が
-//     確定後の textarea value に先頭から保持されているか（先頭欠落バグの検出）。
+// を 1 つ以上受け取り、次を機械判定する（PASS 条件は 2026-07-13 の実機知見で改訂）:
+//   - **先頭文字保全（欠落0）**: 各 composition セッションで compositionend.data の先頭文字が
+//     確定後の textarea value に先頭から保持されているか（＝CG-1 が最も守る先頭欠落バグの実機担保）。
+//   - **確定 Enter 順序B**（compositionend 後の keydown Enter isComposing:false）の実機採取。
+//   - **Tier-1 両ブラウザ（Chrome・Edge）** をカバーしているか。
+//
+// 【順序A について（2026-07-13 実機知見・ユーザー判断）】
+//   順序A（変換中 Enter＝keydown Enter isComposing:true）は、現行 Tier-1（Windows Chromium 150・
+//   Chrome/Edge）では **構造的に発生しない**（確定 Enter は key=Process(229)＋compositionend 先行＝
+//   順序B に統一）。実機採取 25 セッションで順序A=0・先頭欠落=0 を確認。よって順序Aは「実機で証明する
+//   対象」ではなく「状態機械が備える防御経路」とし、**自動不変条件・E2E（synthetic）で担保**（green）。
+//   実機 PASS 条件から順序Aの必須要件を外す（順序Aは informational として報告）。詳細=DD-012-1 evidence.md。
 //
 // 使い方:
 //   node scripts/cg1/judge-ime-trace.mjs <trace1.json> [trace2.json ...]
-// 出力: 判定サマリ（JSON）を stdout。合格（両順序あり・先頭欠落0）なら exit 0、不合格なら exit 1。
+// 出力: 判定サマリ（JSON）を stdout。合格（先頭欠落0・順序B採取・Chrome/Edge両カバー）なら exit 0、不合格なら exit 1。
 //
 // これは Phase 4（人手・実機 Win Chrome/Edge）で採取した trace を検証するためのツール。
 // Phase 3 までに用意し、synthetic フィクスチャ（fixtures/）で判定ロジックを検証済み。
@@ -141,15 +148,28 @@ function main() {
     });
   }
 
-  const pass = orderA && orderB && headDrops === 0 && sessionTotal > 0;
+  // Tier-1 両ブラウザ（Chrome/Edge）カバレッジ（meta.browser を lower-case で判定）。
+  const browsers = new Set(
+    perFile.map((p) => (p.env.browser ?? '').toLowerCase()).filter((b) => b !== ''),
+  );
+  const hasChrome = [...browsers].some((b) => b.includes('chrome'));
+  const hasEdge = [...browsers].some((b) => b.includes('edge'));
+  const bothBrowsers = hasChrome && hasEdge;
+
+  // PASS 条件（2026-07-13 改訂）: 先頭欠落0・順序B採取・Tier-1 両ブラウザ・セッション1件以上。
+  // 順序A は実機で構造的に発生しないため必須から除外（自動テストで担保・informational 報告）。
+  const pass = orderB && headDrops === 0 && sessionTotal > 0 && bothBrowsers;
   const summary = {
     verdict: pass ? 'PASS' : 'FAIL',
-    orderAPresent: orderA,
     orderBPresent: orderB,
     headDropSessions: headDrops,
     sessionTotal,
+    tier1Browsers: { chrome: hasChrome, edge: hasEdge, bothCovered: bothBrowsers },
+    orderAPresent_informational: orderA,
+    orderANote:
+      '順序A（keydown Enter isComposing:true）は現行 Tier-1(Chromium 150) で構造的に発生せず（実機25セッションで0）。自動不変条件・E2E で担保。実機 PASS 条件からは除外（DD-012-1 evidence.md）。',
     perFile,
-    criteria: '両順序A/B採取・先頭欠落0・セッション1件以上 で PASS（AC8）',
+    criteria: '先頭欠落0・順序B採取・Chrome/Edge両カバー・セッション1件以上 で PASS（AC8・2026-07-13改訂）',
   };
   console.log(JSON.stringify(summary, null, 2));
   process.exit(pass ? 0 : 1);

@@ -31,7 +31,7 @@
 
 | CG | 主担当DD | 解除証拠 | 期限 | 未解除時 |
 |---|---|---|---|---|
-| CG-1 実機IME | 単一利用者IME DD＋**最終consumer統合後のTier 1実機スモーク** | 実機trace・確定Enter順序A/B・先頭欠落0（Win Chrome/Edge両方） | Facade公開前 | **Alpha不可** |
+| CG-1 実機IME | 単一利用者IME DD＋**最終consumer統合後のTier 1実機スモーク** | 実機trace・確定Enter順序A/B・先頭欠落0（Win Chrome/Edge両方）。**注記（2026-07-13・DD-012-1で実証）**: 確定Enter順序A/Bのうち現行Tier-1（Chromium 150）では順序Aが構造的に発生しないため、実機解除証拠は「順序B＋先頭欠落0×Chrome/Edge両方」とし順序Aは自動テスト（不変条件・synthetic E2E）で担保する。**DD-012-1 で CG-1 実機ゲートは PASS（解除済・cg-ledger参照）／DD-016 統合後スモークは残**。 | Facade公開前 | **Alpha不可** |
 | CG-2 安定ID（index→RowId） | 安定ID・CellStore移行DD（DD-010） | RowId serialization・replay整合試験 | **永続化・snapshot復元DD（DD-014）より前** | **Alpha不可** |
 | CG-3 snapshot正式形式 | 永続化・snapshot復元DD | versioned snapshot・snapshot+tail replay一致・100k で log全replay非依存・O(N²)回避測定 | reconnect DD前 | **Alpha不可** |
 | CG-4 Tier 1環境 | 基盤判断＋全DD共通 | Tier 1 compatibility matrix | Phase開始時に確定・exitで実証 | 対象外環境を明示（境界化で可） |

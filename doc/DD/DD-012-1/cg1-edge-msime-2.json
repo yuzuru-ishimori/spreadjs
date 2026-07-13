@@ -1,0 +1,7925 @@
+{
+  "meta": {
+    "browser": "Edge",
+    "os": "Windows",
+    "ime": "Google",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0",
+    "exportedAt": "2026-07-13T07:20:43.607Z",
+    "traceCount": 451
+  },
+  "traces": [
+    {
+      "timestamp": 207,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "",
+      "state": "Navigation",
+      "eventType": "focus",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      }
+    },
+    {
+      "timestamp": 2413,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "",
+      "state": "Navigation",
+      "eventType": "blur",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      }
+    },
+    {
+      "timestamp": 16415,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "pointerdown",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      }
+    },
+    {
+      "timestamp": 16416,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "focus",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      }
+    },
+    {
+      "timestamp": 17691,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "keydown",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "key": "Alt",
+      "code": "AltLeft",
+      "isComposing": false
+    },
+    {
+      "timestamp": 17748,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "keydown",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "key": "KanjiMode",
+      "code": "Backquote",
+      "isComposing": false
+    },
+    {
+      "timestamp": 17848,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "keyup",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "key": "Alt",
+      "code": "AltLeft",
+      "isComposing": false
+    },
+    {
+      "timestamp": 18055,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "keydown",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyI",
+      "isComposing": false
+    },
+    {
+      "timestamp": 18057,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "compositionstart",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "data": ""
+    },
+    {
+      "timestamp": 18057,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "data": "い"
+    },
+    {
+      "timestamp": 18061,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "い",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18063,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "い",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "い",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18130,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "い",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyS",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18134,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "い",
+      "selectionStart": 0,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "data": "いｓ"
+    },
+    {
+      "timestamp": 18136,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "い",
+      "selectionStart": 0,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "いｓ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18139,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "いｓ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "いｓ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18149,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "いｓ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18157,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "いｓ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "key": "i",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18217,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "いｓ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18220,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "いｓ",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "data": "いし"
+    },
+    {
+      "timestamp": 18222,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "いｓ",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "いし",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18225,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "いし",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "いし",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18312,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "いし",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18315,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "いし",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "key": "i",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18317,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "いし",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyS",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18322,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "いし",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "key": "s",
+      "code": "KeyS",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18394,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "いし",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyM",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18397,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "いし",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "data": "いしｍ"
+    },
+    {
+      "timestamp": 18399,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "いし",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "いしｍ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18403,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "いしｍ",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "いしｍ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18458,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "いしｍ",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18462,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "いしｍ",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "data": "いしも"
+    },
+    {
+      "timestamp": 18465,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "いしｍ",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "いしも",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18469,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "いしも",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "いしも",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18520,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "いしも",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyM",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18523,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "いしも",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "key": "m",
+      "code": "KeyM",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18550,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "いしも",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyR",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18554,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "いしも",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "data": "いしもｒ"
+    },
+    {
+      "timestamp": 18558,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "いしも",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "いしもｒ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18561,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "いしもｒ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "いしもｒ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18575,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "いしもｒ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18578,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "いしもｒ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "key": "o",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18677,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "いしもｒ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18681,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "いしもｒ",
+      "selectionStart": 0,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "data": "いしもり"
+    },
+    {
+      "timestamp": 18684,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "いしもｒ",
+      "selectionStart": 0,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "いしもり",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18688,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "いしもり",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "いしもり",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18692,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "いしもり",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyR",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18695,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "いしもり",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "key": "r",
+      "code": "KeyR",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18764,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "いしもり",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18768,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "いしもり",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "key": "i",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 19513,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "いしもり",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "Enter",
+      "isComposing": true
+    },
+    {
+      "timestamp": 19518,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "いしもり",
+      "selectionStart": 0,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "data": "いしもり"
+    },
+    {
+      "timestamp": 19521,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "いしもり",
+      "selectionStart": 0,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "いしもり",
+      "isComposing": true
+    },
+    {
+      "timestamp": 19525,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "いしもり",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "いしもり",
+      "isComposing": true
+    },
+    {
+      "timestamp": 19527,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionend",
+      "value": "いしもり",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "data": "いしもり"
+    },
+    {
+      "timestamp": 19600,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Editing",
+      "eventType": "keyup",
+      "value": "いしもり",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "Enter",
+      "isComposing": false
+    },
+    {
+      "timestamp": 20616,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Editing",
+      "eventType": "keydown",
+      "value": "いしもり",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 3,
+        "col": 0
+      },
+      "key": "Enter",
+      "code": "Enter",
+      "isComposing": false
+    },
+    {
+      "timestamp": 20711,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "keyup",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "key": "Enter",
+      "code": "Enter",
+      "isComposing": false
+    },
+    {
+      "timestamp": 21054,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "keydown",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyI",
+      "isComposing": false
+    },
+    {
+      "timestamp": 21057,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "compositionstart",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "data": ""
+    },
+    {
+      "timestamp": 21058,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "data": "い"
+    },
+    {
+      "timestamp": 21060,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "い",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21062,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "い",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "い",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21127,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "い",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21130,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "い",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "key": "i",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21132,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "い",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyS",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21136,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "い",
+      "selectionStart": 0,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "data": "いｓ"
+    },
+    {
+      "timestamp": 21138,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "い",
+      "selectionStart": 0,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "いｓ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21141,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "いｓ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "いｓ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21200,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "いｓ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21203,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "いｓ",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "data": "いし"
+    },
+    {
+      "timestamp": 21204,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "いｓ",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "いし",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21206,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "いし",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "いし",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21279,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "いし",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21281,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "いし",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "key": "i",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21283,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "いし",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyS",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21285,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "いし",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "key": "s",
+      "code": "KeyS",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21350,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "いし",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyM",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21354,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "いし",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "data": "いしｍ"
+    },
+    {
+      "timestamp": 21355,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "いし",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "いしｍ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21357,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "いしｍ",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "いしｍ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21406,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "いしｍ",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21409,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "いしｍ",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "data": "いしも"
+    },
+    {
+      "timestamp": 21411,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "いしｍ",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "いしも",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21412,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "いしも",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "いしも",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21452,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "いしも",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyM",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21454,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "いしも",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "key": "m",
+      "code": "KeyM",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21483,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "いしも",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyR",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21485,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "いしも",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "data": "いしもｒ"
+    },
+    {
+      "timestamp": 21486,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "いしも",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "いしもｒ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21488,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "いしもｒ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "いしもｒ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21515,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "いしもｒ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21518,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "いしもｒ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "key": "o",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21570,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "いしもｒ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21572,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "いしもｒ",
+      "selectionStart": 0,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "data": "いしもり"
+    },
+    {
+      "timestamp": 21574,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "いしもｒ",
+      "selectionStart": 0,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "いしもり",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21576,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "いしもり",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "いしもり",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21618,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "いしもり",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyR",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21620,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "いしもり",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "key": "r",
+      "code": "KeyR",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21633,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "いしもり",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "Space",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21677,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "いしもり",
+      "selectionStart": 0,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "data": "石森"
+    },
+    {
+      "timestamp": 21680,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "いしもり",
+      "selectionStart": 0,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "石森",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21682,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "石森",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "石森",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21687,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "石森",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21690,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "石森",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "key": "i",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21735,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "石森",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "Space",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21738,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "石森",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "key": " ",
+      "code": "Space",
+      "isComposing": true
+    },
+    {
+      "timestamp": 22305,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "石森",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "Enter",
+      "isComposing": true
+    },
+    {
+      "timestamp": 22307,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "石森",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "data": "石森"
+    },
+    {
+      "timestamp": 22309,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "石森",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "石森",
+      "isComposing": true
+    },
+    {
+      "timestamp": 22310,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "石森",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "石森",
+      "isComposing": true
+    },
+    {
+      "timestamp": 22311,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionend",
+      "value": "石森",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "data": "石森"
+    },
+    {
+      "timestamp": 22384,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Editing",
+      "eventType": "keyup",
+      "value": "石森",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "Enter",
+      "isComposing": false
+    },
+    {
+      "timestamp": 23023,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Editing",
+      "eventType": "keydown",
+      "value": "石森",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 4,
+        "col": 0
+      },
+      "key": "Enter",
+      "code": "Enter",
+      "isComposing": false
+    },
+    {
+      "timestamp": 23117,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "keyup",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "key": "Enter",
+      "code": "Enter",
+      "isComposing": false
+    },
+    {
+      "timestamp": 24267,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "keydown",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyA",
+      "isComposing": false
+    },
+    {
+      "timestamp": 24269,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "compositionstart",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "data": ""
+    },
+    {
+      "timestamp": 24270,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "data": "あ"
+    },
+    {
+      "timestamp": 24271,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "あ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 24273,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "あ",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "あ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 24361,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "あ",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 24364,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "あ",
+      "selectionStart": 0,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "data": "あい"
+    },
+    {
+      "timestamp": 24366,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "あ",
+      "selectionStart": 0,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "あい",
+      "isComposing": true
+    },
+    {
+      "timestamp": 24367,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "あい",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "あい",
+      "isComposing": true
+    },
+    {
+      "timestamp": 24441,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "あい",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 24444,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "あい",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "key": "i",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 24493,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "あい",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyA",
+      "isComposing": true
+    },
+    {
+      "timestamp": 24496,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "あい",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "key": "a",
+      "code": "KeyA",
+      "isComposing": true
+    },
+    {
+      "timestamp": 24559,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "あい",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyU",
+      "isComposing": true
+    },
+    {
+      "timestamp": 24561,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "あい",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "data": "あいう"
+    },
+    {
+      "timestamp": 24563,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "あい",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "あいう",
+      "isComposing": true
+    },
+    {
+      "timestamp": 24564,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "あいう",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "あいう",
+      "isComposing": true
+    },
+    {
+      "timestamp": 24670,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "あいう",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyU",
+      "isComposing": true
+    },
+    {
+      "timestamp": 24672,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "あいう",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "key": "u",
+      "code": "KeyU",
+      "isComposing": true
+    },
+    {
+      "timestamp": 24762,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "あいう",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyE",
+      "isComposing": true
+    },
+    {
+      "timestamp": 24766,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "あいう",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "data": "あいうえ"
+    },
+    {
+      "timestamp": 24768,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "あいう",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "あいうえ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 24770,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "あいうえ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "あいうえ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 24921,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "あいうえ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyE",
+      "isComposing": true
+    },
+    {
+      "timestamp": 24923,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "あいうえ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "key": "e",
+      "code": "KeyE",
+      "isComposing": true
+    },
+    {
+      "timestamp": 25045,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "あいうえ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 25048,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "あいうえ",
+      "selectionStart": 0,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "data": "あいうえお"
+    },
+    {
+      "timestamp": 25049,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "あいうえ",
+      "selectionStart": 0,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "あいうえお",
+      "isComposing": true
+    },
+    {
+      "timestamp": 25051,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "あいうえお",
+      "selectionStart": 5,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "あいうえお",
+      "isComposing": true
+    },
+    {
+      "timestamp": 25164,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "あいうえお",
+      "selectionStart": 5,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 25167,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "あいうえお",
+      "selectionStart": 5,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "key": "o",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 25422,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "あいうえお",
+      "selectionStart": 5,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "Enter",
+      "isComposing": true
+    },
+    {
+      "timestamp": 25425,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "あいうえお",
+      "selectionStart": 0,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "data": "あいうえお"
+    },
+    {
+      "timestamp": 25426,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "あいうえお",
+      "selectionStart": 0,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "あいうえお",
+      "isComposing": true
+    },
+    {
+      "timestamp": 25429,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "あいうえお",
+      "selectionStart": 5,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "あいうえお",
+      "isComposing": true
+    },
+    {
+      "timestamp": 25430,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionend",
+      "value": "あいうえお",
+      "selectionStart": 5,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "data": "あいうえお"
+    },
+    {
+      "timestamp": 25525,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Editing",
+      "eventType": "keyup",
+      "value": "あいうえお",
+      "selectionStart": 5,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "Enter",
+      "isComposing": false
+    },
+    {
+      "timestamp": 25802,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Editing",
+      "eventType": "keydown",
+      "value": "あいうえお",
+      "selectionStart": 5,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 5,
+        "col": 0
+      },
+      "key": "Tab",
+      "code": "Tab",
+      "isComposing": false
+    },
+    {
+      "timestamp": 25952,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "keyup",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "key": "Tab",
+      "code": "Tab",
+      "isComposing": false
+    },
+    {
+      "timestamp": 26525,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "keydown",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "KeyK",
+      "isComposing": false
+    },
+    {
+      "timestamp": 26527,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "compositionstart",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "data": ""
+    },
+    {
+      "timestamp": 26528,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "data": "ｋ"
+    },
+    {
+      "timestamp": 26530,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "ｋ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 26532,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "ｋ",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "ｋ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 26649,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "ｋ",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "KeyK",
+      "isComposing": true
+    },
+    {
+      "timestamp": 26652,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "ｋ",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "key": "k",
+      "code": "KeyK",
+      "isComposing": true
+    },
+    {
+      "timestamp": 26654,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "ｋ",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "KeyA",
+      "isComposing": true
+    },
+    {
+      "timestamp": 26658,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "ｋ",
+      "selectionStart": 0,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "data": "か"
+    },
+    {
+      "timestamp": 26661,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "ｋ",
+      "selectionStart": 0,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "か",
+      "isComposing": true
+    },
+    {
+      "timestamp": 26663,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "か",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "か",
+      "isComposing": true
+    },
+    {
+      "timestamp": 26784,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "か",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "KeyK",
+      "isComposing": true
+    },
+    {
+      "timestamp": 26786,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "か",
+      "selectionStart": 0,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "data": "かｋ"
+    },
+    {
+      "timestamp": 26788,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "か",
+      "selectionStart": 0,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "かｋ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 26789,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "かｋ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "かｋ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 26812,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "かｋ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "KeyA",
+      "isComposing": true
+    },
+    {
+      "timestamp": 26815,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "かｋ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "key": "a",
+      "code": "KeyA",
+      "isComposing": true
+    },
+    {
+      "timestamp": 26870,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "かｋ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "KeyK",
+      "isComposing": true
+    },
+    {
+      "timestamp": 26873,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "かｋ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "key": "k",
+      "code": "KeyK",
+      "isComposing": true
+    },
+    {
+      "timestamp": 27002,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "かｋ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 27005,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "かｋ",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "data": "かき"
+    },
+    {
+      "timestamp": 27008,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "かｋ",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "かき",
+      "isComposing": true
+    },
+    {
+      "timestamp": 27009,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "かき",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "かき",
+      "isComposing": true
+    },
+    {
+      "timestamp": 27056,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "かき",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 27062,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "かき",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "key": "i",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 27231,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "かき",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "KeyK",
+      "isComposing": true
+    },
+    {
+      "timestamp": 27233,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "かき",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "data": "かきｋ"
+    },
+    {
+      "timestamp": 27235,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "かき",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "かきｋ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 27236,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "かきｋ",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "かきｋ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 27334,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "かきｋ",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "KeyU",
+      "isComposing": true
+    },
+    {
+      "timestamp": 27337,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "かきｋ",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "data": "かきく"
+    },
+    {
+      "timestamp": 27339,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "かきｋ",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "かきく",
+      "isComposing": true
+    },
+    {
+      "timestamp": 27340,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "かきく",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "かきく",
+      "isComposing": true
+    },
+    {
+      "timestamp": 27365,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "かきく",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "KeyK",
+      "isComposing": true
+    },
+    {
+      "timestamp": 27369,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "かきく",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "key": "k",
+      "code": "KeyK",
+      "isComposing": true
+    },
+    {
+      "timestamp": 27396,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "かきく",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "KeyU",
+      "isComposing": true
+    },
+    {
+      "timestamp": 27399,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "かきく",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "key": "u",
+      "code": "KeyU",
+      "isComposing": true
+    },
+    {
+      "timestamp": 27505,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "かきく",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "KeyK",
+      "isComposing": true
+    },
+    {
+      "timestamp": 27507,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "かきく",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "data": "かきくｋ"
+    },
+    {
+      "timestamp": 27509,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "かきく",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "かきくｋ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 27511,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "かきくｋ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "かきくｋ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 27607,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "かきくｋ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "KeyK",
+      "isComposing": true
+    },
+    {
+      "timestamp": 27609,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "かきくｋ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "key": "k",
+      "code": "KeyK",
+      "isComposing": true
+    },
+    {
+      "timestamp": 27649,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "かきくｋ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "KeyE",
+      "isComposing": true
+    },
+    {
+      "timestamp": 27654,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "かきくｋ",
+      "selectionStart": 0,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "data": "かきくけ"
+    },
+    {
+      "timestamp": 27657,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "かきくｋ",
+      "selectionStart": 0,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "かきくけ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 27660,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "かきくけ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "かきくけ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 27832,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "かきくけ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "KeyE",
+      "isComposing": true
+    },
+    {
+      "timestamp": 27835,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "かきくけ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "key": "e",
+      "code": "KeyE",
+      "isComposing": true
+    },
+    {
+      "timestamp": 27849,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "かきくけ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "KeyK",
+      "isComposing": true
+    },
+    {
+      "timestamp": 27851,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "かきくけ",
+      "selectionStart": 0,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "data": "かきくけｋ"
+    },
+    {
+      "timestamp": 27853,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "かきくけ",
+      "selectionStart": 0,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "かきくけｋ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 27856,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "かきくけｋ",
+      "selectionStart": 5,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "かきくけｋ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 27960,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "かきくけｋ",
+      "selectionStart": 5,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 27964,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "かきくけｋ",
+      "selectionStart": 0,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "data": "かきくけこ"
+    },
+    {
+      "timestamp": 27967,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "かきくけｋ",
+      "selectionStart": 0,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "かきくけこ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 27969,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "かきくけこ",
+      "selectionStart": 5,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "かきくけこ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 27991,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "かきくけこ",
+      "selectionStart": 5,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "KeyK",
+      "isComposing": true
+    },
+    {
+      "timestamp": 27994,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "かきくけこ",
+      "selectionStart": 5,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "key": "k",
+      "code": "KeyK",
+      "isComposing": true
+    },
+    {
+      "timestamp": 28087,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "かきくけこ",
+      "selectionStart": 5,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 28090,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "かきくけこ",
+      "selectionStart": 5,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "key": "o",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 28221,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "かきくけこ",
+      "selectionStart": 5,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "Enter",
+      "isComposing": true
+    },
+    {
+      "timestamp": 28224,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "かきくけこ",
+      "selectionStart": 0,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "data": "かきくけこ"
+    },
+    {
+      "timestamp": 28225,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "かきくけこ",
+      "selectionStart": 0,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "かきくけこ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 28227,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "かきくけこ",
+      "selectionStart": 5,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "かきくけこ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 28228,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionend",
+      "value": "かきくけこ",
+      "selectionStart": 5,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "data": "かきくけこ"
+    },
+    {
+      "timestamp": 28316,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Editing",
+      "eventType": "keyup",
+      "value": "かきくけこ",
+      "selectionStart": 5,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "Enter",
+      "isComposing": false
+    },
+    {
+      "timestamp": 28702,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Editing",
+      "eventType": "keydown",
+      "value": "かきくけこ",
+      "selectionStart": 5,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 5,
+        "col": 1
+      },
+      "key": "Enter",
+      "code": "Enter",
+      "isComposing": false
+    },
+    {
+      "timestamp": 28796,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "keyup",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "key": "Enter",
+      "code": "Enter",
+      "isComposing": false
+    },
+    {
+      "timestamp": 29438,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "keydown",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "KeyT",
+      "isComposing": false
+    },
+    {
+      "timestamp": 29441,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "compositionstart",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "data": ""
+    },
+    {
+      "timestamp": 29442,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "data": "ｔ"
+    },
+    {
+      "timestamp": 29443,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "ｔ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 29445,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "ｔ",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "ｔ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 29484,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "ｔ",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 29489,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "ｔ",
+      "selectionStart": 0,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "data": "と"
+    },
+    {
+      "timestamp": 29492,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "ｔ",
+      "selectionStart": 0,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "と",
+      "isComposing": true
+    },
+    {
+      "timestamp": 29496,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "と",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "と",
+      "isComposing": true
+    },
+    {
+      "timestamp": 29538,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "と",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "KeyU",
+      "isComposing": true
+    },
+    {
+      "timestamp": 29542,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "と",
+      "selectionStart": 0,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "data": "とう"
+    },
+    {
+      "timestamp": 29545,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "と",
+      "selectionStart": 0,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "とう",
+      "isComposing": true
+    },
+    {
+      "timestamp": 29549,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "とう",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "とう",
+      "isComposing": true
+    },
+    {
+      "timestamp": 29588,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "とう",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 29593,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "とう",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "key": "o",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 29597,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "とう",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "KeyT",
+      "isComposing": true
+    },
+    {
+      "timestamp": 29602,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "とう",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "key": "t",
+      "code": "KeyT",
+      "isComposing": true
+    },
+    {
+      "timestamp": 29631,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "とう",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "KeyU",
+      "isComposing": true
+    },
+    {
+      "timestamp": 29635,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "とう",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "key": "u",
+      "code": "KeyU",
+      "isComposing": true
+    },
+    {
+      "timestamp": 29711,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "とう",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "KeyK",
+      "isComposing": true
+    },
+    {
+      "timestamp": 29714,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "とう",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "data": "とうｋ"
+    },
+    {
+      "timestamp": 29716,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "とう",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "とうｋ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 29718,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "とうｋ",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "とうｋ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 29783,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "とうｋ",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "KeyK",
+      "isComposing": true
+    },
+    {
+      "timestamp": 29787,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "とうｋ",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "key": "k",
+      "code": "KeyK",
+      "isComposing": true
+    },
+    {
+      "timestamp": 29882,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "とうｋ",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "KeyY",
+      "isComposing": true
+    },
+    {
+      "timestamp": 29885,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "とうｋ",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "data": "とうｋｙ"
+    },
+    {
+      "timestamp": 29887,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "とうｋ",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "とうｋｙ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 29889,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "とうｋｙ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "とうｋｙ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 29937,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "とうｋｙ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 29940,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "とうｋｙ",
+      "selectionStart": 0,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "data": "とうきょ"
+    },
+    {
+      "timestamp": 29942,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "とうｋｙ",
+      "selectionStart": 0,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "とうきょ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 29944,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "とうきょ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "とうきょ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 29949,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "とうきょ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "KeyY",
+      "isComposing": true
+    },
+    {
+      "timestamp": 29951,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "とうきょ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "key": "y",
+      "code": "KeyY",
+      "isComposing": true
+    },
+    {
+      "timestamp": 30008,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "とうきょ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "KeyU",
+      "isComposing": true
+    },
+    {
+      "timestamp": 30011,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "とうきょ",
+      "selectionStart": 0,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "data": "とうきょう"
+    },
+    {
+      "timestamp": 30013,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "とうきょ",
+      "selectionStart": 0,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "とうきょう",
+      "isComposing": true
+    },
+    {
+      "timestamp": 30014,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "とうきょう",
+      "selectionStart": 5,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "とうきょう",
+      "isComposing": true
+    },
+    {
+      "timestamp": 30041,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "とうきょう",
+      "selectionStart": 5,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "Space",
+      "isComposing": true
+    },
+    {
+      "timestamp": 30051,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "とうきょう",
+      "selectionStart": 0,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "data": "東京"
+    },
+    {
+      "timestamp": 30053,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "とうきょう",
+      "selectionStart": 0,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "東京",
+      "isComposing": true
+    },
+    {
+      "timestamp": 30055,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "東京",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "東京",
+      "isComposing": true
+    },
+    {
+      "timestamp": 30063,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "東京",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 30065,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "東京",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "key": "o",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 30109,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "東京",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "KeyU",
+      "isComposing": true
+    },
+    {
+      "timestamp": 30111,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "東京",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "key": "u",
+      "code": "KeyU",
+      "isComposing": true
+    },
+    {
+      "timestamp": 30134,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "東京",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "Space",
+      "isComposing": true
+    },
+    {
+      "timestamp": 30137,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "東京",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "key": " ",
+      "code": "Space",
+      "isComposing": true
+    },
+    {
+      "timestamp": 30260,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "東京",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "Enter",
+      "isComposing": true
+    },
+    {
+      "timestamp": 30263,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "東京",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "data": "東京"
+    },
+    {
+      "timestamp": 30266,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "東京",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "東京",
+      "isComposing": true
+    },
+    {
+      "timestamp": 30269,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "東京",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "inputType": "insertCompositionText",
+      "data": "東京",
+      "isComposing": true
+    },
+    {
+      "timestamp": 30269,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionend",
+      "value": "東京",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "data": "東京"
+    },
+    {
+      "timestamp": 30323,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Editing",
+      "eventType": "keyup",
+      "value": "東京",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "key": "Process",
+      "code": "Enter",
+      "isComposing": false
+    },
+    {
+      "timestamp": 30817,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Editing",
+      "eventType": "keydown",
+      "value": "東京",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 6,
+        "col": 1
+      },
+      "key": "Tab",
+      "code": "Tab",
+      "isComposing": false
+    },
+    {
+      "timestamp": 30992,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "keyup",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "key": "Tab",
+      "code": "Tab",
+      "isComposing": false
+    },
+    {
+      "timestamp": 34494,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "blur",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      }
+    },
+    {
+      "timestamp": 218707,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "pointerdown",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      }
+    },
+    {
+      "timestamp": 218710,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "focus",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 4,
+        "col": 2
+      }
+    },
+    {
+      "timestamp": 223129,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "keydown",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 4,
+        "col": 2
+      },
+      "key": "Escape",
+      "code": "Escape",
+      "isComposing": false
+    },
+    {
+      "timestamp": 223256,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "keyup",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 4,
+        "col": 2
+      },
+      "key": "Escape",
+      "code": "Escape",
+      "isComposing": false
+    },
+    {
+      "timestamp": 223390,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "keydown",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 4,
+        "col": 2
+      },
+      "key": "Escape",
+      "code": "Escape",
+      "isComposing": false
+    },
+    {
+      "timestamp": 223524,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "keyup",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 4,
+        "col": 2
+      },
+      "key": "Escape",
+      "code": "Escape",
+      "isComposing": false
+    },
+    {
+      "timestamp": 224537,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "keydown",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 4,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "KeyA",
+      "isComposing": false
+    },
+    {
+      "timestamp": 224540,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "compositionstart",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 4,
+        "col": 2
+      },
+      "data": ""
+    },
+    {
+      "timestamp": 224541,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 4,
+        "col": 2
+      },
+      "data": "あ"
+    },
+    {
+      "timestamp": 224542,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 4,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "あ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 224544,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "あ",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 4,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "あ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 224671,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "あ",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 4,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "KeyA",
+      "isComposing": true
+    },
+    {
+      "timestamp": 224673,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "あ",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 4,
+        "col": 2
+      },
+      "key": "a",
+      "code": "KeyA",
+      "isComposing": true
+    },
+    {
+      "timestamp": 224987,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "あ",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 4,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 224989,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "あ",
+      "selectionStart": 0,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 4,
+        "col": 2
+      },
+      "data": "あい"
+    },
+    {
+      "timestamp": 224991,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "あ",
+      "selectionStart": 0,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 4,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "あい",
+      "isComposing": true
+    },
+    {
+      "timestamp": 224993,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "あい",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 4,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "あい",
+      "isComposing": true
+    },
+    {
+      "timestamp": 225098,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "あい",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 4,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 225100,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "あい",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 4,
+        "col": 2
+      },
+      "key": "i",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 225483,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "あい",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 4,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "KeyU",
+      "isComposing": true
+    },
+    {
+      "timestamp": 225485,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "あい",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 4,
+        "col": 2
+      },
+      "data": "あいう"
+    },
+    {
+      "timestamp": 225487,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "あい",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 4,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "あいう",
+      "isComposing": true
+    },
+    {
+      "timestamp": 225488,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "あいう",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 4,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "あいう",
+      "isComposing": true
+    },
+    {
+      "timestamp": 225562,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "あいう",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 4,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "KeyU",
+      "isComposing": true
+    },
+    {
+      "timestamp": 225564,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "あいう",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 4,
+        "col": 2
+      },
+      "key": "u",
+      "code": "KeyU",
+      "isComposing": true
+    },
+    {
+      "timestamp": 233994,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "あいう",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 4,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "Enter",
+      "isComposing": true
+    },
+    {
+      "timestamp": 233998,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "あいう",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 4,
+        "col": 2
+      },
+      "data": "あいう"
+    },
+    {
+      "timestamp": 234000,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "あいう",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 4,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "あいう",
+      "isComposing": true
+    },
+    {
+      "timestamp": 234002,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "あいう",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 4,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "あいう",
+      "isComposing": true
+    },
+    {
+      "timestamp": 234003,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionend",
+      "value": "あいう",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 4,
+        "col": 2
+      },
+      "data": "あいう"
+    },
+    {
+      "timestamp": 234105,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Editing",
+      "eventType": "keyup",
+      "value": "あいう",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 4,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "Enter",
+      "isComposing": false
+    },
+    {
+      "timestamp": 238140,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Editing",
+      "eventType": "keydown",
+      "value": "あいう",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 4,
+        "col": 2
+      },
+      "key": "Enter",
+      "code": "Enter",
+      "isComposing": false
+    },
+    {
+      "timestamp": 238250,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "keyup",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 5,
+        "col": 2
+      },
+      "key": "Enter",
+      "code": "Enter",
+      "isComposing": false
+    },
+    {
+      "timestamp": 251389,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "keydown",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 5,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "KeyA",
+      "isComposing": false
+    },
+    {
+      "timestamp": 251391,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "compositionstart",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 5,
+        "col": 2
+      },
+      "data": ""
+    },
+    {
+      "timestamp": 251392,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 5,
+        "col": 2
+      },
+      "data": "あ"
+    },
+    {
+      "timestamp": 251394,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 5,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "あ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 251397,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "あ",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 5,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "あ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 251529,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "あ",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 5,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "KeyA",
+      "isComposing": true
+    },
+    {
+      "timestamp": 251531,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "あ",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 5,
+        "col": 2
+      },
+      "key": "a",
+      "code": "KeyA",
+      "isComposing": true
+    },
+    {
+      "timestamp": 251658,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "あ",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 5,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 251662,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "あ",
+      "selectionStart": 0,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 5,
+        "col": 2
+      },
+      "data": "あお"
+    },
+    {
+      "timestamp": 251664,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "あ",
+      "selectionStart": 0,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 5,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "あお",
+      "isComposing": true
+    },
+    {
+      "timestamp": 251667,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "あお",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 5,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "あお",
+      "isComposing": true
+    },
+    {
+      "timestamp": 251745,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "あお",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 5,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 251747,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "あお",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 5,
+        "col": 2
+      },
+      "key": "o",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 252132,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "あお",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 5,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 252134,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "あお",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 5,
+        "col": 2
+      },
+      "data": "あおい"
+    },
+    {
+      "timestamp": 252136,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "あお",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 5,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "あおい",
+      "isComposing": true
+    },
+    {
+      "timestamp": 252138,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "あおい",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 5,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "あおい",
+      "isComposing": true
+    },
+    {
+      "timestamp": 252235,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "あおい",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 5,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 252237,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "あおい",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 5,
+        "col": 2
+      },
+      "key": "i",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 252937,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "あおい",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 5,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "Enter",
+      "isComposing": true
+    },
+    {
+      "timestamp": 252941,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "あおい",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 5,
+        "col": 2
+      },
+      "data": "あおい"
+    },
+    {
+      "timestamp": 252945,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "あおい",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 5,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "あおい",
+      "isComposing": true
+    },
+    {
+      "timestamp": 252949,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "あおい",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 5,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "あおい",
+      "isComposing": true
+    },
+    {
+      "timestamp": 252950,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionend",
+      "value": "あおい",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 5,
+        "col": 2
+      },
+      "data": "あおい"
+    },
+    {
+      "timestamp": 253016,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Editing",
+      "eventType": "keyup",
+      "value": "あおい",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 5,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "Enter",
+      "isComposing": false
+    },
+    {
+      "timestamp": 253410,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Editing",
+      "eventType": "keydown",
+      "value": "あおい",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 5,
+        "col": 2
+      },
+      "key": "Enter",
+      "code": "Enter",
+      "isComposing": false
+    },
+    {
+      "timestamp": 253512,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "keyup",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "key": "Enter",
+      "code": "Enter",
+      "isComposing": false
+    },
+    {
+      "timestamp": 254398,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "keydown",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "KeyI",
+      "isComposing": false
+    },
+    {
+      "timestamp": 254401,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "compositionstart",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "data": ""
+    },
+    {
+      "timestamp": 254401,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "data": "い"
+    },
+    {
+      "timestamp": 254403,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "い",
+      "isComposing": true
+    },
+    {
+      "timestamp": 254404,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "い",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "い",
+      "isComposing": true
+    },
+    {
+      "timestamp": 254450,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "い",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "KeyS",
+      "isComposing": true
+    },
+    {
+      "timestamp": 254455,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "い",
+      "selectionStart": 0,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "data": "いｓ"
+    },
+    {
+      "timestamp": 254457,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "い",
+      "selectionStart": 0,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "いｓ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 254459,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "いｓ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "いｓ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 254467,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "いｓ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 254470,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "いｓ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "key": "i",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 254553,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "いｓ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 254556,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "いｓ",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "data": "いし"
+    },
+    {
+      "timestamp": 254558,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "いｓ",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "いし",
+      "isComposing": true
+    },
+    {
+      "timestamp": 254559,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "いし",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "いし",
+      "isComposing": true
+    },
+    {
+      "timestamp": 254622,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "いし",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 254625,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "いし",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "key": "i",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 254627,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "いし",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "KeyS",
+      "isComposing": true
+    },
+    {
+      "timestamp": 254628,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "いし",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "key": "s",
+      "code": "KeyS",
+      "isComposing": true
+    },
+    {
+      "timestamp": 254692,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "いし",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "KeyM",
+      "isComposing": true
+    },
+    {
+      "timestamp": 254695,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "いし",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "data": "いしｍ"
+    },
+    {
+      "timestamp": 254699,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "いし",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "いしｍ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 254701,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "いしｍ",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "いしｍ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 254739,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "いしｍ",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 254742,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "いしｍ",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "data": "いしも"
+    },
+    {
+      "timestamp": 254744,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "いしｍ",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "いしも",
+      "isComposing": true
+    },
+    {
+      "timestamp": 254746,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "いしも",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "いしも",
+      "isComposing": true
+    },
+    {
+      "timestamp": 254802,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "いしも",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "KeyM",
+      "isComposing": true
+    },
+    {
+      "timestamp": 254804,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "いしも",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "key": "m",
+      "code": "KeyM",
+      "isComposing": true
+    },
+    {
+      "timestamp": 254850,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "いしも",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 254852,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "いしも",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "key": "o",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 254894,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "いしも",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "KeyR",
+      "isComposing": true
+    },
+    {
+      "timestamp": 254898,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "いしも",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "data": "いしもｒ"
+    },
+    {
+      "timestamp": 254899,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "いしも",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "いしもｒ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 254901,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "いしもｒ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "いしもｒ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 254959,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "いしもｒ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 254961,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "いしもｒ",
+      "selectionStart": 0,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "data": "いしもり"
+    },
+    {
+      "timestamp": 254963,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "いしもｒ",
+      "selectionStart": 0,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "いしもり",
+      "isComposing": true
+    },
+    {
+      "timestamp": 254964,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "いしもり",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "いしもり",
+      "isComposing": true
+    },
+    {
+      "timestamp": 255005,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "いしもり",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "KeyR",
+      "isComposing": true
+    },
+    {
+      "timestamp": 255007,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "いしもり",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "key": "r",
+      "code": "KeyR",
+      "isComposing": true
+    },
+    {
+      "timestamp": 255053,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "いしもり",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 255055,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "いしもり",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "key": "i",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 255507,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "いしもり",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "Enter",
+      "isComposing": true
+    },
+    {
+      "timestamp": 255511,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "いしもり",
+      "selectionStart": 0,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "data": "いしもり"
+    },
+    {
+      "timestamp": 255514,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "いしもり",
+      "selectionStart": 0,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "いしもり",
+      "isComposing": true
+    },
+    {
+      "timestamp": 255517,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "いしもり",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "いしもり",
+      "isComposing": true
+    },
+    {
+      "timestamp": 255518,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionend",
+      "value": "いしもり",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "data": "いしもり"
+    },
+    {
+      "timestamp": 255578,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Editing",
+      "eventType": "keyup",
+      "value": "いしもり",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "Enter",
+      "isComposing": false
+    },
+    {
+      "timestamp": 256040,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Editing",
+      "eventType": "keydown",
+      "value": "いしもり",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 6,
+        "col": 2
+      },
+      "key": "Enter",
+      "code": "Enter",
+      "isComposing": false
+    },
+    {
+      "timestamp": 256135,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "keyup",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 7,
+        "col": 2
+      },
+      "key": "Enter",
+      "code": "Enter",
+      "isComposing": false
+    },
+    {
+      "timestamp": 268356,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "blur",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 7,
+        "col": 2
+      }
+    },
+    {
+      "timestamp": 629110,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "pointerdown",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 7,
+        "col": 2
+      }
+    },
+    {
+      "timestamp": 629116,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "focus",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      }
+    },
+    {
+      "timestamp": 631208,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "keydown",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "KeyN",
+      "isComposing": false
+    },
+    {
+      "timestamp": 631213,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Navigation",
+      "eventType": "compositionstart",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "data": ""
+    },
+    {
+      "timestamp": 631215,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "data": "ｎ"
+    },
+    {
+      "timestamp": 631218,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "ｎ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 631220,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "ｎ",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "ｎ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 631276,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "ｎ",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 631281,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "ｎ",
+      "selectionStart": 0,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "data": "に"
+    },
+    {
+      "timestamp": 631283,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "ｎ",
+      "selectionStart": 0,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "に",
+      "isComposing": true
+    },
+    {
+      "timestamp": 631285,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "に",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "に",
+      "isComposing": true
+    },
+    {
+      "timestamp": 631306,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "に",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "KeyN",
+      "isComposing": true
+    },
+    {
+      "timestamp": 631311,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "に",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "key": "n",
+      "code": "KeyN",
+      "isComposing": true
+    },
+    {
+      "timestamp": 631347,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "に",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 631350,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "に",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "key": "i",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 631434,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "に",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "KeyH",
+      "isComposing": true
+    },
+    {
+      "timestamp": 631437,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "に",
+      "selectionStart": 0,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "data": "にｈ"
+    },
+    {
+      "timestamp": 631439,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "に",
+      "selectionStart": 0,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "にｈ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 631440,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "にｈ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "にｈ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 631482,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "にｈ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 631486,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "にｈ",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "data": "にほ"
+    },
+    {
+      "timestamp": 631489,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "にｈ",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "にほ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 631491,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "にほ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "にほ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 631577,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "KeyH",
+      "isComposing": true
+    },
+    {
+      "timestamp": 631579,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "key": "h",
+      "code": "KeyH",
+      "isComposing": true
+    },
+    {
+      "timestamp": 631600,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 631603,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "key": "o",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 631855,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "にほ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "KeyN",
+      "isComposing": true
+    },
+    {
+      "timestamp": 631859,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "にほ",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "data": "にほｎ"
+    },
+    {
+      "timestamp": 631861,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "にほ",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "にほｎ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 631862,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "にほｎ",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "にほｎ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 631934,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほｎ",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "KeyN",
+      "isComposing": true
+    },
+    {
+      "timestamp": 631938,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほｎ",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "key": "n",
+      "code": "KeyN",
+      "isComposing": true
+    },
+    {
+      "timestamp": 632015,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "にほｎ",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "KeyN",
+      "isComposing": true
+    },
+    {
+      "timestamp": 632017,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "にほｎ",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "data": "にほん"
+    },
+    {
+      "timestamp": 632020,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "にほｎ",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "にほん",
+      "isComposing": true
+    },
+    {
+      "timestamp": 632023,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "にほん",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "にほん",
+      "isComposing": true
+    },
+    {
+      "timestamp": 632142,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほん",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "KeyN",
+      "isComposing": true
+    },
+    {
+      "timestamp": 632144,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほん",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "key": "n",
+      "code": "KeyN",
+      "isComposing": true
+    },
+    {
+      "timestamp": 635320,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "にほん",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "Space",
+      "isComposing": true
+    },
+    {
+      "timestamp": 635371,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "にほん",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "data": "日本"
+    },
+    {
+      "timestamp": 635373,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "にほん",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "日本",
+      "isComposing": true
+    },
+    {
+      "timestamp": 635375,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "日本",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "日本",
+      "isComposing": true
+    },
+    {
+      "timestamp": 635448,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "日本",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "Space",
+      "isComposing": true
+    },
+    {
+      "timestamp": 635451,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "日本",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "key": " ",
+      "code": "Space",
+      "isComposing": true
+    },
+    {
+      "timestamp": 636233,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "日本",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "Space",
+      "isComposing": true
+    },
+    {
+      "timestamp": 636247,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "日本",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "data": "二本"
+    },
+    {
+      "timestamp": 636250,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "日本",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "二本",
+      "isComposing": true
+    },
+    {
+      "timestamp": 636252,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "二本",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "二本",
+      "isComposing": true
+    },
+    {
+      "timestamp": 636368,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "二本",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "Space",
+      "isComposing": true
+    },
+    {
+      "timestamp": 636370,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "二本",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "key": " ",
+      "code": "Space",
+      "isComposing": true
+    },
+    {
+      "timestamp": 646139,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "二本",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "Enter",
+      "isComposing": true
+    },
+    {
+      "timestamp": 646144,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "二本",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "data": "二本"
+    },
+    {
+      "timestamp": 646148,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "二本",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "二本",
+      "isComposing": true
+    },
+    {
+      "timestamp": 646152,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "二本",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "inputType": "insertCompositionText",
+      "data": "二本",
+      "isComposing": true
+    },
+    {
+      "timestamp": 646153,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Composing",
+      "eventType": "compositionend",
+      "value": "二本",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "data": "二本"
+    },
+    {
+      "timestamp": 646242,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Editing",
+      "eventType": "keyup",
+      "value": "二本",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      },
+      "key": "Process",
+      "code": "Enter",
+      "isComposing": false
+    },
+    {
+      "timestamp": 661252,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Google",
+      "state": "Editing",
+      "eventType": "blur",
+      "value": "二本",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 8,
+        "col": 2
+      }
+    }
+  ]
+}

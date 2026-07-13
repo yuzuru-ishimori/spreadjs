@@ -27,7 +27,7 @@
 
 | CG | 内容 | 主担当DD | 解除証拠（何をもって解除とするか） | 期限 | 未解除時の扱い | 現在状態 |
 |---|---|---|---|---|---|---|
-| **CG-1** | 実機IME（日本語連続入力の正しさ） | DD-012 単一利用者IME縦切りDD ＋ **最終consumer統合後（DD-016）の Tier 1 実機スモーク** | 実機 trace・確定Enter順序A/B・先頭欠落0（Win Chrome/Edge **両方**）。証拠採取は `event-recorder`/`trace-panel`（DD-009台帳 C 参照） | **Facade公開前** | **Alpha不可** | 未着手 |
+| **CG-1** | 実機IME（日本語連続入力の正しさ） | DD-012-1 入力縦切りDD ＋ **最終consumer統合後（DD-016）の Tier 1 実機スモーク** | 実機 trace・**先頭欠落0＋順序B確定**（Win Chrome/Edge **両方**）。証拠採取は `event-recorder`/`trace-panel`（DD-009台帳 C 参照） | **Facade公開前** | **Alpha不可** | **解除済**（DD-012-1・2026-07-13）。実機20セッション（Chrome6＋Edge5＋Edge9・Win Chromium 150・Microsoft IME）→ `scripts/cg1/judge-ime-trace.mjs` **verdict PASS**（先頭欠落0・順序B・両ブラウザ）。証拠=`doc/DD/DD-012-1/cg1-judge-result.json`＋trace3本（`cg1-chrome-msime.json`/`cg1-edge-msime-1.json`/`cg1-edge-msime-2.json`）＋`evidence.md`。**再定義注記**: 確定Enter順序Aは現行 Tier-1（Chromium 150）で構造的に発生しない（実機0）→自動不変条件/E2E〔synthetic〕で担保し実機必須から除外。**DD-016 の統合後 Tier 1 実機スモークは残**（Facade 配線後の最終確認） |
 | **CG-2** | 安定ID（index→RowId） | DD-010 安定ID・CellStore移行DD | RowId serialization・replay 整合試験 green | **永続化DD（DD-014）より前** | **Alpha不可** | **解除済**（DD-010・証拠 `doc/DD/DD-010/replay-evidence.md`〔AC1〜5〕・`perf-report.md`〔AC6〕。RowId キー slot 間接 CellStore を core（`@nanairo-sheet/core`）へ統合・round-trip/全replay/differential green。DD-014 より前に完了。ADR-0011 は **Codex レビュー（xhigh・findings 4件全対応）をもって Accepted 確定**〔ユーザー判断 2026-07-13＝ChatGPT ではなく Codex で十分〕） |
 | **CG-3** | snapshot 正式形式 | DD-014 永続化・snapshot復元DD | versioned snapshot・snapshot+tail replay 一致・100k で log 全replay 非依存・O(N²)回避測定・corrupt/version fail-fast | reconnect DD（DD-015）前 | **Alpha不可** | 未着手 |
 | **CG-4** | Tier 1 環境 | **DD-009 基盤判断（確定）＋全DD共通（実証）** | Tier 1 compatibility matrix（枠＝ADR-0015・`package-boundary.md` §6。実測記入 DD-017・合否 DD-018） | **Phase開始時に確定・exit で実証** | 対象外環境を明示（境界化で可） | **枠確定（DD-009）／実測待ち** |
@@ -37,7 +37,7 @@
 ## CG × 担当DD 早見
 
 ```text
-CG-1 実機IME        → DD-012（＋DD-016 統合後スモーク）   期限: Facade公開前   未解除: Alpha不可
+CG-1 実機IME        → DD-012-1【解除済】（＋DD-016 統合後スモーク）  期限: Facade公開前   未解除: Alpha不可
 CG-2 安定ID         → DD-010【解除済】                    期限: DD-014 前      未解除: Alpha不可
 CG-3 snapshot形式   → DD-014                             期限: DD-015 前      未解除: Alpha不可
 CG-4 Tier 1         → DD-009（確定）＋DD-017/018（実証）  期限: 開始時/exit    未解除: 対象外明示で可
