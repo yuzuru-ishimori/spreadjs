@@ -307,6 +307,10 @@ export async function startServer(options: StartServerOptions = {}): Promise<Run
       : undefined;
   const bridge = new RoomBridge(persistentRoom ?? room);
   const demoHtml = loadDemoHtml();
+  // 検査/復元用 snapshot: 永続化有効時は durable frontier 以下に制限する（未 fsync revision を `/snapshot`・
+  // RunningServer.snapshot() から観測させない・DD-014-1 P1-3）。無効時は現在状態（全 in-memory が読取可能）。
+  const readSnapshot = (): SnapshotData =>
+    persistentRoom !== undefined ? persistentRoom.durableSnapshot() : serializeSnapshot(room.exportState());
 
   const app = new Hono();
   // dev サーバー: playground 統合ページは別オリジン（Vite dev の別ポート）から /config・/snapshot を fetch するため
@@ -316,7 +320,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<Run
   app.get('/health', (c) => c.text('ok'));
   // columnOrder はブラウザークライアント（playground 統合ページ）が ClientSession を同一列順で構築するために配る。
   app.get('/config', (c) => c.json({ documentId, heartbeatMillis, columnOrder: columnOrderStrings }));
-  app.get('/snapshot', (c) => c.json(serializeSnapshot(room.exportState())));
+  app.get('/snapshot', (c) => c.json(readSnapshot()));
 
   const { server, boundPort } = await new Promise<{ server: NodeServer; boundPort: number }>(
     (resolve, reject) => {
@@ -360,7 +364,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<Run
     url,
     documentId,
     hash: () => documentHash(sequencer.document),
-    snapshot: () => serializeSnapshot(room.exportState()),
+    snapshot: () => readSnapshot(),
     connectionCount: () => bridge.connectionCount(),
     recovery,
     close: () => closeServer(server, wss, sweepTimer, persistentRoom),

@@ -1,6 +1,7 @@
 # ADR-0023: Durable 永続化契約と versioned persisted snapshot format
 
-- **Status**: **Proposed**（2026-07-13）。DD-014（永続化・snapshot復元）で本 ADR の方式（durable ACK 契約・operation log 永続化・persisted snapshot format v1・snapshot＋tail 復元一致・100k で log 全replay 非依存＝O(N²)回避）を実装し、サーバー側は自動試験・100k 復旧計測で実証した。ただし **Codex xhigh レビューで P1 findings（durable frontier 未満 revision の観測・snapshot が durable frontier 超過・oplog 失敗時の room poisoning・クライアント snapshot bootstrap 未実装）を検出し未反映**のため、**Accepted は当該 findings 反映後**とする（Accepted 化＝原則 External Review 対象だが、本件は DD-010/ADR-0011・DD-012-1 先例に倣い Codex xhigh レビューをもって承認代替とする）。永続化方式の大きな設計転換（例: PostgreSQL 本採用）が生じたら停止して再判定・ユーザー提示。
+- **Status**: **Accepted**（2026-07-14・子DD DD-014-1 の Codex xhigh レビュー承認をもって Proposed→Accepted 昇格。Accepted 化＝原則 External Review 対象だが、DD-010/ADR-0011・DD-012-1 先例に倣い Codex xhigh レビューを承認代替とする）。DD-014（永続化・snapshot復元）で本 ADR の方式（durable ACK 契約・operation log 永続化・persisted snapshot format v1・snapshot＋tail 復元一致・100k で log 全replay 非依存＝O(N²)回避）を実装し、**子DD DD-014-1 で Codex xhigh P1 findings を解消**（下記「6. durable frontier・snapshot bootstrap〔DD-014-1〕」）。永続化方式の大きな設計転換（例: PostgreSQL 本採用）が生じたら停止して再判定・ユーザー提示。
+  - 履歴: Proposed（2026-07-13・DD-014 サーバー側実装）→ Accepted（2026-07-14・DD-014-1 で durable frontier/snapshot barrier/room poisoning/クライアント snapshot bootstrap を実装し Codex xhigh 承認）。
 - **関連**: 計画書 §19（Phase 2 永続化）・§6（信頼境界）／roadmap §0 CG-3・§4 DD-014／ADR-0005（server-ordered operation log＝本 ADR の「log=正本」の前提）／ADR-0015（version 不一致 fail-fast）／DD-010・ADR-0011（RowId キー CellStore＝CG-2・本 DD の前提）／DD-013（同期・本 ADR は触れない）・DD-015（reconnect・切断系）／DD-016（Facade・物理抽出）
 
 ## 背景・課題
@@ -43,6 +44,17 @@ version 不一致・checksum 不一致・JSON 破損・oplog **中間行**破損
 - **100k 復旧計測（AC4/AC5・`doc/DD/DD-014/recovery-perf-raw.txt`）**: base 100k セル。snapshot-based recovery tail 250/500/1000 = **865/660/565ms**（全 hashMatch=true・≦5秒目標達成）。tailReplayed=tail 長のみ（log 全長 100k+ に非依存）＝log 全replay 非依存。O(N²)回避: tail ×2.00 に対し時間 ×0.76/×0.86（tail比²=4 から程遠い＝概ね線形）。
 - **fault matrix（AC6・`doc/DD/DD-014/evidence.md`）**: unsupported version・JSON 破損・checksum 不一致・oplog 中間破損・torn write（末尾のみ破棄）・snapshot 欠落＋log 残存 の各ケースを注入して fail-fast/安全破棄を固定。
 - **回帰**: `npm run test` 674 pass / 0 fail（apply.test 26・hash.test 22 含む＝リファクタで hash 決定性維持）・typecheck・lint（boundary 新規 0）・build green。
+
+### 6. durable frontier・snapshot bootstrap（DD-014-1・CG-3 解除の残条件）
+
+DD-014 の Codex xhigh P1 findings（P1-3〜P1-7）を子DD DD-014-1 で解消し、durable ACK 契約に**読取境界**と**クライアント初期化**を追加する:
+
+- **join protocol = snapshot@R＋tail**: fresh join（`lastAppliedRevision=0`・非空文書）に対しサーバーは新規 `bootstrap`（document@frontier）メッセージを 1 通返す。クライアントは全 operationLog を replay せず committed@R を確立し tail のみ適用する（DD-006 の 100k 全replay=14分 経路を排除・§8 既知制約回収）。文書 wire 形式（`DocumentSnapshot`）は `@nanairo-sheet/core` が所有し、サーバー snapshot とクライアント bootstrap が同一実装を共有する（両端乖離＝hash 非決定化を防ぐ・CG-2 維持）。partial/reconnect（`lastAppliedRevision>0`）は従来の tail（operations）経路。
+- **durable frontier 読取ゲート（P1-3）**: 配布境界 = durable frontier（fsync 済み最大 revision）。join / requestCatchup / `/snapshot` / welcome は frontier 以下のみ配布し、未 fsync revision を観測させない。frontier は append(fsync) 解決後に単調前進する（document は COW ゆえ frontier 時点の参照保持で不変。clientSequenceTable も frontier 時点をコピー保持＝未 durable の clientSequence を漏らさない）。
+- **snapshot barrier（P1-4）**: snapshot 生成は frontier == currentRevision の完全 durable 状態からのみ（snapshot.revision ≦ durable frontier を常に満たし、再起動時 snapshot.revision > oplog 長 の fail-fast を構造的に排除）。生成中の蓄積分は完了時に再判定する（P2-5）。
+- **room poisoning（P1-5）**: oplog append 失敗時に room を poisoning（write 全停止・後続 submit reject・Sequencer 非前進）し revision 欠番を防ぐ。`FileOpLogStore` は一度でも fsync 失敗すると fail-stop（以降の append を全 reject）し、並行 in-flight で後続 append が成功して欠番/偽 durable ACK を生むのを防ぐ。
+- **reconnect-with-pending 保護**: bootstrap は operation envelope を運ばないため、fresh 再接続で残る **ACK 済み pending**（committed@R に含まれる成功 op）を bootstrap 時に除去してから再検証する（成功 op を Conflict Queue へ誤送しない）。未 ACK pending は保持（消失0）。残る un-acked-drop の稀 race は DD-015（reconnect/CG-5）で回収。
+- **実証（DD-014-1 Evidence full）**: fresh join bootstrap は operationLog を 1 件も replay しない（20k op 文書で bootstrap 4.8ms vs 全replay 26s・`doc/DD/DD-014-1/bootstrap-perf-raw.txt`）。実ブラウザー再読込復元 E2E green（`reload-bootstrap.spec.ts`）。durable frontier fault matrix・barrier・poisoning を注入テストで固定（`durable-frontier.test.ts`）。
 
 ## 再検討条件
 

@@ -5,18 +5,30 @@
 // connectionId はサーバーが払い出す（welcome.sessionId＝Presence 管理単位）。clientId（envelope）は clientSequence/
 // 冪等キーで再接続不変（protocol-subset §2）。時刻・ID は注入（clock / idGenerator）でテスト再現可能。
 
+import { serializeDocument } from '@nanairo-sheet/core';
 import type {
   ClientMessageExceptJoin,
   ClientOperationEnvelope,
   JoinMessage,
   ServerMessage,
   ServerOperationEnvelope,
+  SheetDocument,
 } from '@nanairo-sheet/core';
 
 import { createCounterIdGenerator } from './deps';
 import type { Clock, IdGenerator } from './deps';
 import { PresenceRegistry } from './presence';
 import type { Sequencer, SequencerState } from './sequencer';
+
+/**
+ * durable 読取境界（DD-014-1・P1-3）。join/requestCatchup/welcome が観測してよい最大 revision（frontier）と
+ * その revision に対応する権威文書を供給する。永続化無効時は Room が Sequencer の現在値を frontier とみなす
+ * （in-memory のみ＝全 revision が即読取可能）。PersistentRoom が fsync 済み境界を注入して未 durable を隠す。
+ */
+export interface DurableBoundary {
+  frontierRevision(): number; // fsync 済み最大 revision（この revision 以下のみ配布する）
+  frontierDocument(): SheetDocument; // document@frontierRevision（COW ゆえ以降の op で不変・snapshot bootstrap の源）
+}
 
 /** Outbound の宛先。transport が 'all'/'others' を活性接続へ fan-out する。 */
 export type OutboundTarget =
@@ -38,6 +50,7 @@ export class Room {
   private readonly clock: Clock;
   private readonly idGenerator: IdGenerator;
   private readonly connections = new Map<string, { clientId: string }>();
+  private durableBoundary: DurableBoundary | undefined;
 
   constructor(
     sequencer: Sequencer,
@@ -53,6 +66,36 @@ export class Room {
   }
 
   /**
+   * durable 読取境界を注入する（PersistentRoom が構築時に呼ぶ・DD-014-1 P1-3）。以降 join/catch-up/welcome は
+   * frontier 以下のみを配布する。未注入（永続化無効）なら Sequencer の現在 revision/document を frontier とみなす。
+   */
+  attachDurableBoundary(boundary: DurableBoundary): void {
+    this.durableBoundary = boundary;
+  }
+
+  /** 配布してよい最大 revision（durable frontier）。永続化無効時は現在 revision（全 in-memory が読取可能）。 */
+  private frontierRevision(): number {
+    return this.durableBoundary?.frontierRevision() ?? this.sequencer.currentRevision;
+  }
+
+  /** frontier revision に対応する権威文書（snapshot bootstrap の源）。 */
+  private frontierDocument(): SheetDocument {
+    return this.durableBoundary?.frontierDocument() ?? this.sequencer.document;
+  }
+
+  /**
+   * afterRevision 超〜frontier 以下の未受信 op を返す（catch-up/join tail 共通）。durable 境界未注入（永続化無効）時は
+   * frontier=currentRevision ゆえ余計な filter 割当を避ける（実 WS 収束経路の per-message オーバーヘッドを増やさない）。
+   */
+  private operationsUpToFrontier(afterRevision: number, frontier: number): ServerOperationEnvelope[] {
+    const since = this.sequencer.operationsSince(afterRevision);
+    if (this.durableBoundary === undefined) {
+      return since; // frontier == currentRevision＝全て配布可（filter 不要）
+    }
+    return since.filter((e) => e.revision <= frontier);
+  }
+
+  /**
    * join を処理し connectionId を払い出す（§8.2）。welcome ＋ lastAppliedRevision 以降の operations ＋
    * presenceSnapshot を送信元へ返す。join は userId/displayName を持たない（§1）ため presenceDelta は
    * 最初の presence メッセージで配信する（colorKey は join で予約・S-L1）。
@@ -62,6 +105,7 @@ export class Room {
     this.connections.set(connectionId, { clientId: join.clientId });
     const colorKey = this.presence.register(connectionId); // colorKey を welcome で返す（Phase 3 指示 3）
 
+    const frontier = this.frontierRevision(); // welcome/配布は durable frontier 以下に限定（P1-3・未 durable を隠す）
     const outbound: Outbound[] = [
       {
         target: { kind: 'connection', connectionId },
@@ -69,18 +113,32 @@ export class Room {
           type: 'welcome',
           sessionId: connectionId,
           colorKey,
-          currentRevision: this.sequencer.currentRevision,
+          currentRevision: frontier,
           capabilities: { protocolVersion: PROTOCOL_VERSION },
         },
       },
     ];
 
-    const missed = this.sequencer.operationsSince(join.lastAppliedRevision);
-    if (missed.length > 0) {
+    // snapshot bootstrap（P1-6/P1-7・§8 既知制約回収）: fresh join（lastAppliedRevision<=0）で文書が空でなければ、
+    // 全 operationLog を送らず document@frontier（snapshot）1 通で committed を確立させる（全 replay 経路を廃止）。
+    if (join.lastAppliedRevision <= 0 && frontier > 0) {
       outbound.push({
         target: { kind: 'connection', connectionId },
-        message: operationsMessage(missed),
+        message: {
+          type: 'bootstrap',
+          document: serializeDocument(this.frontierDocument()),
+          revision: frontier,
+        },
       });
+    } else {
+      // tail 経路（reconnect/catch-up・lastAppliedRevision>0）: frontier 以下の未受信 op だけを送る。
+      const missed = this.operationsUpToFrontier(join.lastAppliedRevision, frontier);
+      if (missed.length > 0) {
+        outbound.push({
+          target: { kind: 'connection', connectionId },
+          message: operationsMessage(missed),
+        });
+      }
     }
 
     outbound.push({
@@ -189,7 +247,9 @@ export class Room {
   }
 
   private handleRequestCatchup(connectionId: string, afterRevision: number): Outbound[] {
-    const missed = this.sequencer.operationsSince(afterRevision);
+    // durable frontier 以下のみ配布する（未 fsync revision を catch-up から観測させない・P1-3）。
+    const frontier = this.frontierRevision();
+    const missed = this.operationsUpToFrontier(afterRevision, frontier);
     // off-by-one: fromRevision = afterRevision+1（afterRevision 自身は再送しない・S-I5）。空でも range を返し確定応答。
     return [
       {
@@ -197,7 +257,7 @@ export class Room {
         message: {
           type: 'operations',
           fromRevision: afterRevision + 1,
-          toRevision: this.sequencer.currentRevision,
+          toRevision: frontier,
           operations: missed,
         },
       },

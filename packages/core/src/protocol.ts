@@ -5,6 +5,7 @@
 // 配置判断（DDログ記録）: Operation Envelope（Client/Server）は Phase 1 で operations.ts に定義済みのため
 // ここで二重定義せず type import して message でラップする。message union / reject コード / Presence 型のみ本ファイルに追加する。
 
+import type { DocumentSnapshot } from './document-snapshot';
 import type { ClientOperationEnvelope, ServerOperationEnvelope } from './operations';
 import type { OperationViolation } from './validate';
 
@@ -123,6 +124,17 @@ export interface OperationsMessage {
   operations: ServerOperationEnvelope[];
 }
 
+/**
+ * snapshot bootstrap（DD-014-1・CG-3）: fresh join（lastAppliedRevision=0）に対しサーバーが返す。
+ * クライアントは全 operationLog を replay せず、この document@revision から committed を確立し tail のみ適用する
+ * （§8 既知制約「snapshotベース初期化」回収・P1-6/P1-7）。document は durable frontier 以下（未 durable を配らない）。
+ */
+export interface BootstrapMessage {
+  type: 'bootstrap';
+  document: DocumentSnapshot; // document@revision（durable frontier 以下の権威文書）
+  revision: number; // = document.revision（committed の確定 revision）
+}
+
 export interface OperationAckMessage {
   type: 'operationAck';
   operationId: OperationId;
@@ -159,6 +171,7 @@ export interface HeartbeatAckMessage {
 export type ServerMessage =
   | WelcomeMessage
   | OperationsMessage
+  | BootstrapMessage
   | OperationAckMessage
   | OperationRejectedMessage
   | PresenceSnapshotMessage

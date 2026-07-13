@@ -107,6 +107,10 @@ function isServerMessage(value: unknown): value is ServerMessage {
         typeof value.toRevision === 'number' &&
         Array.isArray(value.operations)
       );
+    case 'bootstrap':
+      // snapshot bootstrap（DD-014-1）: document（正準構造）＋revision。両端が自製ゆえ内部詳細は信頼する
+      // （decode 方針の踏襲）。document は DocumentSnapshot（rowOrder/rowMeta/columnOrder/cells）。
+      return typeof value.revision === 'number' && isRecord(value.document);
     case 'operationAck':
       return typeof value.operationId === 'string' && typeof value.revision === 'number';
     case 'operationRejected':

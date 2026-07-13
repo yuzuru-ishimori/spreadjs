@@ -4,6 +4,7 @@ export * from './operations';
 export * from './cell-input';
 export * from './cell-store';
 export * from './document';
+export * from './document-snapshot';
 export * from './apply';
 export * from './hash';
 export * from './validate';

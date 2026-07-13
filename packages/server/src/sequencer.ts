@@ -71,6 +71,14 @@ export class Sequencer {
   }
 
   /**
+   * clientId→最終処理 clientSequence の読み取りビュー（durable frontier での state 捕捉用・DD-014-1 P1-C）。
+   * 呼び出し側はコピーして保持する（内部 Map は submit で前進する）。
+   */
+  get clientSequenceTable(): ReadonlyMap<string, number> {
+    return this.state.clientSequenceTable;
+  }
+
+  /**
    * submitOperation を §5 の処理順で処理する。
    * 1 operationId 冪等 → 2 clientSequence → 3 baseRevision → 4 検証 → 5 適用（no-op は revision 非消費）。
    */

@@ -7,18 +7,62 @@
 //   snapshot 無しは oplog 全 replay（DD-006 の 14分経路・snapshot が無い縮退時のみ）。
 // snapshot 生成（要確認③）: 前回から N=1,000 accepted op ごとに非同期生成。保持 K=2 世代。log 切詰めなし（正本保全）。
 
-import { replayAcceptedOperations } from '@nanairo-sheet/core';
-import type { ClientMessageExceptJoin, ServerOperationEnvelope } from '@nanairo-sheet/core';
+import { replayAcceptedOperations, serializeDocument } from '@nanairo-sheet/core';
+import type {
+  ClientMessageExceptJoin,
+  ServerOperationEnvelope,
+  SheetDocument,
+} from '@nanairo-sheet/core';
 import type { ColumnId } from '@nanairo-sheet/types';
 
 import type { Clock } from './deps';
 import type { OpLogStore } from './oplog-store';
-import type { Outbound, Room } from './room';
+import type { DurableBoundary, Outbound, Room } from './room';
 import { Sequencer, freshSequencerState } from './sequencer';
 import type { SequencerState } from './sequencer';
-import { serializeSnapshot, deserializeSnapshot } from './snapshot';
+import { SNAPSHOT_VERSION, serializeSnapshot, deserializeSnapshot } from './snapshot';
+import type { SnapshotData } from './snapshot';
 import { createPersistedSnapshot } from './snapshot-store';
 import type { SnapshotStore } from './snapshot-store';
+
+/**
+ * durable frontier（fsync 完了済み最大 revision）とその文書を保持する可変ホルダー（DD-014-1 P1-3/P1-4）。
+ * Room は DurableBoundary として読取（join/catch-up を frontier 以下に制限）、PersistentRoom は append 解決時に advance する。
+ * 文書は COW（applyOperation が新インスタンスを返す）ゆえ frontier 時点の参照を保持すれば以降の op で不変。
+ */
+class DurableFrontier implements DurableBoundary {
+  constructor(
+    private revision: number,
+    private document: SheetDocument,
+    private clientSequenceTable: ReadonlyMap<string, number>,
+  ) {}
+
+  frontierRevision(): number {
+    return this.revision;
+  }
+
+  frontierDocument(): SheetDocument {
+    return this.document;
+  }
+
+  /** frontier 時点の clientSequenceTable（durable snapshot 用・P1-C: live 表〔未 durable op を含む〕を混ぜない）。 */
+  frontierClientSequenceTable(): ReadonlyMap<string, number> {
+    return this.clientSequenceTable;
+  }
+
+  /**
+   * append（fsync）解決後に呼ぶ。単調前進のみ（append は FIFO ゆえ通常昇順・順不同でも guard で安全）。
+   * document・clientSequenceTable は submit 直後（revision R 確定時点・COW/コピー済み）に捕捉した値を渡す
+   * （await 中に別 submit が live 表を前進させても frontier は R 時点のまま＝未 durable を漏らさない・P1-C）。
+   */
+  advance(revision: number, document: SheetDocument, clientSequenceTable: ReadonlyMap<string, number>): void {
+    if (revision > this.revision) {
+      this.revision = revision;
+      this.document = document;
+      this.clientSequenceTable = clientSequenceTable;
+    }
+  }
+}
 
 /** 再起動復旧の内訳（Evidence・性能測定用）。 */
 export interface RecoveryReport {
@@ -132,6 +176,8 @@ export class PersistentRoom {
   private opsSinceSnapshot = 0;
   private snapshotInProgress = false;
   private lastSnapshotError: unknown;
+  private readonly frontier: DurableFrontier;
+  private poisoned = false; // append 失敗後は write を全停止（欠番防止・P1-5）
 
   constructor(
     private readonly room: Room,
@@ -142,10 +188,22 @@ export class PersistentRoom {
     private readonly options: PersistentRoomOptions,
   ) {
     this.snapshotIntervalOps = options.snapshotIntervalOps ?? DEFAULT_SNAPSHOT_INTERVAL;
+    // 構築時点の Sequencer 状態（recovery/seed 済み＝全て durable）を frontier の初期値にする。
+    this.frontier = new DurableFrontier(
+      sequencer.currentRevision,
+      sequencer.document,
+      new Map(sequencer.clientSequenceTable),
+    );
+    room.attachDurableBoundary(this.frontier); // 以降 Room の join/catch-up/welcome は frontier 以下に限定
   }
 
   handleJoin(join: Parameters<Room['handleJoin']>[0]): ReturnType<Room['handleJoin']> {
     return this.room.handleJoin(join);
+  }
+
+  /** append 失敗で room が poisoned（write 停止）か。運用監視・テスト用。 */
+  get isPoisoned(): boolean {
+    return this.poisoned;
   }
 
   /**
@@ -156,12 +214,35 @@ export class PersistentRoom {
     if (message.type !== 'submitOperation') {
       return this.room.handleMessage(connectionId, message);
     }
+    // poisoning（P1-5）: 直前の append 失敗で room の durable 一貫性が壊れている。新規 write は全て拒否し、
+    // Sequencer をこれ以上前進させない（revision 欠番＝oplog に穴、を作らない）。RoomBridge が接続を閉じる。
+    if (this.poisoned) {
+      throw new Error('PersistentRoom: poisoned（直前の durable 書込失敗により write 停止中）');
+    }
     const revisionBefore = this.sequencer.currentRevision;
     // submit（revision 割当・ログ in-memory 追記）は同期。ここまでで順序が確定する。
     const outbound = this.room.handleMessage(connectionId, message);
     const accepted = this.sequencer.operationsSince(revisionBefore); // 新規 accepted（0 or 1 件）
     if (accepted.length > 0) {
-      await this.oplog.append(accepted); // ★ durable 境界（fsync）。解決後に呼び出し側が ACK/broadcast を dispatch。
+      // append 前に「この op を durable 化したら frontier はどこか」を submit 直後（revision R 確定時点）に捕捉する。
+      // document は COW ゆえ不変・clientSequenceTable は R 時点をコピー（await 中に別 submit が live 表を前進させても
+      // frontier は R のまま＝未 durable の clientSequence を漏らさない・P1-C）。
+      const revision = this.sequencer.currentRevision;
+      const document = this.sequencer.document;
+      const clientSequenceTable = new Map(this.sequencer.clientSequenceTable);
+      try {
+        await this.oplog.append(accepted); // ★ durable 境界（fsync）。解決後に ACK/broadcast を dispatch。
+      } catch (error) {
+        this.poisoned = true; // 以降の submit は上の poisoned チェックで reject（fail-stop・欠番0）
+        throw error;
+      }
+      // P1-A: await 中に別の in-flight append が失敗して room を poison した可能性を再確認する。
+      // 失敗が先行していれば frontier を前進させず ACK/broadcast も出さない（欠番・偽 durable ACK を防ぐ）。
+      // oplog は先行失敗後に fail-stop するため本 append 自体が reject される経路が主だが、二重の防御として保持する。
+      if (this.poisoned) {
+        throw new Error('PersistentRoom: poisoned（在庫中の durable 書込が失敗したため本 op も破棄）');
+      }
+      this.frontier.advance(revision, document, clientSequenceTable); // durable 化完了 → 配布境界を前進
       this.opsSinceSnapshot += accepted.length;
       this.maybeSnapshot();
     }
@@ -189,14 +270,24 @@ export class PersistentRoom {
     return this.lastSnapshotError;
   }
 
-  /** N op ごとに非同期 snapshot 生成をトリガーする（生成中の重複起動はしない・取り漏らしは oplog が正本ゆえ発生しない）。 */
+  /**
+   * N op ごとに非同期 snapshot 生成をトリガーする（P1-4 barrier・P2-5 再判定）。
+   * - **barrier（P1-4）**: snapshot は durable frontier == currentRevision の**完全 durable 状態**からのみ生成する。
+   *   in-flight append で currentRevision が frontier を超えている間は延期する（snapshot.revision > durable oplog 長＝
+   *   再起動 fail-fast を構造的に防ぐ）。延期は opsSinceSnapshot を保持したまま return し、次の append 解決後に再評価する。
+   * - **P2-5**: 生成完了時に蓄積分（write 中に到着した op）を再評価し、閾値超過なら続けて生成する（tail 肥大を防ぐ）。
+   */
   private maybeSnapshot(): void {
     if (this.snapshotInProgress || this.opsSinceSnapshot < this.snapshotIntervalOps) {
       return;
     }
+    // barrier: 完全 durable 状態（frontier == currentRevision）でのみ snapshot を取る。in-flight があれば延期。
+    if (this.frontier.frontierRevision() !== this.sequencer.currentRevision) {
+      return; // opsSinceSnapshot は据え置き＝次の append 解決後に再評価される（取り漏らし無し）
+    }
     this.opsSinceSnapshot = 0;
     this.snapshotInProgress = true;
-    // exportState は同期＝生成時点の一貫した状態（document は COW ゆえ以降の op で不変）。async write は競合しない。
+    // exportState は同期＝生成時点の一貫した状態（frontier==current ゆえ全て durable・snapshot<=frontier を満たす）。
     const state = this.sequencer.exportState();
     const revision = state.currentRevision;
     void this.writeSnapshot(state, revision)
@@ -205,7 +296,33 @@ export class PersistentRoom {
       })
       .finally(() => {
         this.snapshotInProgress = false;
+        this.maybeSnapshot(); // P2-5: write 中に蓄積した分を再判定（閾値未満なら即 return）
       });
+  }
+
+  /**
+   * durable frontier 以下に制限した snapshot を返す（`/snapshot` エンドポイント・検査用・P1-3）。
+   * 未 fsync（frontier 超過）の revision は document・operationLog・currentRevision・ackCache のいずれからも観測させない。
+   * frontier == currentRevision（in-flight 無し）のときは通常の serializeSnapshot と一致する。
+   */
+  durableSnapshot(): SnapshotData {
+    const R = this.frontier.frontierRevision();
+    const state = this.sequencer.exportState();
+    return {
+      version: SNAPSHOT_VERSION,
+      document: serializeDocument(this.frontier.frontierDocument()),
+      operationLog: state.operationLog.filter((e) => e.revision <= R),
+      currentRevision: R,
+      // ackCache（値=revision）は revision≦R で gate。clientSequenceTable（値=clientSequence）は R で gate できないため
+      // frontier 時点のコピーを使う（未 durable op〔R+1〕の clientSequence を漏らさない・P1-C: 復元後の retry 誤 reject を防ぐ）。
+      ackCache: [...state.ackCache]
+        .filter(([, revision]) => revision <= R)
+        .map(([operationId, revision]) => ({ operationId, revision })),
+      clientSequenceTable: [...this.frontier.frontierClientSequenceTable()].map(([clientId, lastSequence]) => ({
+        clientId,
+        lastSequence,
+      })),
+    };
   }
 
   private async writeSnapshot(state: SequencerState, revision: number): Promise<void> {

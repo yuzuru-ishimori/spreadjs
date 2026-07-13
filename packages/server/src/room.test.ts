@@ -100,6 +100,18 @@ describe('Room join（§8.2・S-L1）', () => {
     expect(ops.fromRevision).toBe(2);
     expect(ops.toRevision).toBe(2);
   });
+
+  it('DD-014-1 AC1: 非空文書への fresh join（lastApplied=0）は bootstrap（document@R）を返し全 operationLog を送らない', () => {
+    const { room, sequencer } = createTestRoom();
+    for (let i = 1; i <= 4; i += 1) {
+      sequencer.submit(envelope({ clientId: 'setup', clientSequence: i, operationId: `s${i}`, operation: insertRows(null, [`row-${i}`]) }));
+    }
+    const { outbound } = room.handleJoin(join('cA', 0));
+    const boot = messagesOfType(outbound, 'bootstrap');
+    expect(boot).toHaveLength(1);
+    expect(boot[0].revision).toBe(4); // = currentRevision（frontier）
+    expect(messagesOfType(outbound, 'operations')).toHaveLength(0); // ★ 全 replay 経路（operationLog 全送出）が残っていない
+  });
 });
 
 describe('Room submitOperation ルーティング（S-H4 エコー）', () => {

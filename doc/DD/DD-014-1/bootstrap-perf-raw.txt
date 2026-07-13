@@ -1,0 +1,26 @@
+# DD-014-1 client snapshot bootstrap measurement
+# generated: 2026-07-13T22:10:03.062Z
+# authoritative doc: 2000 rows × 10 cols = 20000 cells built from 20000 individual SetCells ops
+# node: v22.20.0
+
+# authoritative revision=20001 operationLog length=20001 hash=14e87425234f032b
+
+[bootstrap] fresh join（lastAppliedRevision=0）
+  outbound message types   = ["welcome","bootstrap","presenceSnapshot"]
+  operations messages       = 0  ★ 全 operationLog 送出 0（全 replay 非依存）
+  bootstrap messages        = 1
+  client appliedServerOpCount = 0  ★ 適用サーバー op = 0（tail 無し）
+  client committed revision = 20001 (== authoritative 20001)
+  client committed hash     = 14e87425234f032b (match=true)
+  bootstrap payload rowOrder length = 2000 (document@R・operationLog 非埋め込み)
+  bootstrap restore time    = 4.8ms
+
+[full-replay] 対照（全 operationLog を replay・DD-006 14分経路の縮小版）
+  client appliedServerOpCount = 20001  (= operationLog length 20001)
+  client committed revision = 20001
+  client committed hash     = 14e87425234f032b (match=true)
+  full replay time          = 26268.4ms
+
+# 判定: fresh join は bootstrap 1 通で committed@R を確立し operationLog を 1 件も replay しない（appliedServerOpCount=0）。
+#       対照の full-replay は operationLog 全 20001 件を適用する。DD-006 実測では 100k 個別 op replay=14分。
+#       ゆえに join/ブラウザー再読込の初期化は全 replay に依存しない（AC1/AC8・§8 既知制約回収）。

@@ -501,6 +501,10 @@ export interface IntegrationTestApi {
   conflictCount(): number;
   divertedCount(): number;
   knownPresenceCount(): number;
+  /** DD-014-1: snapshot bootstrap で確立した committed revision（未 bootstrap は 0）。全 replay 非依存の確証。 */
+  bootstrapRevision(): number;
+  /** DD-014-1: committed へ適用したサーバー op 総数（bootstrap 後の再読込は tail のみ＝小さい＝全 replay 非依存）。 */
+  appliedServerOpCount(): number;
   presences(): IntegrationPresenceView[];
   isConflicting(): boolean;
   isComposing(): boolean;
@@ -542,6 +546,8 @@ window.__integrationTestApi = {
   conflictCount: () => sync?.session.conflictQueue.length ?? 0,
   divertedCount: () => editor?.session.divertedDrafts().length ?? 0,
   knownPresenceCount: () => sync?.session.knownPresences().length ?? 0,
+  bootstrapRevision: () => sync?.session.bootstrapRevision ?? 0,
+  appliedServerOpCount: () => sync?.session.appliedServerOpCount ?? 0,
   presences: () =>
     (sync?.session.knownPresences() ?? []).map((p) => ({
       displayName: p.displayName,

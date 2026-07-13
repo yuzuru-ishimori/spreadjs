@@ -12,11 +12,13 @@ import {
   createDocument,
   deleteCell,
   deleteRowCells,
+  deserializeDocument,
   documentHash,
   setCell,
   validateOperation,
 } from '@nanairo-sheet/core';
 import type {
+  BootstrapMessage,
   CellAddressById,
   ChangeSet,
   ClientMessage,
@@ -148,7 +150,10 @@ export class ClientSession implements TransportListener {
   private lastSendAt = 0;
   private lastPollAt = 0;
   private awaitingSync = false;
+  private awaitingBootstrap = false; // fresh join（committed.revision=0）で snapshot bootstrap を待つ（P1-6/P1-7）
   private knownServerRevision: number | undefined = undefined;
+  private _appliedServerOpCount = 0; // committed へ適用したサーバー op 総数（AC1/AC8 の「全 replay 非依存」計測用）
+  private _bootstrapRevision: number | undefined = undefined; // snapshot bootstrap で確立した committed revision
 
   constructor(config: SessionConfig) {
     this.clientId = config.clientId;
@@ -236,6 +241,12 @@ export class ClientSession implements TransportListener {
     // 受信済み revision より先を1件も受け取れず（buffer 空・後続 op も欠落）gap 検知が起きない静止系でも、
     // requestCatchup{afterRevision: expectedRevision-1} を周期送信すればサーバーが差分を返し収束する
     // （requestCatchup は既存プロトコル・afterRevision=expectedRevision-1 で全 catch-up ケースを包含）。
+    // bootstrap 待ち（fresh join）中は周期 catch-up を発行しない（P1-4/Codex）: requestCatchup{afterRevision:0} は
+    // サーバーに全 operationLog（revisions 1..frontier）を返させ、bootstrap で回避したはずの全 replay 経路を復活させる。
+    // bootstrap は join 応答に同梱されて到着するため、それまで catch-up を抑止する。
+    if (this.awaitingBootstrap) {
+      return;
+    }
     if (now - this.lastPollAt >= this.catchupPollMillis) {
       this.lastPollAt = now;
       this.requestCatchup();
@@ -261,6 +272,9 @@ export class ClientSession implements TransportListener {
     switch (message.type) {
       case 'welcome':
         this.handleWelcome(message);
+        break;
+      case 'bootstrap':
+        this.handleBootstrap(message);
         break;
       case 'operations':
         this.handleOperations(message);
@@ -291,12 +305,49 @@ export class ClientSession implements TransportListener {
     this._connectionId = message.sessionId;
     this._colorKey = message.colorKey; // 自色（welcome 拡張・指示 3）
     this.knownServerRevision = message.currentRevision;
+    // fresh join（committed 空）で server が前進していれば、続く bootstrap メッセージが committed を確立する。
+    // ここで catch-up を発行すると server が全 operationLog を返す＝全 replay 経路に戻るため、bootstrap を待つ（P1-6/P1-7）。
+    if (this.awaitingBootstrap && message.currentRevision > this.committed.revision) {
+      return;
+    }
+    this.awaitingBootstrap = false;
     // 既知サーバー revision（currentRevision）に committed が未達なら差分を要求する
     // （初期/再接続の operations 配信が欠落しても welcome が到達すれば回復できる）。
     if (this.needsCatchup()) {
       this.requestCatchup();
     }
     this.maybeFinalizeSync();
+  }
+
+  /**
+   * snapshot bootstrap（§8 既知制約回収・P1-6/P1-7）: 全 operationLog を replay せず document@revision から committed を確立する。
+   * fresh join（committed.revision=0）でのみ前進する。deserialize は core の共有関数（server serialize と wire 一致）。
+   */
+  private handleBootstrap(message: BootstrapMessage): void {
+    if (message.revision <= this.committed.revision) {
+      this.awaitingBootstrap = false;
+      return; // 既に同等以上（reconnect は tail 経路・二重 bootstrap を無視）
+    }
+    this.committed = deserializeDocument(message.document); // committed.revision = message.document.revision (= R)
+    this.expectedRevision = this.committed.revision + 1;
+    this._bootstrapRevision = message.revision;
+    // R 以下の buffer は committed に取り込み済みゆえ破棄（重複適用防止）。
+    for (const revision of [...this.revisionBuffer.keys()]) {
+      if (revision < this.expectedRevision) {
+        this.revisionBuffer.delete(revision);
+      }
+    }
+    if (this.knownServerRevision === undefined || message.revision > this.knownServerRevision) {
+      this.knownServerRevision = message.revision;
+    }
+    this.awaitingBootstrap = false;
+    // reconnect-with-pending 保護（Codex P1）: サーバーが accepted した（ACK 受領済み）pending は committed@R に
+    // 既に含まれる。bootstrap は operation envelope を運ばず own-echo で除去できないため、ここで acknowledged な
+    // pending を除去してから再適用する（さもないと duplicate-row 等で「成功済み op」を誤って Conflict Queue へ送る）。
+    // 未 ACK の pending は保持し再送・再検証に委ねる（消失0・input 保全）。残る un-acked-drop の稀 race は DD-015 で回収。
+    this.pending = this.pending.filter((entry) => !entry.acknowledged);
+    this.rebuildView(); // 残 pending を新 committed へ再適用（fresh では空）
+    this.drainBuffer(); // R+1.. がバッファにあれば連続適用しつつ maybeFinalizeSync
   }
 
   private handleOperations(message: OperationsMessage): void {
@@ -340,6 +391,7 @@ export class ClientSession implements TransportListener {
     this.committed = applyOperation(this.committed, serverEnv.operation, {
       revision: serverEnv.revision,
     }).document;
+    this._appliedServerOpCount += 1; // 適用したサーバー op を計上（bootstrap 後は tail のみ＝全 replay 非依存の実証）
     this.expectedRevision = serverEnv.revision + 1;
     this.removeFromPending(serverEnv.operationId); // own 除去（冪等・operationId 一致・S-H2/H4）
     this.rebuildView(); // 残 pending 再検証＋再適用＋不成立は Conflict Queue（手順4-6）
@@ -458,6 +510,9 @@ export class ClientSession implements TransportListener {
   // ---- 再送・再接続 ----
 
   private sendJoin(): void {
+    // fresh join（committed 空）はサーバーから snapshot bootstrap を受ける（全 operationLog replay を避ける・P1-6/P1-7）。
+    // reconnect（committed.revision>0）は従来どおり tail（差分）経路。
+    this.awaitingBootstrap = this.committed.revision === 0;
     this.transport.send({
       type: 'join',
       protocolVersion: this.protocolVersion,
@@ -584,6 +639,16 @@ export class ClientSession implements TransportListener {
 
   get nextExpectedRevision(): number {
     return this.expectedRevision;
+  }
+
+  /** committed へ適用したサーバー op 総数（AC1/AC8: bootstrap 後の join/再読込は tail のみ＝この値が小さい＝全 replay 非依存）。 */
+  get appliedServerOpCount(): number {
+    return this._appliedServerOpCount;
+  }
+
+  /** snapshot bootstrap で確立した committed revision（未 bootstrap は undefined。全 replay 非依存の確証）。 */
+  get bootstrapRevision(): number | undefined {
+    return this._bootstrapRevision;
   }
 
   get pendingCount(): number {

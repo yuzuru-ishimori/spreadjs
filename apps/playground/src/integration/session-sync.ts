@@ -104,6 +104,12 @@ export function createSessionSync(config: SessionSyncConfig): SessionSync {
     onServerMessage(message) {
       // session は適用済み。種別ごとに Render State の dirty を立てる（Render は常に Document State を追う・#1/#2）。
       switch (message.type) {
+        case 'bootstrap':
+          // snapshot bootstrap（DD-014-1）: committed が document@R へ丸ごと差し替わる。Render State は全再構築で追従
+          // （全 operationLog を replay せず初期ロードを確立・§8 既知制約回収）。firstSync 計測も初回同期として点火する。
+          view.markFullRebuild();
+          config.onOperations?.();
+          break;
         case 'operations':
           for (const envelope of message.operations) {
             view.noteOperation(envelope.operation);

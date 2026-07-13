@@ -111,7 +111,18 @@ Evidence Level: full（A区分: durability/ACK条件・fault matrix〔corrupt/un
 - [x] 密度計測を記録（人間確認時間・Codex effort/回数・ゲート待ち・findings数 → ログへ。roadmap §2.4）
 - [x] 😈 **DA批判レビュー**（Evidence full 監査: durability契約・fault matrix・復旧手順・測定生ログ・未保証境界〔ACK前クラッシュ＝§6〕が証跡に欠けていないか）
 
+## 既知制約（本DDで解消しない・子DD DD-014-1／後続DDへ回収・ユーザー決定 2026-07-13）
+
+- **P2-1: 単一行 InsertRows 連発ログの Θ(N²)** — `packages/core/src/apply.ts` `nextSlot` の全 rowMeta 走査＋`rowOrder.splice` により単一行 InsertRows が N 件並ぶ構造ログの replay は Θ(N²)。**行操作は Stage 2（DD-021）**のため Alpha 対象外＝最適化しない。100k 計測は bulk insert で O(N²) 回避を実証済（snapshot 経路＝セル値中心の線形性は担保）。回収先: DD-021。
+- **P2-3: recovery の documentId/revision 相互検証欠如** — 起動時 recovery が `persisted.documentId`・封筒 revision・`snapshot.currentRevision`/`document.revision` の相互一致を検査せず tail 開始位置を決める。同一 persistenceDir を別 documentId で起動すると旧文書を新 ID として公開し得る（異常構成のエッジケース）。回収先: 起動 recovery 堅牢化の後続DD（DD-015 or 運用 DD）。
+- **P2-4: restoreFrom＋persistenceDir 併用の revision 不連続** — 空 persistenceDir と revision R の `restoreFrom` を同時指定すると state は採るが既存 log が oplog へ書かれず、次 accepted op が R+1 をファイル先頭へ書いて次回起動が revision 不連続で失敗し得る（異常構成のエッジケース）。回収先: 同上（明示拒否 or restoreFrom 全ログの durable bootstrap）。
+
 ## ログ
+
+### 2026-07-14（子DD DD-014-1 で CG-3 解除・親クローズ可能）
+- **CG-3 ブロッカー（Codex xhigh P1-3〜P1-7）を子DD `DD-014-1` で解消**: (1) join protocol を snapshot@R＋tail 化＝fresh join/ブラウザー再読込が `bootstrap`（document@frontier）1 通で committed@R を確立し全 operationLog を replay しない（P1-6/P1-7・§8 既知制約回収）／(2) durable frontier 読取ゲート＝未 fsync revision を join/catch-up/`/snapshot`/welcome から非観測（P1-3）／(3) snapshot barrier＝snapshot.revision ≦ durable frontier（P1-4）＋生成中蓄積分の再判定（P2-5）／(4) oplog append 失敗で room poisoning＝write 全停止・欠番0（P1-5）。
+- 証拠: `doc/DD/DD-014-1/{evidence.md,scenarios.md,bootstrap-perf-raw.txt,reload-01/02-*.png,codex-review-result.md}`。実ブラウザー再読込 E2E green・bootstrap 計測（4.8ms vs 全replay 26s/20k op）。
+- **残 P2-1/P2-3/P2-4 は上記「既知制約」節へ記録**（Alpha 対象外・異常構成エッジ）。**ADR-0023 は DD-014-1 の Codex xhigh 承認で Accepted 昇格**。本DD（DD-014）は **クローズ可能**（CG-3 解除は DD-014＋DD-014-1）。
 
 ### 2026-07-13
 - DD作成（roadmap §4 DD-014 定義・§0 CG-3・§5 Alpha必須ライン・§6 製品境界・§8 既知制約「snapshotベース初期化」回収を前提に起票。dd-drafter）

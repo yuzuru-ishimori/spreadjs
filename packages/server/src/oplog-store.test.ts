@@ -61,6 +61,22 @@ describe('FileOpLogStore', () => {
     expect(revisions).toEqual([1, 2, 3]); // enqueue 順（=submit 順）で保存
   });
 
+  it('DD-014-1 P1-A: append 失敗後は fail-stop で以降の append を全 reject する（並行 in-flight で後続が成功して欠番を作らない）', async () => {
+    // append 先を **ディレクトリ**にして open(path,'a') を EISDIR で失敗させる（durable 書込失敗の注入）。
+    const { mkdir } = await import('node:fs/promises');
+    const badPath = join(dir, 'as-a-directory');
+    await mkdir(badPath);
+    const store = new FileOpLogStore(badPath);
+    // 2 件を await せず並行 enqueue（同一 flush で先行が失敗 → fail-stop で後続も reject）。
+    const p1 = store.append([envelope(1)]);
+    const p2 = store.append([envelope(2)]);
+    await expect(p1).rejects.toThrow();
+    await expect(p2).rejects.toThrow();
+    // fail-stop 後の新規 append も reject（成功して revision を書き進めない＝欠番防止）。
+    await expect(store.append([envelope(3)])).rejects.toThrow(/fail-stop/);
+    await store.close();
+  });
+
   it('末尾の torn write（改行なし途中書き）は破棄して件数を報告する（未 ACK＝安全）', async () => {
     const store = new FileOpLogStore(path);
     await store.append([envelope(1), envelope(2)]);

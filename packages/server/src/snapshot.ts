@@ -5,39 +5,24 @@
 
 import {
   applyOperation,
-  createCellStore,
   createDocument,
+  deserializeDocument,
   documentHash,
-  forEachCellInRow,
+  serializeDocument,
 } from '@nanairo-sheet/core';
 import type {
-  CellScalar,
-  RowMeta,
+  DocumentSnapshot,
   ServerOperationEnvelope,
   SheetDocument,
 } from '@nanairo-sheet/core';
-import { createColumnId, createOperationId, createRowId } from '@nanairo-sheet/types';
-import type { ColumnId, RowId } from '@nanairo-sheet/types';
+import { createColumnId, createOperationId } from '@nanairo-sheet/types';
+import type { ColumnId } from '@nanairo-sheet/types';
 
 import type { SequencerState } from './sequencer';
 
-interface SerializedRowMeta {
-  id: string;
-  slot: number;
-  tombstone: boolean;
-  lastChangedRevision: number;
-}
-interface SerializedRowCells {
-  rowId: string;
-  columns: Array<{ columnId: string; value: CellScalar; lastChangedRevision: number }>;
-}
-interface SerializedDocument {
-  revision: number;
-  rowOrder: string[];
-  rowMeta: SerializedRowMeta[];
-  columnOrder: string[];
-  cells: SerializedRowCells[];
-}
+// 文書の直列化/復元は core（document-snapshot.ts）が正本（bootstrap メッセージと wire 形式を共有・DD-014-1）。
+// 旧 SerializedDocument は DocumentSnapshot の別名として残す（既存 import の後方互換）。
+export type SerializedDocument = DocumentSnapshot;
 
 /**
  * SnapshotData の版数。DD-010（安定 slot キー CellStore・CG-2）で 2 に更新。
@@ -153,93 +138,4 @@ function structuralMatch(a: SheetDocument, b: SheetDocument): boolean {
     }
   }
   return true;
-}
-
-function serializeDocument(doc: SheetDocument): SerializedDocument {
-  const rowMeta: SerializedRowMeta[] = [];
-  for (const meta of doc.rowMeta.values()) {
-    rowMeta.push({
-      id: meta.id,
-      slot: meta.slot,
-      tombstone: meta.tombstone,
-      lastChangedRevision: meta.lastChangedRevision,
-    });
-  }
-  // 全行（tombstone 含む）を rowMeta 順に走査し、非空セルを持つ行だけを直列化する（slot キー CellStore を
-  // rowId で読み直す）。列は colIndex 昇順。tombstone 行のセルも保全される（S-B3・round-trip 一致）。
-  const cells: SerializedRowCells[] = [];
-  for (const rowId of doc.rowMeta.keys()) {
-    const columns: SerializedRowCells['columns'] = [];
-    forEachCellInRow(doc, rowId, (columnId, record) => {
-      columns.push({
-        columnId,
-        value: record.value,
-        lastChangedRevision: record.lastChangedRevision,
-      });
-    });
-    if (columns.length > 0) {
-      cells.push({ rowId, columns });
-    }
-  }
-  return {
-    revision: doc.revision,
-    rowOrder: [...doc.rowOrder],
-    rowMeta,
-    columnOrder: [...doc.columnOrder],
-    cells,
-  };
-}
-
-function deserializeDocument(data: SerializedDocument): SheetDocument {
-  // rowMeta を構築しつつ slot の健全性を検証する（DD-010 Codex[P2]・安定 ID 復元の fail-fast）:
-  // slot は非負整数・**一意**であること（重複 slot は複数 RowId が同一物理行を共有＝サイレント上書き経路）。
-  const rowMeta = new Map<RowId, RowMeta>();
-  const seenSlots = new Set<number>();
-  for (const meta of data.rowMeta) {
-    if (!Number.isInteger(meta.slot) || meta.slot < 0) {
-      throw new Error(`deserializeSnapshot: 不正な slot ${String(meta.slot)}（行 ${meta.id}）`);
-    }
-    if (seenSlots.has(meta.slot)) {
-      throw new Error(`deserializeSnapshot: slot ${meta.slot} が重複（安定 ID 破損・行 ${meta.id}）`);
-    }
-    seenSlots.add(meta.slot);
-    const id = createRowId(meta.id);
-    rowMeta.set(id, {
-      id,
-      slot: meta.slot,
-      tombstone: meta.tombstone,
-      lastChangedRevision: meta.lastChangedRevision,
-    });
-  }
-  // ColumnId→colIndex は columnOrder、RowId→slot は rowMeta で解決して安定 slot キー CellStore へ復元する。
-  // 解決不能なセル参照（rowMeta に無い行・columnOrder 外の列）は黙って捨てず fail-fast（データ欠落を検知）。
-  const columnOrder: ColumnId[] = data.columnOrder.map((c) => createColumnId(c));
-  const colIndexById = new Map<string, number>();
-  columnOrder.forEach((columnId, index) => colIndexById.set(String(columnId), index));
-  const cells = createCellStore();
-  for (const rowCells of data.cells) {
-    const slot = rowMeta.get(createRowId(rowCells.rowId))?.slot;
-    if (slot === undefined) {
-      throw new Error(`deserializeSnapshot: rowMeta に無い行 ${rowCells.rowId} のセル（安定 ID 破損）`);
-    }
-    for (const cell of rowCells.columns) {
-      const colIndex = colIndexById.get(cell.columnId);
-      if (colIndex === undefined) {
-        throw new Error(
-          `deserializeSnapshot: columnOrder 外の列 ${cell.columnId}（行 ${rowCells.rowId}・安定 ID 破損）`,
-        );
-      }
-      cells.set(slot, colIndex, {
-        value: cell.value,
-        lastChangedRevision: cell.lastChangedRevision,
-      });
-    }
-  }
-  return {
-    revision: data.revision,
-    rowOrder: data.rowOrder.map((r) => createRowId(r)),
-    rowMeta,
-    columnOrder,
-    cells,
-  };
 }

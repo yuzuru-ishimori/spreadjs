@@ -51,12 +51,20 @@ export class FileOpLogStore implements OpLogStore {
   private flushing = false;
   private flushPromise: Promise<void> = Promise.resolve();
   private closed = false;
+  private failed: unknown; // fsync 失敗後は fail-stop（以降の append を全 reject・DD-014-1 P1-A: revision 欠番防止）
 
   constructor(private readonly path: string) {}
 
   append(entries: readonly ServerOperationEnvelope[]): Promise<void> {
     if (this.closed) {
       return Promise.reject(new Error('FileOpLogStore: closed'));
+    }
+    // fail-stop（P1-A）: 一度でも fsync に失敗したら以降の append は全て reject する。並行 in-flight で先行 append が
+    // 失敗した後に後続 append が成功して revision を書き進め、oplog に欠番/偽 durable ACK が生じるのを防ぐ。
+    if (this.failed !== undefined) {
+      return Promise.reject(
+        new Error(`FileOpLogStore: fail-stop（先行 append の durable 書込が失敗済み）: ${errorMessage(this.failed)}`),
+      );
     }
     // JSON 直列化は enqueue 時点で同期的に行う（呼び出し順＝revision 順を保存する）。
     const data = entries.map((e) => `${JSON.stringify(e)}\n`).join('');
@@ -115,7 +123,13 @@ export class FileOpLogStore implements OpLogStore {
             item.resolve();
           }
         } catch (error) {
+          // fail-stop（P1-A）: 失敗バッチを reject し、以降 enqueue 済み/新規の append を全 reject する
+          // （後続 append が成功して revision を書き進める＝欠番/偽 durable を防ぐ）。
+          this.failed = error;
           for (const item of batch) {
+            item.reject(error);
+          }
+          for (const item of this.queue.splice(0)) {
             item.reject(error);
           }
         }

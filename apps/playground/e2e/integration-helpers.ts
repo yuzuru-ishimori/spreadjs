@@ -248,6 +248,14 @@ export async function colIdAt(page: Page, index: number): Promise<string | undef
 export async function committedCell(page: Page, rowId: string, columnId: string): Promise<string> {
   return callApi<string>(page, 'committedCell', [rowId, columnId]);
 }
+/** DD-014-1 AC8: snapshot bootstrap の確立 revision（>0 なら全 replay 非依存で復元した）。 */
+export async function bootstrapRevision(page: Page): Promise<number> {
+  return callApi<number>(page, 'bootstrapRevision', []);
+}
+/** DD-014-1 AC8: 適用したサーバー op 数（bootstrap 後の再読込は tail のみ＝小さい＝全 replay 非依存の実証）。 */
+export async function appliedServerOpCount(page: Page): Promise<number> {
+  return callApi<number>(page, 'appliedServerOpCount', []);
+}
 export async function rowIndexOf(page: Page, rowId: string): Promise<number> {
   return callApi<number>(page, 'rowIndexOf', [rowId]);
 }
