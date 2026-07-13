@@ -7,7 +7,6 @@
 | DD | 件名 | ステータス | 補足 |
 |----|------|-----------|------|
 | DD-012 | 単一利用者IME縦切り | 進行中 | 仕様確認ゲート4点確定（2026-07-13）。案Y 2分割を採択し親アンブレラ化。実作業は DD-012-1（入力縦切り・CG-1）→ DD-012-2（性能縦切り・CG-6）で実施 |
-| DD-012-1 | 入力縦切り | 完了 | Phase 1〜4完了。型変換/date/ローカルOp/IME不変6項目/ADR-012/Codex＋CG-1解除済（実機PASS・先頭欠落0・順序B×Chrome/Edge）。実機で順序A不発（Chromium150）の知見を記録。抽出はDD-016委譲 |
 | DD-012-2 | 性能縦切り | 検討中 | 親=DD-012（案Y分割・2026-07-13確定）。CG-6 担当。依存: DD-012-1 完了後に着手 |
 
 ## 保留・見送り
@@ -19,6 +18,7 @@
 
 | DD | 件名 | 主な成果 |
 |----|------|---------|
+| DD-012-1 | 入力縦切り | Phase 1〜4完了。型変換/date/ローカルOp/IME不変6項目/ADR-012/Codex＋CG-1解除済（実機PASS・先頭欠落0・順序B×Chrome/Edge）。実機で順序A不発（Chromium150）の知見を記録。抽出はDD-016委譲 |
 | DD-011 | 基盤実装 | 要確認①〜④回答済。DD-011-1 完了前提で全Phase実装＋Codex(high)4件全対応。Facade skeleton・boundary lint(baseline 41)・不変条件runner・consumer harness雛形・Risk Classヘッダ新設。typecheck/lint(+boundary)/build/test:invariants/contract/consumer-harness green。差分テストflaky恒久是正。ws-convergence.smokeは環境依存flaky据え置き。コミット済 |
 | DD-011-1 | packageリネーム | 実装完了（rename 5 package・66 renames＋import 全置換・dir==name 統一）・test 561/561・typecheck/lint/build green・Codex(medium) findings 0・旧名/旧dir 参照 0＋正典パッケージ名の現行構成整合。DD-011 の前提確定。コミット cbf7064系列（159d5e8） |
 | DD-010 | 安定ID・CellStore移行 | 実装・テスト（561 green）・Codexレビュー反映（findings 4件全対応）・**CG-2 解除**（index→RowId slot間接・serialization/replay整合証拠）まで完了。**ADR-0011 は Codex レビューをもって Accepted 確定**（ユーザー判断 2026-07-13＝ChatGPT ではなく Codex で十分・AC6 性能 baseline 解釈も同承認に含む）。コミット cbf7064 |
