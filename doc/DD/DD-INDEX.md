@@ -8,7 +8,6 @@
 |----|------|-----------|------|
 | DD-015 | reconnect・catch-up・idempotency | 検討中 | roadmap §4/§5 Alpha必須ライン・**CG-5担当**（D27/D34回収）。DD-014の次・DD-016の前 |
 | DD-014 | 永続化・snapshot復元 | 検討中 | roadmap §4/§5 Alpha必須ライン・**CG-3担当**。DD-013の次・DD-015（reconnect）の前 |
-| DD-013 | 共同編集同期・OCC | 完了 | 同期/OCC harden（テスト実充足）・randomized収束スイート・Phase4 実WS 2タブ smoke PASS・Codex high 反映済 |
 | DD-012 | 単一利用者IME縦切り | 進行中 | 案Y 2分割・両子DD完了アーカイブ済（DD-012-1 入力縦切り＝**CG-1解除**／DD-012-2 性能縦切り＝**CG-6指標pass**）。milestone残（ime/selection/render物理抽出・baseline縮退・CG-1統合後スモーク・CG-6精密メモリ＋clean redraw）は**DD-016で確定**。DD-016完了でクローズ |
 
 ## 保留・見送り
@@ -20,6 +19,7 @@
 
 | DD | 件名 | 主な成果 |
 |----|------|---------|
+| DD-013 | 共同編集同期・OCC | 同期/OCC harden（テスト実充足）・randomized収束スイート・Phase4 実WS 2タブ smoke PASS・Codex high 反映済 |
 | DD-012-1 | 入力縦切り | Phase 1〜4完了。型変換/date/ローカルOp/IME不変6項目/ADR-012/Codex＋CG-1解除済（実機PASS・先頭欠落0・順序B×Chrome/Edge）。実機で順序A不発（Chromium150）の知見を記録。抽出はDD-016委譲 |
 | DD-012-2 | 性能縦切り | 親=DD-012（案Y分割）。CG-6 担当。**Phase2/3 指標計測完了**（Playwright: scroll p95 16.8ms・メモリ 24MB≪300MB pass／redraw over-budget=render無変更ゆえ回帰不能のアーティファクト）。予算常設化・計測ハーネス・Codex 完了。**定義的確定（CG-6精密・render抽出・clean redraw）は DD-016 委譲** |
 | DD-011 | 基盤実装 | 要確認①〜④回答済。DD-011-1 完了前提で全Phase実装＋Codex(high)4件全対応。Facade skeleton・boundary lint(baseline 41)・不変条件runner・consumer harness雛形・Risk Classヘッダ新設。typecheck/lint(+boundary)/build/test:invariants/contract/consumer-harness green。差分テストflaky恒久是正。ws-convergence.smokeは環境依存flaky据え置き。コミット済 |
