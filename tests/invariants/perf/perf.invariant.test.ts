@@ -1,10 +1,14 @@
-// 性能予算 不変条件スイート（§2.3 性能回帰予算・通常DDは軽量スモーク）。DD-011 設置・実予算は DD-012。
+// 性能予算 不変条件スイート（§2.3 性能回帰予算）。DD-011 設置・実予算 常設化は DD-012-2。
 //
-// 最小ケース: Document State 表現（core cell-store 経由の apply）へ大きめの setCells を投入し、
-// 機能的に成立し（全セル読み戻せる）、緩い予算内で完了する軽量スモーク。
-// 【閾値の根拠】本ケースは「フル再計測の発動条件を持つ常設スモーク」の骨格であり、
-// 閾値は暫定（CI の CPU 競合でも落ちない緩い上限＝3000ms）。初期ロード経路・replay 方式・
-// Axis 再構築などを変えたDD（DD-012 ほか）が実予算とフル計測を定義する（§2.3）。
+// このファイル（node 実行）= Document State 表現（core cell-store 経由の apply）の軽量スモーク。
+// Canvas の scroll/selection/再描画・メモリの「実予算（DD-004 実測＝16.8/16.9/0.33ms・300MB）」は
+// node では測れないため、headed 実測（人手）＋判定器で常設化する:
+//   - 正典予算: scripts/cg-perf/perf-budget.json（合格ライン・計測条件・ノイズマージン）
+//   - 判定器  : scripts/cg-perf/perf-judge-core.mjs（+ CLI judge-perf-report.mjs）
+//   - 判定器の機械検証＋予算ピン(tripwire): tests/invariants/perf/perf-judge.test.ts
+//   - headed 実測手順: doc/DD/DD-012-2/perf-realmachine-procedure.md（Phase 2）・cg6-memory-procedure.md（Phase 3）
+// 本 node スモークは §2.3 L4 フル再計測の発動条件を持つ常設骨格（Document State 経路）。
+// 閾値は緩い上限（CI の CPU 競合でも落ちない 3000ms）＝機能不成立の検知が目的。
 import { describe, expect, it } from 'vitest';
 
 import { applyOperation, createDocument, getCell } from '@nanairo-sheet/core';

@@ -1,0 +1,40 @@
+{
+  "_doc": "DD-012-2 統合性能回帰予算（正典＝single source of truth）。合格ライン=DD-004 実機確認run（2026-07-12・実Chrome）の実測を予算化（ユーザー確定 2026-07-13）。予算を緩める変更は spec 変更＝再ゲート（doc/DD/DD-012-2 参照）。tests/invariants/perf/perf.invariant.test.ts が本値をピン留め（tripwire）し、scripts/cg-perf/perf-judge-core.mjs が headed 実測レポートを本値で判定する。",
+  "source": "DD-004 measurement-report.md『実機確認run』（2026-07-12・実Chrome）／header 実測値。MCP run（0.39ms 等）とは別の実機確認runを採用。",
+  "conditions": {
+    "rows": 50000,
+    "cols": 200,
+    "nonEmpty": 500000,
+    "fillRatioPct": 5,
+    "seed": 20260712,
+    "distribution": "uniform-sparse",
+    "cellBaseWidthPx": 56,
+    "cellBaseRowHeightPx": 22,
+    "visibleCellBand": { "min": 2000, "max": 4000 },
+    "note": "DD-004 measurement-spec.md 踏襲。可視セルは overscan 込みで 2,000〜4,000 帯（判定前提）。DPR/CPU/RAM/GPU は実測時に evidence.md 環境表へ必ず記録。"
+  },
+  "budget": {
+    "scrollFrameP95Ms": 16.8,
+    "selectionLatencyMs": 16.9,
+    "stoppedRedrawMeanMs": 0.33,
+    "memoryPeakMB": 300
+  },
+  "leakTrend": {
+    "_doc": "CG-6 リーク傾向（DD-004 手法踏襲・Codex 硬化しきい値）。単発ピーク（memoryPeakMB）と AND で判定。minSamples/minDurationSec は『10秒だけ平坦な標本での誤解除』を防ぐ下限（DD-004 実測=約100秒・11標本に整合。推奨=数分〜10分の往復スクロール）。slope・growthRatio は両方とも有限値が必須（欠落は n/a）。",
+    "slopeBytesPerSecMax": 65536,
+    "growthRatioMax": 1.25,
+    "minSamples": 8,
+    "minDurationSec": 90
+  },
+  "hardCeiling": {
+    "_doc": "§18.2 機能上限（絶対に超えてはならない floor）。regression budget 超過は WARN、hardCeiling 超過は FAIL。",
+    "scrollFrameP95Ms": 33,
+    "selectionLatencyMs": 50,
+    "stoppedRedrawMeanMs": 12
+  },
+  "noiseMargin": {
+    "_doc": "計測ノイズ許容（マージン）。timing 系は DD-004 自身の run 間分散（実機確認run 0.33ms ↔ MCP run 0.39ms ≈ 18%）を吸収する 20% を暫定採用。memory は 300MB に対し DD-004 実測 ~29MB＝約10倍ヘッドルームのため 0%。★このマージン値は Phase 2 headed ゲートでユーザー確定する暫定値（緩める＝spec 変更）。",
+    "timingPct": 20,
+    "memoryPct": 0
+  }
+}

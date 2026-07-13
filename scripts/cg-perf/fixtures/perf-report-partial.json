@@ -1,0 +1,22 @@
+{
+  "_fixture": "DD-012-2 judge 自己検証: 部分採取。scroll 未計測（frame.count=0・p95=0）だが選択/再描画/可視セル/メモリは充足。全メトリクス標本が揃わない限り pass にしない（overall n/a・Codex P1）。",
+  "env": { "userAgent": "fixture" },
+  "visibleCellCount": 3000,
+  "frame": { "count": 0, "p50": 0, "p95": 0, "worst": 0 },
+  "stoppedRedrawMs": [0.30, 0.31],
+  "selectionLatencyMs": [15.0, 16.0],
+  "memory": {
+    "sampleCount": 8,
+    "trend": { "slopeBytesPerSec": -100, "growthRatio": 0.99 },
+    "samples": [
+      { "t": 0, "usedBytes": 30000000 },
+      { "t": 15000, "usedBytes": 29800000 },
+      { "t": 30000, "usedBytes": 29700000 },
+      { "t": 45000, "usedBytes": 29600000 },
+      { "t": 60000, "usedBytes": 29500000 },
+      { "t": 75000, "usedBytes": 29400000 },
+      { "t": 90000, "usedBytes": 29300000 },
+      { "t": 105000, "usedBytes": 29200000 }
+    ]
+  }
+}

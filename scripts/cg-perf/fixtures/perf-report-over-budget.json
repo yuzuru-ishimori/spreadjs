@@ -1,0 +1,16 @@
+{
+  "_fixture": "DD-012-2 judge 自己検証: 回帰予算超過（over-budget）。p95 22ms は予算16.8+20%=20.16 超だが §18.2 上限 33ms 未満＝回帰の疑い（再ゲート）。メモリは pass。",
+  "env": { "userAgent": "fixture" },
+  "visibleCellCount": 3000,
+  "frame": { "count": 6000, "p50": 12.0, "p95": 22.0, "worst": 30.0 },
+  "stoppedRedrawMs": [0.30, 0.31],
+  "selectionLatencyMs": [15.0, 16.0],
+  "memory": {
+    "sampleCount": 2,
+    "trend": { "slopeBytesPerSec": 1000, "growthRatio": 1.02 },
+    "samples": [
+      { "t": 0, "usedBytes": 30000000 },
+      { "t": 60000, "usedBytes": 30500000 }
+    ]
+  }
+}

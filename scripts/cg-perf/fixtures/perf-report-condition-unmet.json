@@ -1,0 +1,16 @@
+{
+  "_fixture": "DD-012-2 judge 自己検証: 負荷条件未達。可視セル 500 は目標帯 2,000〜4,000 外＝合格根拠にしない（overall n/a）。",
+  "env": { "userAgent": "fixture" },
+  "visibleCellCount": 500,
+  "frame": { "count": 6000, "p50": 4.0, "p95": 8.0, "worst": 12.0 },
+  "stoppedRedrawMs": [0.1, 0.1],
+  "selectionLatencyMs": [5.0, 6.0],
+  "memory": {
+    "sampleCount": 2,
+    "trend": { "slopeBytesPerSec": 0, "growthRatio": 1.0 },
+    "samples": [
+      { "t": 0, "usedBytes": 10000000 },
+      { "t": 60000, "usedBytes": 10000000 }
+    ]
+  }
+}

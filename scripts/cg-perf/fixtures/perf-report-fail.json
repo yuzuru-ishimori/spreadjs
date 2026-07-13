@@ -1,0 +1,17 @@
+{
+  "_fixture": "DD-012-2 judge 自己検証: 機能上限 fail。p95 40ms > §18.2 上限 33ms（機能不成立）。メモリ 350MB > 300MB＝fail・リーク傾向も超過。",
+  "env": { "userAgent": "fixture" },
+  "visibleCellCount": 3000,
+  "frame": { "count": 6000, "p50": 20.0, "p95": 40.0, "worst": 80.0 },
+  "stoppedRedrawMs": [15.0, 16.0],
+  "selectionLatencyMs": [60.0, 55.0],
+  "memory": {
+    "sampleCount": 3,
+    "trend": { "slopeBytesPerSec": 200000, "growthRatio": 1.6 },
+    "samples": [
+      { "t": 0, "usedBytes": 200000000 },
+      { "t": 30000, "usedBytes": 300000000 },
+      { "t": 60000, "usedBytes": 367001600 }
+    ]
+  }
+}

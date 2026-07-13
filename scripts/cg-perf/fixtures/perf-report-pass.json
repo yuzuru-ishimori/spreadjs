@@ -1,0 +1,25 @@
+{
+  "_fixture": "DD-012-2 judge 自己検証: 予算内 pass。値は DD-004 実機確認run 相当（p95 16.5/選択 16.0/再描画 0.30/メモリ ~29MB・純減傾向）。",
+  "env": { "userAgent": "fixture", "dpr": 1.25 },
+  "visibleCellCount": 3000,
+  "frame": { "count": 6000, "p50": 8.1, "p95": 16.5, "worst": 24.0 },
+  "stoppedRedrawMs": [0.28, 0.31, 0.30, 0.29, 0.32],
+  "selectionLatencyMs": [12.0, 14.5, 16.0, 13.2],
+  "memory": {
+    "sampleCount": 11,
+    "trend": { "slopeBytesPerSec": -1200, "growthRatio": 0.99 },
+    "samples": [
+      { "t": 0, "usedBytes": 30000000 },
+      { "t": 10000, "usedBytes": 29500000 },
+      { "t": 20000, "usedBytes": 29800000 },
+      { "t": 30000, "usedBytes": 29400000 },
+      { "t": 40000, "usedBytes": 29600000 },
+      { "t": 50000, "usedBytes": 29300000 },
+      { "t": 60000, "usedBytes": 29700000 },
+      { "t": 70000, "usedBytes": 29200000 },
+      { "t": 80000, "usedBytes": 29500000 },
+      { "t": 90000, "usedBytes": 29100000 },
+      { "t": 100000, "usedBytes": 29000000 }
+    ]
+  }
+}
