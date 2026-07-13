@@ -1,0 +1,90 @@
+{
+  "budgetSource": "DD-004 measurement-report.md『実機確認run』（2026-07-12・実Chrome）／header 実測値。MCP run（0.39ms 等）とは別の実機確認runを採用。",
+  "conditions": {
+    "rows": 50000,
+    "cols": 200,
+    "nonEmpty": 500000,
+    "fillRatioPct": 5,
+    "seed": 20260712,
+    "distribution": "uniform-sparse",
+    "cellBaseWidthPx": 56,
+    "cellBaseRowHeightPx": 22,
+    "visibleCellBand": {
+      "min": 2000,
+      "max": 4000
+    },
+    "note": "DD-004 measurement-spec.md 踏襲。可視セルは overscan 込みで 2,000〜4,000 帯（判定前提）。DPR/CPU/RAM/GPU は実測時に evidence.md 環境表へ必ず記録。"
+  },
+  "noiseMargin": {
+    "_doc": "計測ノイズ許容（マージン）。timing 系は DD-004 自身の run 間分散（実機確認run 0.33ms ↔ MCP run 0.39ms ≈ 18%）を吸収する 20% を暫定採用。memory は 300MB に対し DD-004 実測 ~29MB＝約10倍ヘッドルームのため 0%。★このマージン値は Phase 2 headed ゲートでユーザー確定する暫定値（緩める＝spec 変更）。",
+    "timingPct": 20,
+    "memoryPct": 0
+  },
+  "reports": [
+    {
+      "file": "doc/DD/DD-012-2/perf-realrun-playwright-chrome150.json",
+      "perf": {
+        "kind": "perf",
+        "metrics": [
+          {
+            "name": "scrollFrameP95Ms",
+            "value": 16.800000000046566,
+            "budget": 16.8,
+            "budgetWithMargin": 20.16,
+            "ceiling": 33,
+            "ceilingStrict": true,
+            "verdict": "pass",
+            "hasData": true
+          },
+          {
+            "name": "selectionLatencyMs",
+            "value": 17,
+            "budget": 16.9,
+            "budgetWithMargin": 20.28,
+            "ceiling": 50,
+            "ceilingStrict": true,
+            "verdict": "pass",
+            "hasData": true
+          },
+          {
+            "name": "stoppedRedrawMeanMs",
+            "value": 0.8449999999254942,
+            "budget": 0.33,
+            "budgetWithMargin": 0.396,
+            "ceiling": 12,
+            "ceilingStrict": false,
+            "verdict": "over-budget",
+            "hasData": true
+          }
+        ],
+        "conditions": {
+          "visibleCellCount": 3034,
+          "inBand": true
+        },
+        "overall": "over-budget"
+      },
+      "memory": {
+        "kind": "memory",
+        "peak": {
+          "valueMB": 24.2,
+          "budgetMB": 300,
+          "verdict": "pass"
+        },
+        "leak": {
+          "slopeBytesPerSec": 9626.202137728158,
+          "growthRatio": 0.9781089988994107,
+          "slopeMax": 65536,
+          "growthRatioMax": 1.25,
+          "sampleCount": 12,
+          "durationSec": 110,
+          "minSamples": 8,
+          "minDurationSec": 90,
+          "verdict": "pass"
+        },
+        "overall": "pass"
+      },
+      "passed": false
+    }
+  ],
+  "overallPass": false
+}

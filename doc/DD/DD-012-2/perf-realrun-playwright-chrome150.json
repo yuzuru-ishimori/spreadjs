@@ -1,0 +1,142 @@
+{
+  "env": {
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
+    "devicePixelRatio": 1.0000000298023224,
+    "hardwareConcurrency": 16,
+    "deviceMemoryGb": 32,
+    "windowInnerWidth": 1740,
+    "windowInnerHeight": 980,
+    "capturedAt": "2026-07-13T09:36:33.298Z"
+  },
+  "visibleCellCount": 3034,
+  "frame": {
+    "count": 4463,
+    "p50": 16.70000000001164,
+    "p95": 16.800000000046566,
+    "worst": 17.099999999976717,
+    "mean": 16.697647322428868,
+    "over33Ratio": 0
+  },
+  "stoppedRedrawMs": [
+    0.7999999970197678,
+    0.5,
+    0.7000000029802322,
+    0.7999999970197678,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.6000000014901161,
+    0.6000000014901161,
+    1,
+    1.1999999955296516,
+    1.2000000029802322,
+    2.7999999970197678,
+    0.8999999985098839,
+    1.2000000029802322,
+    0.6000000014901161,
+    1,
+    0.5,
+    0.5
+  ],
+  "selectionLatencyMs": [
+    10.399999998509884,
+    9.100000001490116,
+    11.799999997019768,
+    6.800000004470348,
+    10.199999995529652,
+    10.100000001490116,
+    17,
+    5,
+    8.600000001490116,
+    7.600000001490116
+  ],
+  "memory": {
+    "sampleCount": 12,
+    "trend": {
+      "slopeBytesPerSec": 9626.202137728158,
+      "growthRatio": 0.9781089988994107
+    },
+    "samples": [
+      {
+        "t": 0,
+        "usedBytes": 25342788
+      },
+      {
+        "t": 10001.799999999988,
+        "usedBytes": 22546650
+      },
+      {
+        "t": 20003.70000000001,
+        "usedBytes": 23259788
+      },
+      {
+        "t": 30005.5,
+        "usedBytes": 23527336
+      },
+      {
+        "t": 40007.59999999998,
+        "usedBytes": 24522465
+      },
+      {
+        "t": 50009.29999999999,
+        "usedBytes": 23383782
+      },
+      {
+        "t": 60011.29999999999,
+        "usedBytes": 23758826
+      },
+      {
+        "t": 70013.20000000001,
+        "usedBytes": 23981174
+      },
+      {
+        "t": 80015.09999999998,
+        "usedBytes": 24529469
+      },
+      {
+        "t": 90016.90000000002,
+        "usedBytes": 24648153
+      },
+      {
+        "t": 100018.90000000002,
+        "usedBytes": 24786457
+      },
+      {
+        "t": 110020.70000000001,
+        "usedBytes": 24788009
+      }
+    ]
+  },
+  "acceptance": {
+    "ac1FrameP95": {
+      "value": 16.800000000046566,
+      "threshold": 33,
+      "verdict": "pass"
+    },
+    "ac2StoppedRedraw": {
+      "value": 0.8449999999254942,
+      "threshold": 12,
+      "verdict": "pass"
+    },
+    "ac3SelectionLatency": {
+      "value": 17,
+      "threshold": 50,
+      "verdict": "pass"
+    },
+    "ac4MemoryStable": {
+      "slopeBytesPerSec": 9626.202137728158,
+      "growthRatio": 0.9781089988994107,
+      "threshold": 65536,
+      "verdict": "pass"
+    },
+    "ac5AnchorMaintained": {
+      "verdict": "n/a"
+    },
+    "conditions": {
+      "visibleCellCount": 3034,
+      "inTargetBand": true
+    },
+    "overall": "n/a"
+  }
+}

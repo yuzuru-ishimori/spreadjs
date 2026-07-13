@@ -32,7 +32,7 @@
 | **CG-3** | snapshot 正式形式 | DD-014 永続化・snapshot復元DD | versioned snapshot・snapshot+tail replay 一致・100k で log 全replay 非依存・O(N²)回避測定・corrupt/version fail-fast | reconnect DD（DD-015）前 | **Alpha不可** | 未着手 |
 | **CG-4** | Tier 1 環境 | **DD-009 基盤判断（確定）＋全DD共通（実証）** | Tier 1 compatibility matrix（枠＝ADR-0015・`package-boundary.md` §6。実測記入 DD-017・合否 DD-018） | **Phase開始時に確定・exit で実証** | 対象外環境を明示（境界化で可） | **枠確定（DD-009）／実測待ち** |
 | **CG-5** | reconnect 境界（D27/D34 完全再整列のデータ損失） | DD-015 reconnect/catch-up/idempotency DD | fault injection・再送・収束（障害種別ごと保証/非保証を分離） | Alpha exit 前 | **Alpha不可** | 未着手 |
-| **CG-6** | 精密メモリ | DD-012 単一利用者IME縦切りDD（統合性能・メモリゲート） | 精密メモリ計測（`performance.memory` 封鎖を回避。実測面＝`apps/pocd-browser-bench`／DD-009台帳 H・要確認 Q3） | Alpha exit 前 | データ上限を明示 or Alpha不可 | 未着手 |
+| **CG-6** | 精密メモリ | **DD-012-2 性能縦切りDD（指標）＋ DD-016（精密確定）** | 精密メモリ計測（`performance.memory` 封鎖を回避＝`--enable-precise-memory-info`。実測面＝`apps/pocd-browser-bench`／pocb ハーネス・DD-009台帳 H・要確認 Q3） | Alpha exit 前 | データ上限を明示 or Alpha不可 | **証拠待ち（指標）**。主担当 DD-012-2 が計測ハーネス常設化（`scripts/cg-perf/`・`tests/invariants/perf`）＋指標計測（Playwright MCP Chrome150 run: メモリ peak **24.2MB ≪ 300MB**・リークなし slope 9.6KB/s・scroll p95 **16.8ms pass**）を実施。**精密メモリ（`--enable-precise-memory-info`）＋clean redraw の定義的解除証拠は DD-016 統合後実機スモークで確定**（redraw over-budget は render 無変更ゆえ回帰不能の計測環境アーティファクト）。証拠=`doc/DD/DD-012-2/perf-judge-result.json`・`evidence.md §8` |
 
 ## CG × 担当DD 早見
 
@@ -42,7 +42,7 @@ CG-2 安定ID         → DD-010【解除済】                    期限: DD-01
 CG-3 snapshot形式   → DD-014                             期限: DD-015 前      未解除: Alpha不可
 CG-4 Tier 1         → DD-009（確定）＋DD-017/018（実証）  期限: 開始時/exit    未解除: 対象外明示で可
 CG-5 reconnect境界  → DD-015                             期限: Alpha exit前   未解除: Alpha不可
-CG-6 精密メモリ     → DD-012                             期限: Alpha exit前   未解除: 上限明示 or 不可
+CG-6 精密メモリ     → DD-012-2（指標）＋DD-016 精密確定   期限: Alpha exit前   未解除: 上限明示 or 不可
 ```
 
 ## 更新運用（台帳の腐敗防止）
