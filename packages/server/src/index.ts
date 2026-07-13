@@ -6,3 +6,6 @@ export * from './sequencer';
 export * from './presence';
 export * from './room';
 export * from './snapshot';
+export * from './oplog-store';
+export * from './snapshot-store';
+export * from './persistent-room';

@@ -42,6 +42,7 @@
 | `doc/adr/0008-optimistic-apply-rollback-replay.md` | 楽観適用＋rollback/replay（PoC-C/DD-003で検証・Status: Proposed） |
 | `doc/adr/0011-row-slot-chunked-cell-store.md` | 行スロット＋チャンク化セルストア（PoC-B/DD-004で起票・Status: Draft・DD-006で拡充） |
 | `doc/adr/0022-zero-runtime-dependency-core.md` | コアはゼロランタイム依存を原則（DD-005/006で実証・Status: Draft・Accepted化はDD-007） |
+| `doc/adr/0023-durable-persistence-and-versioned-snapshot.md` | Durable 永続化契約（fsync後ACK・log正本/snapshot最適化物）とversioned persisted snapshot format v1（checksum封筒・atomic save・fail-fast）（DD-014・Status: Proposed・Codex xhigh P1 findings反映後にAccepted・CG-3進行中） |
 
 ## プロセス・開発規約
 

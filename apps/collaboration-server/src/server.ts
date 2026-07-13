@@ -19,15 +19,32 @@ import { WebSocket, WebSocketServer } from 'ws';
 import type { RawData } from 'ws';
 
 import { documentHash } from '@nanairo-sheet/core';
-import type { ClientMessage, ClientOperationEnvelope } from '@nanairo-sheet/core';
+import type {
+  ClientMessage,
+  ClientMessageExceptJoin,
+  ClientOperationEnvelope,
+  JoinMessage,
+} from '@nanairo-sheet/core';
 import {
+  FileOpLogStore,
+  FileSnapshotStore,
+  PersistentRoom,
   Room,
   Sequencer,
   deserializeSnapshot,
   freshSequencerState,
+  recoverSequencerState,
   serializeSnapshot,
 } from '@nanairo-sheet/server';
-import type { Clock, Outbound, OutboundTarget, SnapshotData } from '@nanairo-sheet/server';
+import type {
+  Clock,
+  OpLogStore,
+  Outbound,
+  OutboundTarget,
+  RecoveryReport,
+  SnapshotData,
+  SnapshotStore,
+} from '@nanairo-sheet/server';
 import {
   createColumnId,
   createDocumentId,
@@ -66,6 +83,8 @@ export interface StartServerOptions {
   sweepMillis?: number; // 既定 5000（sweep 実タイマー間隔）
   restoreFrom?: SnapshotData; // 指定時: snapshot＋log から復元起動（seed をスキップ・revision 継続・S-K2/K4）
   integrationDataset?: IntegrationDatasetConfig | boolean; // DD-005 Phase 2: 50,000行×200列・非空約10万を投入（true=既定規模）
+  persistenceDir?: string; // DD-014: 指定時にファイル永続化（oplog＋snapshot）を有効化。再起動で snapshot＋tail から復旧する
+  snapshotIntervalOps?: number; // DD-014: N op ごとに非同期 snapshot 生成（既定 1,000）
 }
 
 export interface RunningServer {
@@ -75,7 +94,20 @@ export interface RunningServer {
   hash(): string; // 現在の権威文書 hash（smoke の収束 assert 用）
   snapshot(): SnapshotData; // 検査用
   connectionCount(): number; // リーク検査用（後始末後 0）
-  close(): Promise<void>; // 全 ws terminate → wss.close → http server.close → clearInterval
+  recovery?: RecoveryReport; // DD-014: 永続化有効時の再起動復旧内訳（snapshot revision・tail replay 数）
+  close(): Promise<void>; // 全 ws terminate → wss.close → http server.close → clearInterval → oplog/snapshot close
+}
+
+/**
+ * RoomBridge が駆動する Room 相当（Room＝同期／PersistentRoom＝submit のみ durable のため Promise を返す）。
+ * handleMessage が Promise を返す場合、dispatch は durable 化（fsync）後に行われる（DD-014 durable ACK 契約）。
+ */
+interface RoomController {
+  handleJoin(join: JoinMessage): { connectionId: string; outbound: Outbound[] };
+  handleMessage(connectionId: string, message: ClientMessageExceptJoin): Outbound[] | Promise<Outbound[]>;
+  handleDisconnect(connectionId: string): Outbound[];
+  sweep(): Outbound[];
+  activeConnectionIds(): readonly string[];
 }
 
 /**
@@ -86,7 +118,7 @@ class RoomBridge {
   private readonly wsByConnection = new Map<string, WebSocket>();
   private readonly connectionByWs = new Map<WebSocket, string>();
 
-  constructor(private readonly room: Room) {}
+  constructor(private readonly room: RoomController) {}
 
   /** 新規 WS を受理し、メッセージ・切断を購読する（connectionId は最初の join で確定）。 */
   onConnect(ws: WebSocket): void {
@@ -155,7 +187,17 @@ class RoomBridge {
     if (existing === undefined) {
       return; // join 前の非 join メッセージは無視（接続は維持）
     }
-    this.dispatch(this.room.handleMessage(existing, message));
+    const result = this.room.handleMessage(existing, message);
+    if (result instanceof Promise) {
+      // durable 境界（oplog fsync）解決後に ACK/broadcast を dispatch する（DD-014 durable ACK 契約）。
+      // 書込失敗時は当該接続のみ切断（他接続へ波及させない・P08）。
+      result.then((outbound) => this.dispatch(outbound)).catch((error: unknown) => {
+        console.error(`RoomBridge: durable submit failed: ${errorMessage(error)}`);
+        this.closeSocket(ws, 1011, 'internal error');
+      });
+      return;
+    }
+    this.dispatch(result);
   }
 
   private onClose(ws: WebSocket): void {
@@ -214,26 +256,56 @@ export async function startServer(options: StartServerOptions = {}): Promise<Run
 
   const columnOrder = columnOrderStrings.map((c) => createColumnId(c));
   const clock: Clock = { now: () => Date.now() }; // アダプター層のみ実クロック（指示 1）
-  // 復元起動: restoreFrom 指定時は snapshot＋log から Sequencer 状態を再構築する（document/log/revision/
-  // ackCache/clientSequenceTable を全復元・revision は R から継続＝S-K2/K4・D17/D18）。未指定は空＋seed。
-  const sequencer = new Sequencer(
-    options.restoreFrom !== undefined ? deserializeSnapshot(options.restoreFrom) : freshSequencerState(columnOrder),
-    clock,
-  );
+
+  // DD-014 永続化（persistenceDir 指定時）: 再起動復旧＝最新 snapshot（document@R）＋oplog tail（revision>R）で復元。
+  let oplog: OpLogStore | undefined;
+  let snapshotStore: SnapshotStore | undefined;
+  let recovery: RecoveryReport | undefined;
+  let recoveredState: ReturnType<typeof freshSequencerState> | undefined;
+  if (options.persistenceDir !== undefined) {
+    oplog = new FileOpLogStore(join(options.persistenceDir, 'oplog.jsonl'));
+    snapshotStore = new FileSnapshotStore(join(options.persistenceDir, 'snapshots'));
+    const recovered = await recoverSequencerState({ oplog, snapshotStore, columnOrder });
+    recovery = recovered.report;
+    if (recovered.report.totalOps > 0) {
+      recoveredState = recovered.state; // 既存文書を復元（seed しない）
+    }
+  }
+
+  // 復元起動: restoreFrom（in-memory 検査用）指定時は snapshot＋log から Sequencer 状態を再構築する。
+  // 永続化復元が優先（recoveredState）。いずれも無ければ空＋seed。
+  const initialState =
+    recoveredState ??
+    (options.restoreFrom !== undefined ? deserializeSnapshot(options.restoreFrom) : freshSequencerState(columnOrder));
+  const sequencer = new Sequencer(initialState, clock);
   const room = new Room(sequencer, {
     clock,
     idGenerator: { next: () => randomUUID() }, // connectionId は実 UUID
     ttlMillis,
   });
-  if (options.restoreFrom === undefined) {
+  // fresh（復元でも restoreFrom でもない）ときだけ seed する。永続化有効時は seed op を durable に oplog へ追記し、
+  // 次回再起動の復旧で seed 済み文書を再現できるようにする（seed が oplog に無いと edit の baseRevision が破綻する）。
+  const isFresh = recoveredState === undefined && options.restoreFrom === undefined;
+  if (isFresh) {
     if (datasetConfig !== undefined) {
       seedIntegrationDataset(sequencer, documentId, datasetConfig);
     } else {
       seedInitialRows(sequencer, documentId, seedRows);
     }
+    if (oplog !== undefined) {
+      await oplog.append(sequencer.exportState().operationLog); // seed を durable 化（revision 1..k）
+    }
   }
 
-  const bridge = new RoomBridge(room);
+  // 永続化有効時は PersistentRoom（durable ACK 境界＋snapshot 生成）で Room を包む。
+  const persistentRoom =
+    oplog !== undefined && snapshotStore !== undefined
+      ? new PersistentRoom(room, sequencer, oplog, snapshotStore, clock, {
+          documentId,
+          snapshotIntervalOps: options.snapshotIntervalOps,
+        })
+      : undefined;
+  const bridge = new RoomBridge(persistentRoom ?? room);
   const demoHtml = loadDemoHtml();
 
   const app = new Hono();
@@ -290,7 +362,8 @@ export async function startServer(options: StartServerOptions = {}): Promise<Run
     hash: () => documentHash(sequencer.document),
     snapshot: () => serializeSnapshot(room.exportState()),
     connectionCount: () => bridge.connectionCount(),
-    close: () => closeServer(server, wss, sweepTimer),
+    recovery,
+    close: () => closeServer(server, wss, sweepTimer, persistentRoom),
   };
 }
 
@@ -339,9 +412,13 @@ async function closeServer(
   server: NodeServer,
   wss: WebSocketServer | undefined,
   sweepTimer: ReturnType<typeof setInterval> | undefined,
+  persistentRoom?: PersistentRoom,
 ): Promise<void> {
   if (sweepTimer !== undefined) {
     clearInterval(sweepTimer);
+  }
+  if (persistentRoom !== undefined) {
+    await persistentRoom.close(); // 保留中の durable 書込を確定して oplog/snapshot ハンドルを閉じる
   }
   if (wss !== undefined) {
     for (const client of wss.clients) {
@@ -411,11 +488,19 @@ if (isMainModule()) {
   const integrationEnabled =
     process.argv.includes('--integration') || process.env.SEED_DATASET === 'integration';
   const integrationDataset = integrationEnabled ? integrationDatasetFromEnv() : false;
-  startServer({ port, integrationDataset })
+  // DD-014: PERSISTENCE_DIR 指定でファイル永続化（oplog＋snapshot）を有効化する（再起動で復旧）。
+  const persistenceDir = process.env.PERSISTENCE_DIR;
+  const snapshotIntervalOps = numEnv('SNAPSHOT_INTERVAL_OPS');
+  startServer({ port, integrationDataset, persistenceDir, snapshotIntervalOps })
     .then((running) => {
       process.stdout.write(
         `collaboration-server listening on ${running.url} (documentId=${running.documentId})\n`,
       );
+      if (running.recovery !== undefined) {
+        process.stdout.write(
+          `DD-014 persistence: recovered from ${persistenceDir ?? ''} (snapshot=${String(running.recovery.fromSnapshotRevision)} totalOps=${running.recovery.totalOps} tailReplayed=${running.recovery.tailReplayed} tornDiscarded=${running.recovery.discardedTornRecords})\n`,
+        );
+      }
       if (integrationEnabled) {
         process.stdout.write(
           `DD-005 integration dataset seeded (rows/cols/nonEmpty overridable via SEED_ROWS/SEED_COLS/SEED_NONEMPTY). WS: ws://${running.url.replace(/^https?:\/\//, '')}/ws\n`,

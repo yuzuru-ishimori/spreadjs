@@ -1,0 +1,168 @@
+// PersistentRoom の単体テスト（DD-014 Phase 1/2）:
+//   - durable ACK 順序: ACK/broadcast は oplog append（fsync）解決後にのみ返る（log 書込前に ACK が出ない）。
+//   - 再起動復旧: snapshot＋tail replay の hash == oplog 全 replay の hash（AC3）。snapshot 無しの全 replay も一致。
+//   - snapshot 生成トリガー（N op ごと）と取り漏らしなし。
+import { documentHash } from '@nanairo-sheet/core';
+import type { ServerOperationEnvelope } from '@nanairo-sheet/core';
+import { describe, expect, it } from 'vitest';
+
+import { createCounterIdGenerator } from './deps';
+import { MemoryOpLogStore } from './oplog-store';
+import type { OpLogStore, OpLogReadResult } from './oplog-store';
+import { PersistentRoom, recoverSequencerState } from './persistent-room';
+import { Room } from './room';
+import { Sequencer, freshSequencerState } from './sequencer';
+import { MemorySnapshotStore } from './snapshot-store';
+import type { SnapshotStore } from './snapshot-store';
+import { COLUMNS, col, createManualClock, envelope, insertRows, row, setCells, str } from './test-support';
+
+function buildPersistentRoom(oplog: OpLogStore, snapshotStore: SnapshotStore, snapshotIntervalOps = 1_000) {
+  const clock = createManualClock();
+  const sequencer = new Sequencer(freshSequencerState(COLUMNS), clock);
+  const room = new Room(sequencer, { clock, idGenerator: createCounterIdGenerator() });
+  const persistent = new PersistentRoom(room, sequencer, oplog, snapshotStore, clock, {
+    documentId: 'doc-1',
+    snapshotIntervalOps,
+  });
+  return { persistent, sequencer, room, clock };
+}
+
+/** append の解決を手動で制御できる oplog（durable 順序検証用）。 */
+class GatedOpLogStore implements OpLogStore {
+  private readonly entries: ServerOperationEnvelope[] = [];
+  private release: (() => void) | undefined;
+
+  append(entries: readonly ServerOperationEnvelope[]): Promise<void> {
+    this.entries.push(...entries);
+    return new Promise<void>((resolve) => {
+      this.release = resolve;
+    });
+  }
+  flushGate(): void {
+    this.release?.();
+    this.release = undefined;
+  }
+  readAll(): Promise<OpLogReadResult> {
+    return Promise.resolve({ entries: [...this.entries], discardedTornRecords: 0 });
+  }
+  close(): Promise<void> {
+    return Promise.resolve();
+  }
+}
+
+const submitInsert = (id: string, seq: number) =>
+  ({ type: 'submitOperation', envelope: envelope({ operationId: id, clientSequence: seq, operation: insertRows(null, [id]) }) }) as const;
+
+describe('PersistentRoom durable ACK 順序（Phase 1）', () => {
+  it('ACK/broadcast は oplog append（fsync）解決後にのみ dispatch される（log 書込前に ACK を出さない）', async () => {
+    const gate = new GatedOpLogStore();
+    const { persistent } = buildPersistentRoom(gate, new MemorySnapshotStore());
+    persistent.handleJoin({ type: 'join', protocolVersion: 1, documentId: 'doc-1' as never, lastAppliedRevision: 0, clientId: 'client-A' });
+
+    let resolved = false;
+    const pending = persistent.handleMessage('conn-1', submitInsert('op-1', 1)).then((outbound) => {
+      resolved = true;
+      return outbound;
+    });
+    // まだ gate 未開放＝append 未解決ゆえ ACK は返らない。
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(resolved).toBe(false);
+
+    gate.flushGate(); // fsync 完了相当
+    const outbound = await pending;
+    expect(resolved).toBe(true);
+    // durable 化後に ACK と operations（broadcast）が返る。
+    const types = outbound.map((o) => o.message.type);
+    expect(types).toContain('operationAck');
+    expect(types).toContain('operations');
+  });
+
+  it('reject/duplicate は oplog へ書かず即応する（accepted のみ durable 境界）', async () => {
+    const oplog = new MemoryOpLogStore();
+    const { persistent } = buildPersistentRoom(oplog, new MemorySnapshotStore());
+    persistent.handleJoin({ type: 'join', protocolVersion: 1, documentId: 'doc-1' as never, lastAppliedRevision: 0, clientId: 'client-A' });
+    // clientSequence 違反 → reject。oplog は空のまま。
+    const outbound = await persistent.handleMessage('conn-1', submitInsert('op-x', 5));
+    expect(outbound.map((o) => o.message.type)).toContain('operationRejected');
+    const { entries } = await oplog.readAll();
+    expect(entries.length).toBe(0);
+  });
+});
+
+describe('PersistentRoom 再起動復旧（Phase 2）', () => {
+  async function applyOps(persistent: PersistentRoom): Promise<void> {
+    persistent.handleJoin({ type: 'join', protocolVersion: 1, documentId: 'doc-1' as never, lastAppliedRevision: 0, clientId: 'client-A' });
+    await persistent.handleMessage('conn-1', submitInsert('op-1', 1));
+    await persistent.handleMessage('conn-1', {
+      type: 'submitOperation',
+      envelope: envelope({ operationId: 'op-2', clientSequence: 2, baseRevision: 1, operation: setCells([{ rowId: row('op-1'), columnId: col('col-a'), value: str('X') }]) }),
+    });
+    await persistent.handleMessage('conn-1', submitInsert('op-3', 3));
+  }
+
+  it('snapshot＋tail replay の hash == oplog 全 replay の hash（AC3）', async () => {
+    const oplog = new MemoryOpLogStore();
+    const snapshotStore = new MemorySnapshotStore();
+    const { persistent, sequencer } = buildPersistentRoom(oplog, snapshotStore);
+    await applyOps(persistent); // 3 op 適用
+    const liveHash = documentHash(sequencer.document);
+    await persistent.forceSnapshot(); // revision 3 の snapshot（tail 0）
+
+    // 復旧（snapshot revision 3 + tail 0）。
+    const recovered = await recoverSequencerState({ oplog, snapshotStore, columnOrder: [...COLUMNS] });
+    expect(documentHash(recovered.state.document)).toBe(liveHash);
+    expect(recovered.report.fromSnapshotRevision).toBe(3);
+    expect(recovered.report.tailReplayed).toBe(0);
+    expect(recovered.state.currentRevision).toBe(3);
+    expect(recovered.state.operationLog.length).toBe(3); // catch-up 供給のため全 log を in-memory へ復元
+  });
+
+  it('snapshot が古い revision の場合、tail replay で最新 hash に一致する（O(tail)・AC3/AC5）', async () => {
+    const oplog = new MemoryOpLogStore();
+    const snapshotStore = new MemorySnapshotStore();
+    const { persistent, sequencer } = buildPersistentRoom(oplog, snapshotStore);
+    persistent.handleJoin({ type: 'join', protocolVersion: 1, documentId: 'doc-1' as never, lastAppliedRevision: 0, clientId: 'client-A' });
+    await persistent.handleMessage('conn-1', submitInsert('op-1', 1));
+    await persistent.handleMessage('conn-1', submitInsert('op-2', 2));
+    await persistent.forceSnapshot(); // snapshot@revision 2
+    // snapshot 後にさらに op（tail）を追加。
+    await persistent.handleMessage('conn-1', submitInsert('op-3', 3));
+    await persistent.handleMessage('conn-1', submitInsert('op-4', 4));
+    const liveHash = documentHash(sequencer.document);
+
+    const recovered = await recoverSequencerState({ oplog, snapshotStore, columnOrder: [...COLUMNS] });
+    expect(documentHash(recovered.state.document)).toBe(liveHash);
+    expect(recovered.report.fromSnapshotRevision).toBe(2);
+    expect(recovered.report.tailReplayed).toBe(2); // op-3, op-4 のみ replay（O(tail)）
+    expect(recovered.state.currentRevision).toBe(4);
+  });
+
+  it('snapshot 無し時は oplog 全 replay で復旧し hash 一致（縮退経路）', async () => {
+    const oplog = new MemoryOpLogStore();
+    const snapshotStore = new MemorySnapshotStore();
+    const { persistent, sequencer } = buildPersistentRoom(oplog, snapshotStore);
+    await applyOps(persistent); // snapshot は生成しない（interval 未達）
+    const liveHash = documentHash(sequencer.document);
+
+    const recovered = await recoverSequencerState({ oplog, snapshotStore, columnOrder: [...COLUMNS] });
+    expect(documentHash(recovered.state.document)).toBe(liveHash);
+    expect(recovered.report.fromSnapshotRevision).toBeUndefined();
+    expect(recovered.report.tailReplayed).toBe(3);
+  });
+
+  it('N op ごとに snapshot が非同期生成される（snapshotIntervalOps）', async () => {
+    const oplog = new MemoryOpLogStore();
+    const snapshotStore = new MemorySnapshotStore();
+    const { persistent } = buildPersistentRoom(oplog, snapshotStore, 3);
+    persistent.handleJoin({ type: 'join', protocolVersion: 1, documentId: 'doc-1' as never, lastAppliedRevision: 0, clientId: 'client-A' });
+    for (let i = 1; i <= 3; i += 1) {
+      await persistent.handleMessage('conn-1', submitInsert(`op-${i}`, i));
+    }
+    // 非同期 snapshot 生成の完了を待つ。
+    await new Promise((r) => setTimeout(r, 10));
+    expect(snapshotStore.saveCount).toBeGreaterThanOrEqual(1);
+    const loaded = await snapshotStore.loadLatest();
+    expect(loaded?.revision).toBe(3);
+  });
+});

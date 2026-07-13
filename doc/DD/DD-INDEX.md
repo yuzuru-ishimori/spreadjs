@@ -7,7 +7,7 @@
 | DD | 件名 | ステータス | 補足 |
 |----|------|-----------|------|
 | DD-015 | reconnect・catch-up・idempotency | 検討中 | roadmap §4/§5 Alpha必須ライン・**CG-5担当**（D27/D34回収）。DD-014の次・DD-016の前 |
-| DD-014 | 永続化・snapshot復元 | 検討中 | roadmap §4/§5 Alpha必須ライン・**CG-3担当**。DD-013の次・DD-015（reconnect）の前 |
+| DD-014 | 永続化・snapshot復元 | 確認待ち | サーバー側達成（durable ACK・snapshot format v1・100k復旧≦1s・O(N²)回避・fail-fast）。**Codex xhigh で P1 findings 検出＝CG-3 未解除・要判断**（クライアント snapshot bootstrap 未実装＝AC4/AC8 未達・durable frontier/poisoning）。ADR-0023 Proposed。roadmap §4/§5 |
 | DD-012 | 単一利用者IME縦切り | 進行中 | 案Y 2分割・両子DD完了アーカイブ済（DD-012-1 入力縦切り＝**CG-1解除**／DD-012-2 性能縦切り＝**CG-6指標pass**）。milestone残（ime/selection/render物理抽出・baseline縮退・CG-1統合後スモーク・CG-6精密メモリ＋clean redraw）は**DD-016で確定**。DD-016完了でクローズ |
 
 ## 保留・見送り

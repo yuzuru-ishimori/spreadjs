@@ -82,30 +82,55 @@ export function applyOperation(
   op: DocumentOperation,
   ctx: { revision: number },
 ): ApplyResult {
+  // 入力を破壊しないため 1 回だけ clone し、以降は working copy を in-place で変更する（二相適用）。
+  const next = cloneDocument(doc);
+  return applyOperationInto(next, op, ctx.revision);
+}
+
+/**
+ * 既に accepted 済みの operation 列を **単一の working document へ in-place 適用**して最終文書を返す
+ * （再起動復旧・snapshot tail replay 用・DD-014）。op ごとの full clone を避けるため計算量は
+ * O(clone 1 回 ＋ Σ変更) ＝ O(N²) 回避（AC4/AC5）。**base は破壊される**（呼び出し側が所有・共有参照を渡さないこと）。
+ * ChangeSet/inverse は生成するが破棄してよい（呼び出し側は最終文書のみを使う）。
+ */
+export function replayAcceptedOperations(
+  base: SheetDocument,
+  ops: Iterable<{ operation: DocumentOperation; revision: number }>,
+): SheetDocument {
+  let doc = base;
+  for (const entry of ops) {
+    doc = applyOperationInto(doc, entry.operation, entry.revision).document;
+  }
+  return doc;
+}
+
+/** working document `next` を破壊的に変更して適用する（clone はしない）。applyOperation と replay が共有する。 */
+function applyOperationInto(next: SheetDocument, op: DocumentOperation, revision: number): ApplyResult {
   switch (op.type) {
     case 'setCells':
-      return applySetCells(doc, op, ctx.revision);
+      return applySetCells(next, op, revision);
     case 'insertRows':
-      return applyInsertRows(doc, op, ctx.revision);
+      return applyInsertRows(next, op, revision);
     case 'deleteRows':
-      return applyDeleteRows(doc, op, ctx.revision);
+      return applyDeleteRows(next, op, revision);
     default:
       return assertNever(op);
   }
 }
 
-function applySetCells(doc: SheetDocument, op: SetCellsOperation, revision: number): ApplyResult {
+// 以下 apply* は渡された `next`（clone 済み working copy）を **in-place** で変更する（内部で clone しない）。
+function applySetCells(next: SheetDocument, op: SetCellsOperation, revision: number): ApplyResult {
   // Phase 1: 全件を構造検証（部分適用しない＝原子性・I-5）。違反は種別ごとに収集し全件 reject。
   const unknownRows: RowId[] = [];
   const deletedRows: RowId[] = [];
   const unknownColumns: ColumnId[] = [];
   for (const change of op.changes) {
-    const meta = doc.rowMeta.get(change.rowId);
+    const meta = next.rowMeta.get(change.rowId);
     if (meta === undefined) {
       unknownRows.push(change.rowId);
     } else if (meta.tombstone) {
       deletedRows.push(change.rowId);
-    } else if (columnIndexOf(doc, change.columnId) < 0) {
+    } else if (columnIndexOf(next, change.columnId) < 0) {
       // columnOrder 外の列は構造エラー（DD-010・列固定 PoC）。setCell の raw throw ではなく ApplyError で reject。
       unknownColumns.push(change.columnId);
     }
@@ -120,9 +145,8 @@ function applySetCells(doc: SheetDocument, op: SetCellsOperation, revision: numb
     throw new ApplyError('unknown-column', unknownColumns);
   }
 
-  // Phase 2: clone 上で確定（入力 doc は不変）。before は working clone から読み、
-  // 同一 SetCells 内の複数変更（同一セルの連続書き）も正しく直前値を反映する。
-  const next = cloneDocument(doc);
+  // Phase 2: working copy 上で確定（clone は applyOperation/replay が 1 回だけ実施済み）。
+  // before は working copy から読み、同一 SetCells 内の複数変更（同一セルの連続書き）も正しく直前値を反映する。
   const cells: CellChange[] = [];
   const inverseCells: InverseSeed['cells'] = [];
   const dirty: RowId[] = [];
@@ -162,11 +186,11 @@ function applySetCells(doc: SheetDocument, op: SetCellsOperation, revision: numb
 }
 
 function applyInsertRows(
-  doc: SheetDocument,
+  next: SheetDocument,
   op: InsertRowsOperation,
   revision: number,
 ): ApplyResult {
-  const anchorIndex = resolveAnchorIndex(doc, op.afterRowId);
+  const anchorIndex = resolveAnchorIndex(next, op.afterRowId);
   if (anchorIndex === undefined) {
     throw new ApplyError('unknown-anchor', op.afterRowId);
   }
@@ -174,7 +198,6 @@ function applyInsertRows(
   // 前提（呼び出し側の契約・DA D11）: op.rows の rowId は文書内で未使用（本番は crypto.randomUUID、
   // テストはシード一意）。既存 rowId を渡すと rowOrder に重複が入る。PoC は採番一意性を前提とし、
   // 専用エラーコードは設けない（apply の ApplyError は構造3種＝phase1-design §4 に限定）。
-  const next = cloneDocument(doc);
   const insertedRowIds: RowId[] = [];
   let slot = nextSlot(next);
   let insertAt = anchorIndex + 1; // アンカー直後（先頭=-1 のときは 0）
@@ -203,11 +226,10 @@ function applyInsertRows(
 }
 
 function applyDeleteRows(
-  doc: SheetDocument,
+  next: SheetDocument,
   op: DeleteRowsOperation,
   revision: number,
 ): ApplyResult {
-  const next = cloneDocument(doc);
   const rowsDeleted: RowId[] = [];
   const inverseDeleted: InverseSeed['deletedRows'] = [];
 

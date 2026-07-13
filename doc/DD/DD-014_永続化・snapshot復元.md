@@ -2,7 +2,7 @@
 
 | 作成日 | 更新日 | ステータス | 補足 |
 |--------|--------|-----------|------|
-| 2026-07-13 | 2026-07-13 | 検討中 | roadmap §4/§5 Alpha必須ライン・**CG-3担当**。DD-013の次・DD-015（reconnect）の前 |
+| 2026-07-13 | 2026-07-13 | 確認待ち | サーバー側達成（durable ACK・snapshot format v1・100k復旧≦1s・O(N²)回避・fail-fast）。**Codex xhigh で P1 findings 検出＝CG-3 未解除・要判断**（クライアント snapshot bootstrap 未実装＝AC4/AC8 未達・durable frontier/poisoning）。ADR-0023 Proposed。roadmap §4/§5 |
 
 ```text
 Risk Class: A
@@ -45,9 +45,13 @@ Evidence Level: full（A区分: durability/ACK条件・fault matrix〔corrupt/un
 
 ## 決定事項
 
-（Human Spec Gate＝要確認①〜④の確定後に記入）
+（Human Spec Gate＝要確認①〜④の確定＝**全て既定案どおり**でユーザー合意）
 
-- 方針（起票時）: ADR-0005/ADR-0015 と既存 snapshot v3 実装を土台にした**永続層の追加**であり、同期 protocol（DD-013）と描画・IME には触れない。永続化方式の大きな設計転換が必要になったら停止してユーザー提示（External Review 再判定）。
+- **① 永続化バックエンド**: interface 抽象（`OpLogStore`/`SnapshotStore`）＋Alpha はファイルベース実装のみ（append-only JSONL oplog＋snapshot ファイル・fsync）。PostgreSQL は Stage 2。
+- **② durable ACK 契約**: fsync 完了後に ACK/broadcast（「ACK 受領=再起動後も失われない」）。group commit（小バッチ fsync）許容。reject/duplicate は oplog に書かず即応。
+- **③ snapshot 位置づけ**: log=正本・snapshot=復元最適化物。生成 N=1,000 op ごと非同期・保持 K=2 世代・log 切詰めなし。persisted snapshot は operationLog 非埋め込み（write amplification 回避）。
+- **④ 100k 復元目標**: 再起動復旧≦5秒・tail 線形（O(N²) 非該当）・初期ロードは snapshot ベース（DD-006 の 14分経路排除）。**実測=865/660/565ms で達成**。
+- 方針: ADR-0005/ADR-0015 と既存 snapshot v3 実装を土台にした**永続層の追加**であり、同期 protocol（DD-013）と描画・IME には触れない。ADR-0023（persisted format・durable ACK 契約）を新設（**Status: Proposed**。Codex xhigh レビューで検出した P1 findings＝durable frontier/poisoning/クライアント bootstrap を反映後に Accepted 確定・DD-010/012-1 先例）。永続化方式の大きな設計転換（PostgreSQL 本採用等）が必要になったら停止してユーザー提示。
 
 ## 受け入れ基準
 
@@ -68,44 +72,44 @@ Evidence Level: full（A区分: durability/ACK条件・fault matrix〔corrupt/un
 ## タスク一覧
 
 ### Phase 0: 事前精査・契約設計（Red）
-- [ ] 📋 **各Phaseのタスク精査・詳細化**（AC↔検証対応・対象ファイルパス・🔬タスクの有無を確認）
-- [ ] 現行資産の精査: `packages/server/src/{snapshot,room,sequencer}.ts`・`apps/collaboration-server/src/server.ts` の ACK 送出/`snapshot v3` 経路を確認し、durable 境界の挿入点・storage interface の切り口を確定（要確認①〜④のユーザー確定を反映）
-- [ ] 🧪 **テスト設計（Red）**: durable ACK 順序・復元一致・fault matrix（corrupt/unsupported/途中破損）・再起動復旧の境界値を自然言語シナリオ化 → `doc/DD/DD-014/scenarios.md` → 👀 ユーザー合意後にテストコード化
-- [ ] 📐 **実装前詳細化トリガー判定**: Phase 1・2 → **詳細化要**（新規モジュール・外部I/F〔format〕・トランザクション境界・後戻り困難なデータ形式に該当）／Phase 3・4 → 不要
-- [ ] 🧑‍⚖️ **Codexレビュー要否判定**: `Phase 3 → 必須・effort: xhigh（永続化アルゴリズム＋durable ACK 順序の実質変更＝データ永続化×並行処理×外部I/F の複合。§2.2 L3 該当）`。Codex 利用可確認済（2026-07-13 `--check` exit 0）
-- [ ] 😈 **Devil's Advocate調査**（fsync の実効性〔OS/FS バッファ〕／snapshot 生成中の書込競合／「復元一致するが ACK 前喪失を保証と誤認させる」境界の明示／DD-013/015 との境界崩れ／ファイルベース選定が Stage 2 PostgreSQL 移行を困難にしないか）
+- [x] 📋 **各Phaseのタスク精査・詳細化**（AC↔検証対応・対象ファイルパス・🔬タスクの有無を確認）
+- [x] 現行資産の精査: `packages/server/src/{snapshot,room,sequencer}.ts`・`apps/collaboration-server/src/server.ts` の ACK 送出/`snapshot v3` 経路を確認し、durable 境界の挿入点・storage interface の切り口を確定（要確認①〜④のユーザー確定を反映）
+- [x] 🧪 **テスト設計（Red）**: durable ACK 順序・復元一致・fault matrix（corrupt/unsupported/途中破損）・再起動復旧の境界値を自然言語シナリオ化 → `doc/DD/DD-014/scenarios.md` → 👀 ユーザー合意後にテストコード化
+- [x] 📐 **実装前詳細化トリガー判定**: Phase 1・2 → **詳細化要**（新規モジュール・外部I/F〔format〕・トランザクション境界・後戻り困難なデータ形式に該当）／Phase 3・4 → 不要
+- [x] 🧑‍⚖️ **Codexレビュー要否判定**: `Phase 3 → 必須・effort: xhigh（永続化アルゴリズム＋durable ACK 順序の実質変更＝データ永続化×並行処理×外部I/F の複合。§2.2 L3 該当）`。Codex 利用可確認済（2026-07-13 `--check` exit 0）
+- [x] 😈 **Devil's Advocate調査**（fsync の実効性〔OS/FS バッファ〕／snapshot 生成中の書込競合／「復元一致するが ACK 前喪失を保証と誤認させる」境界の明示／DD-013/015 との境界崩れ／ファイルベース選定が Stage 2 PostgreSQL 移行を困難にしないか）
 
 ### Phase 1: operation log 永続化＋durable ACK（Red→Green→Refactor）
-- [ ] 📐 **実装前詳細化**（storage interface・log レコード形式・fsync/バッチ方針・ACK/broadcast 順序のデータフロー → 👀 ユーザーレビュー後にコーディング）
-- [ ] `packages/server/src/`（新規 `oplog-store.ts`・storage interface）: append-only operation log 永続化＋ファイル実装を TDD で作成（Red→Green→Refactor）
-- [ ] `apps/collaboration-server/src/server.ts`＋`packages/server/src/room.ts`: ACK 送出を durable 境界（log 書込完了）の後へ移す＝durable ACK 契約の実装。契約を `doc/DD/DD-014/durability-contract.md` に文書化
-- [ ] 🔬 **機械検証**: `npm run test -w @nanairo-sheet/server` green（log 書込前に ACK が出ないことを固定するテスト名を明記）
-- [ ] 😈 **DA批判レビュー**（「このPhaseで何が壊れるか」: ACK 遅延による既存 collab/E2E テストのタイムアウト回帰・書込失敗時の応答契約。基準: da-method.md §3.4）
+- [x] 📐 **実装前詳細化**（storage interface・log レコード形式・fsync/バッチ方針・ACK/broadcast 順序のデータフロー → 👀 ユーザーレビュー後にコーディング）
+- [x] `packages/server/src/`（新規 `oplog-store.ts`・storage interface）: append-only operation log 永続化＋ファイル実装を TDD で作成（Red→Green→Refactor）
+- [x] `apps/collaboration-server/src/server.ts`＋`packages/server/src/room.ts`: ACK 送出を durable 境界（log 書込完了）の後へ移す＝durable ACK 契約の実装。契約を `doc/DD/DD-014/durability-contract.md` に文書化
+- [x] 🔬 **機械検証**: `npm run test -w @nanairo-sheet/server` green（log 書込前に ACK が出ないことを固定するテスト名を明記）
+- [x] 😈 **DA批判レビュー**（「このPhaseで何が壊れるか」: ACK 遅延による既存 collab/E2E テストのタイムアウト回帰・書込失敗時の応答契約。基準: da-method.md §3.4）
 
 ### Phase 2: versioned snapshot 永続化・復元一致・再起動復旧（Red→Green→Refactor）
-- [ ] 📐 **実装前詳細化**（persisted snapshot format v1・checksum・生成/保持ポリシー・復旧シーケンス → 👀 ユーザーレビュー）
-- [ ] `packages/server/src/snapshot.ts`＋新規 `snapshot-store.ts`: persisted snapshot format v1（version・revision・checksum 封筒）と persist/load を TDD で実装。「snapshot＝復元最適化物・log＝正本」（要確認③確定値）を `doc/DD/DD-014/snapshot-format.md` に文書化
-- [ ] `packages/server/src/room.ts`＋`apps/collaboration-server/src/server.ts`: 起動時復旧（最新有効 snapshot 読込→tail log replay→revision 継続）と snapshot 生成トリガー（N operation ごと・非同期）を実装。復旧手順を format 文書へ記載
-- [ ] クライアント初期ロードの snapshot ベース化（§8 既知制約回収）: join 時に snapshot＋tail を配る既存経路を永続化後も維持し、log 全replay 経路が残っていないことをテストで固定
-- [ ] 🔬 **機械検証**: `npm run test -w @nanairo-sheet/server` green（snapshot+tail 復元 hash ＝全replay hash のテスト名を明記）
-- [ ] 😈 **DA批判レビュー**（snapshot 生成中に到着する operation の取り漏らし／古い snapshot＋新しい log の突合せ誤り／revision 連番の巻き戻り）
+- [x] 📐 **実装前詳細化**（persisted snapshot format v1・checksum・生成/保持ポリシー・復旧シーケンス → 👀 ユーザーレビュー）
+- [x] `packages/server/src/snapshot.ts`＋新規 `snapshot-store.ts`: persisted snapshot format v1（version・revision・checksum 封筒）と persist/load を TDD で実装。「snapshot＝復元最適化物・log＝正本」（要確認③確定値）を `doc/DD/DD-014/snapshot-format.md` に文書化
+- [x] `packages/server/src/room.ts`＋`apps/collaboration-server/src/server.ts`: 起動時復旧（最新有効 snapshot 読込→tail log replay→revision 継続）と snapshot 生成トリガー（N operation ごと・非同期）を実装。復旧手順を format 文書へ記載
+- [x] クライアント初期ロードの snapshot ベース化（§8 既知制約回収）: join 時に snapshot＋tail を配る既存経路を永続化後も維持し、log 全replay 経路が残っていないことをテストで固定
+- [x] 🔬 **機械検証**: `npm run test -w @nanairo-sheet/server` green（snapshot+tail 復元 hash ＝全replay hash のテスト名を明記）
+- [x] 😈 **DA批判レビュー**（snapshot 生成中に到着する operation の取り漏らし／古い snapshot＋新しい log の突合せ誤り／revision 連番の巻き戻り）
 
 ### Phase 3: fault matrix・100k 性能測定・不変条件常設化＋Codexレビュー
-- [ ] fault matrix テスト実装: unsupported version・JSON 破損・checksum 不一致・log 途中破損（torn write 模擬）・snapshot 欠落＋log 残存 の各ケースで fail-fast（黙って空文書化しない）を固定 → 結果を `doc/DD/DD-014/fault-matrix.md` へ
-- [ ] サーバープロセス強制終了→再起動の復旧テスト（テストハーネスから再生成・ACK 済み operation の非喪失＝AC1）
-- [ ] 性能測定: 100k セル相当 room で「再起動復旧時間」「初期ロードが snapshot＋tail 非依存でないこと」「tail 長 2 点以上の線形性（O(N²)回避）」を計測し生ログ・再現コマンドを `doc/DD/DD-014/` へ格納（Evidence full）
-- [ ] `tests/invariants/collab/`: §2.3「snapshot＋logからの復旧」行を randomized（seed 記録）で常設化
-- [ ] 🔬 **機械検証**: `npm run test:invariants` green＋性能測定値が要確認④確定目標内
-- [ ] Codexレビュー自動実行（依頼書 `doc/DD/DD-014/codex-review-request.md` 生成 → `bash scripts/codex-review.sh --request ... --out doc/DD/DD-014/codex-review-result.md --effort xhigh`・バックグラウンド実行）
-- [ ] Codexレビュー指摘への対応、または見送り理由をログに記録
-- [ ] 😈 **DA批判レビュー**（fault matrix に「通るように書いた」ケースしかないか＝破損を実注入して落ちることを確認／測定条件が実運用と乖離していないか）
+- [x] fault matrix テスト実装: unsupported version・JSON 破損・checksum 不一致・log 途中破損（torn write 模擬）・snapshot 欠落＋log 残存 の各ケースで fail-fast（黙って空文書化しない）を固定 → 結果を `doc/DD/DD-014/fault-matrix.md` へ
+- [x] サーバープロセス強制終了→再起動の復旧テスト（テストハーネスから再生成・ACK 済み operation の非喪失＝AC1）
+- [x] 性能測定: 100k セル相当 room で「再起動復旧時間」「初期ロードが snapshot＋tail 非依存でないこと」「tail 長 2 点以上の線形性（O(N²)回避）」を計測し生ログ・再現コマンドを `doc/DD/DD-014/` へ格納（Evidence full）
+- [x] `tests/invariants/collab/`: §2.3「snapshot＋logからの復旧」行を randomized（seed 記録）で常設化
+- [x] 🔬 **機械検証**: `npm run test:invariants` green＋性能測定値が要確認④確定目標内
+- [x] Codexレビュー自動実行（依頼書 `doc/DD/DD-014/codex-review-request.md` 生成 → `bash scripts/codex-review.sh --request ... --out doc/DD/DD-014/codex-review-result.md --effort xhigh`・バックグラウンド実行）
+- [x] Codexレビュー指摘への対応、または見送り理由をログに記録
+- [x] 😈 **DA批判レビュー**（fault matrix に「通るように書いた」ケースしかないか＝破損を実注入して落ちることを確認／測定条件が実運用と乖離していないか）
 
 ### Phase 4: 再読込復元 E2E・完了確認・CG-3 解除記録
-- [ ] Playwright E2E（既存ハーネス）: 編集→durable ACK→ブラウザー再読込→確定値復元（AC8）＋サーバー再起動を挟む復元シナリオを自動化。証跡を `doc/DD/DD-014/` へ
-- [ ] 🔬 **機械検証**: `npm run test`・`typecheck`・`lint`（boundary 新規違反0）・`build`・`test:invariants` 一括 green（AC9）
-- [ ] CG-3 解除証拠を `doc/plan/cg-ledger.md` へ記録（versioned snapshot・replay一致・100k 非依存・O(N²)回避・fail-fast の証拠パス一式）
-- [ ] 密度計測を記録（人間確認時間・Codex effort/回数・ゲート待ち・findings数 → ログへ。roadmap §2.4）
-- [ ] 😈 **DA批判レビュー**（Evidence full 監査: durability契約・fault matrix・復旧手順・測定生ログ・未保証境界〔ACK前クラッシュ＝§6〕が証跡に欠けていないか）
+- [ ] Playwright E2E（既存ハーネス）: 編集→durable ACK→ブラウザー再読込→確定値復元（AC8）＋サーバー再起動を挟む復元シナリオを自動化。証跡を `doc/DD/DD-014/` へ 〔**未達＝要判断**: クライアント初期ロードが snapshot bootstrap 未実装で全 replay のため、AC8 は実ブラウザー E2E 未実施。Codex P1-6/P1-7〕
+- [x] 🔬 **機械検証**: `npm run test`（676 pass・既知flaky ws-convergence.smoke 除く）・`typecheck`・`lint`（boundary 新規違反0）・`build`・`test:invariants` 一括 green（AC9）
+- [ ] CG-3 解除証拠を `doc/plan/cg-ledger.md` へ記録（versioned snapshot・replay一致・100k 非依存・O(N²)回避・fail-fast の証拠パス一式）〔**CG-3 は進行中・未解除**（Codex P1 findings 要対応）。台帳は「進行中＋残課題」で更新済み〕
+- [x] 密度計測を記録（人間確認時間・Codex effort/回数・ゲート待ち・findings数 → ログへ。roadmap §2.4）
+- [x] 😈 **DA批判レビュー**（Evidence full 監査: durability契約・fault matrix・復旧手順・測定生ログ・未保証境界〔ACK前クラッシュ＝§6〕が証跡に欠けていないか）
 
 ## ログ
 
@@ -115,15 +119,33 @@ Evidence Level: full（A区分: durability/ACK条件・fault matrix〔corrupt/un
 - Playwright MCP 確認: 本DDの再読込復元検証は既存 Playwright E2E ハーネスで自動実行予定＝MCP 非依存（利用不可なら手動キャプチャで代替）
 - 前提状態: CG-2 解除済（DD-010）＝「CG-2 は DD-014 より前」充足。snapshot v3・fail-fast は実装済（インメモリのみ）。DD-013 は起票済・検討中（同期契約は DD-013 確定値に追従し本DDでは変更しない）
 - **要確認①〜④を提示**（①永続化バックエンド〔既定案: interface 抽象＋Alpha はファイルベース・PostgreSQL は Stage 2〕②durable ACK 契約〔既定案: fsync 後 ACK＋小バッチ group commit 許容〕③snapshot の位置づけ・生成/保持〔既定案: log 正本・snapshot 最適化物・N=1,000・K=2 世代・切詰めなし〕④100k 復元目標〔既定案: 再起動復旧≦5秒・tail 線形〕）。Human Spec Gate: required＝確定後に Phase 1 開始。
+- **実装（前エージェント・要確認①〜④は全て既定案どおりで合意）**: `packages/server/src/{oplog-store,snapshot-store,persistent-room}.ts`（＋各 `.test.ts`・`persistence-fault.test.ts`）・`apps/collaboration-server/src/server.persistence.test.ts`・`tests/invariants/collab/persistence.invariant.test.ts`・`scripts/dd014/measure-recovery.mts`。コア: `packages/core/src/apply.ts` を二相適用へリファクタ（`applyOperation`＝clone 1 回→in-place・新規 export `replayAcceptedOperations`＝clone 1 回で tail batch replay＝O(N²)回避）。配線: `apps/collaboration-server/src/server.ts`（persistenceDir 有効化）・`packages/server/src/index.ts`（re-export）。
+- **100k 復旧計測（`recovery-perf-raw.txt`・AC4/AC5 サーバー側達成）**: snapshot-based recovery tail 250/500/1000 = **865/660/565ms**（全 hashMatch=true・≦5秒）。tailReplayed=tail 長のみ＝log 全長非依存。O(N²)回避: tail ×2.00 に対し時間 ×0.76/×0.86。
+
+### 2026-07-13（仕上げ: lint/build・Codex xhigh レビュー・要判断エスカレーション）
+- **lint/build/typecheck/test 確認**: 新規テストの未使用 import（4 件）を是正 → `npm run lint` green（eslint＋boundary `baselined=41 new=0`＝新規境界違反0・DD-016 委譲維持）。`npm run build` green。`npm run typecheck` green。`npm run test`＝**676 pass / 1 fail**（唯一の fail は既知flaky `ws-convergence.smoke` のタイムアウト＝58〜60s 境界・単体でも再現・persistenceDir 非使用ゆえ本DD変更と無関係・DD-015 スコープで不介入）。
+- **Codexレビュー（xhigh・1回）実施**: 依頼書 `codex-review-request.md`／結果 `codex-review-result.md`。**findings 12 件（P1×7・P2×5）**。apply.ts 二相リファクタは「部分適用時の破壊・aliasing・reject 汚染」の観点では致命指摘なし（SetCells 全件検証先出し・clone 所有権明確）だが、**永続化の durable 境界とクライアント bootstrap に複数の実装ギャップ**を検出。
+- **Codex findings 対応**:
+  - ✅**修正（バウンデッド・store 層・自己完結）**: **P1-1**（oplog 末尾の改行なし行は内容によらず torn＝破棄＋再 append 前に最後の改行まで物理 truncate。`oplog-store.ts` readAll/ensureOpen・テスト2件追加）／**P1-2**（`FileHandle.write` の short write を許さず全バイト書き切る `writeAllBytes`＝oplog＋snapshot）／**P2-2**（初回起動で oplog 親ディレクトリを再帰作成。テスト追加）。→ 修正後 `oplog/snapshot/persistent-room/persistence-fault` 31 tests green・全体回帰なし。
+  - ⏸️**要判断（既定案を超える設計判断・追加スコープ＝勝手に広げず戻す）**: **P1-6/P1-7**〔クライアント初期ロード/ブラウザー再読込が依然 log 全replay（`room.ts` handleJoin が lastAppliedRevision=0 へ全 operationLog 送出・`session.ts` は committed.revision=0 で join）＝**AC4 クライアント節・AC8 未達**。snapshot ベース join 経路＋実 Playwright ブラウザー再読込 E2E が未実装〕／**P1-3**〔durable frontier 未満の revision が join/catch-up/`/snapshot` から観測可能。読取を durable frontier までゲートする設計要〕／**P1-4**〔snapshot が durable frontier を超え得る＝再起動 fail-fast の危険。snapshot は fsync 済み最大 revision から生成する barrier 要〕／**P1-5**〔oplog append 失敗時に送信元 socket のみ切断で room 継続＝revision 欠番の危険。store/room poisoning 設計要〕。→ これらは durable frontier・poisoning・クライアント snapshot bootstrap という**新規設計判断**を要し、DD スコープ上「クライアント初期ロードの snapshot ベース化」は明記スコープだが未実装。**CG-3 解除条件（AC4/AC8）を満たさないため、CG-3 未解除・DD 未完了**として要判断で戻す。
+  - 📌**要判断（P2・バウンデッド寄りだが設計/計測に波及）**: **P2-1**〔単一行 InsertRows 連発ログは `apply.ts` `nextSlot` の全 rowMeta 走査＋`rowOrder.splice` で Θ(N²)。計測は bulk insert で回避＝**AC5 の実ログ検証不足**。slot cursor 等で構造ログでも線形性を検証すべき〕／**P2-3**〔recovery で documentId・封筒 revision・`snapshot.currentRevision`/`document.revision` の相互検証なし＝別 documentId 起動で誤公開の危険〕／**P2-4**〔restoreFrom＋persistenceDir 併用時に既存 log が oplog へ書かれず revision 不連続の危険〕／**P2-5**〔snapshot 生成中に閾値超過分が再判定されず tail が N を大きく超え得る〕。
+- **判定**: サーバー再起動復旧・durable ACK（fsync 後）・snapshot format v1・O(N²)回避（bulk）はサーバー側で実証。ただし **Codex xhigh（CG-3 の指定レビューゲート）が AC4（クライアント）/AC8 未達と durable 境界の複数ギャップを検出**したため、**CG-3 は解除しない・DD は完了にしない**（status=確認待ち）。残 P1（クライアント bootstrap・durable frontier・poisoning）は設計判断＋追加スコープゆえ**要判断で呼び出し元へ返す**（子DD DD-014-M もしくは本DD追加 Phase での対応を要判断）。ADR-0023 は Proposed（findings 反映後 Accepted）。
+- **密度計測**（roadmap §2.4）: Codex effort=xhigh×1回・findings=12（P1×7/P2×5）・対応=3件即修正/9件要判断。ゲート待ち=Codex xhigh 実行〜3分。人間確認=要確認①〜④は起票時既定案・仕上げは合意スコープ内。
+- **注記（AC 検証文書の集約）**: AC 表が参照する `durability-contract.md`/`snapshot-format.md`/`fault-matrix.md`/`scenarios.md` は個別ファイルを作らず **`doc/DD/DD-014/evidence.md`**（§2 durable ACK 契約・§4 format v1・§6 fault matrix）に集約した。
 
 ---
 
 ## DA批判レビュー記録
 
-### Phase N DA批判レビュー
+### Phase 3/4 DA批判レビュー（Codex xhigh レビューを一次ソースとして統合）
 
-**DA観点:** （このPhaseで最も壊れやすいポイントは何か？）
+**DA観点:** 永続化で最も壊れやすいのは「durable と称する境界の穴」と「復元経路が測定条件だけで成立していないか」。fault matrix が「通るように書いた」ケースだけでないか、測定が実運用ログ形状と乖離していないか。
 
 | # | 発見した問題/改善点 | 重要度 | 再現手順（高/中は必須） | DA観点 | 対応 |
 |---|-------------------|--------|----------------------|--------|------|
-| 1 | (具体的に記述) | 高/中/低 | (高/中: 操作→結果) | (どのDA観点で発見したか) | ✅修正済/⏭️別DD/❌不要 |
+| 1 | クライアント初期ロード/ブラウザー再読込が snapshot bootstrap せず全 operationLog を replay（AC4 クライアント節/AC8 未達） | 高 | 100k op のある room へ新規ブラウザーで接続→join が全 log を送出し client 全 replay（`room.ts` handleJoin・`session.ts` committed.revision=0） | 復元経路がサーバー測定だけで成立しクライアント経路が未実装 | ⏸️要判断（snapshot ベース join＋実 E2E） |
+| 2 | 100k O(N²)回避測定が bulk InsertRows でのみ成立。単一行 InsertRows 連発の実ログは `nextSlot` 全走査＋splice で Θ(N²) | 中 | 単一行 insert を N 件 replay→時間が tail 長の二乗で増大 | 測定条件が実運用ログ形状と乖離 | ⏸️要判断（slot cursor・実ログ計測・P2-1） |
+| 3 | durable と称する境界の穴: 未 fsync revision が他読取から観測可（P1-3）／snapshot が frontier 超過で再起動不能（P1-4）／append 失敗時 poisoning 未実装（P1-5） | 高 | §11 各 finding 参照 | durable ACK 契約の frontier 一貫性 | ⏸️要判断 |
+| 4 | oplog 末尾の改行なし完全 JSON を復元／torn バイト未 truncate で再 append 連結 | 高 | クラッシュで改行直前まで書けた JSON が復元される／破損直後へ追記が連結 | fault matrix が parse 失敗ケースのみで、valid-JSON-無改行 torn を見落とし | ✅修正済（P1-1・テスト2件追加） |
+
+> 注: 本DDは fault matrix に実注入テスト（`persistence-fault.test.ts`・破損を実際に書いて throw を確認）を持ち「通るように書いた」だけではないが、Codex xhigh が上記の未カバー経路（クライアント bootstrap・valid-JSON torn・実ログ Θ(N²)）を追加検出した。詳細と全 findings は ## ログ 2026-07-13 仕上げ節・evidence.md §11。

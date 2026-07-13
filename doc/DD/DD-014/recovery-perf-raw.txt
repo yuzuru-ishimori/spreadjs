@@ -1,0 +1,18 @@
+# DD-014 recovery performance measurement
+# generated: 2026-07-13T20:12:08.901Z
+# base cells: 1000 rows × 100 cols = 100000 cells
+# node: v22.20.0
+
+[snapshot-based] tail=250 totalOps=100251 recoverMs=864.9 (runs=793.5/864.9/1435.8) fromSnapshotRevision=100001 tailReplayed=250 hashMatch=true
+[full-replay ]  tail=250 totalOps=100251 recoverMs=530.7 fromSnapshotRevision=undefined tailReplayed=100251 hashMatch=true
+[snapshot-based] tail=500 totalOps=100501 recoverMs=660.3 (runs=486.9/660.3/1234.5) fromSnapshotRevision=100001 tailReplayed=500 hashMatch=true
+[full-replay ]  tail=500 totalOps=100501 recoverMs=775.3 fromSnapshotRevision=undefined tailReplayed=100501 hashMatch=true
+[snapshot-based] tail=1000 totalOps=101001 recoverMs=564.6 (runs=480.4/564.6/1200.2) fromSnapshotRevision=100001 tailReplayed=1000 hashMatch=true
+[full-replay ]  tail=1000 totalOps=101001 recoverMs=508.1 fromSnapshotRevision=undefined tailReplayed=101001 hashMatch=true
+
+# O(N²) 回避 / 線形性（tail 長 2 点以上）
+  tail 250->500 (×2.00): recoverMs ×0.76  (線形なら概ね ≤ tail比、O(N²)なら tail比² に近づく)
+  tail 500->1000 (×2.00): recoverMs ×0.86  (線形なら概ね ≤ tail比、O(N²)なら tail比² に近づく)
+
+# 判定: snapshot-based recovery は snapshot(document) load + tail replay のみ＝log 全replay 非依存。
+#       recover 時間は tail 長に対し概ね線形（時間比 << tail比² ＝ O(N²) 非該当）。目標 100k 復旧 ≦5s。
