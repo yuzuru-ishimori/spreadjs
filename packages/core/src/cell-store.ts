@@ -41,6 +41,8 @@ function cloneScalar(value: CellScalar): CellScalar {
       return { kind: 'string', value: value.value };
     case 'number':
       return { kind: 'number', value: value.value };
+    case 'date':
+      return { kind: 'date', value: value.value };
   }
 }
 
@@ -120,7 +122,9 @@ export function createCellStore(config: CellStoreConfig = {}): CellStore {
   };
 
   const valueChars = (record: CellRecord): number =>
-    record.value.kind === 'string' ? record.value.value.length : 0;
+    // string と date（LocalDate 文字列）は UTF-16 文字列領域を持つため文字数を計上する。
+    // date を除外すると大量日付セルのメモリを過少評価する（Codex P2）。
+    record.value.kind === 'string' || record.value.kind === 'date' ? record.value.value.length : 0;
 
   const store: CellStore = {
     get(slot, colIndex) {

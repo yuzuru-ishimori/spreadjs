@@ -125,11 +125,27 @@
     if (!scalar) { return ''; }
     if (scalar.kind === 'string') { return scalar.value; }
     if (scalar.kind === 'number') { return String(scalar.value); }
+    if (scalar.kind === 'date') { return scalar.value; } // LocalDate YYYY-MM-DD（DD-012-1）
     return '';
   }
+  // 標準セット（core parseCellInput）の簡易版。第一提供クライアントと値型を揃える（Codex P2）。
+  // 全角正規化＋暦日検証は playground/commit-bridge（core）が正本。デモは半角の基本形のみ対応。
+  function isRealDate(y, mo, d) {
+    if (mo < 1 || mo > 12 || d < 1) { return false; }
+    var leap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+    var dim = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    return d <= dim[mo - 1];
+  }
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
   function textToScalar(text) {
     if (text === '') { return { kind: 'blank' }; }
-    if (/^-?\d+(\.\d+)?$/.test(text)) { return { kind: 'number', value: Number(text) }; }
+    var dm = /^(\d{4})([-/])(\d{1,2})\2(\d{1,2})$/.exec(text);
+    if (dm && isRealDate(Number(dm[1]), Number(dm[3]), Number(dm[4]))) {
+      return { kind: 'date', value: dm[1] + '-' + pad2(Number(dm[3])) + '-' + pad2(Number(dm[4])) };
+    }
+    if (/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(text) || /^-?\d+(\.\d+)?$/.test(text)) {
+      return { kind: 'number', value: Number(text.replace(/,/g, '')) };
+    }
     return { kind: 'string', value: text };
   }
 

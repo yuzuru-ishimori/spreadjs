@@ -1,0 +1,13 @@
+{
+  "meta": { "browser": "Chrome", "os": "Windows", "ime": "synthetic-orderA", "note": "判定ロジック検証用の合成トレース（実機ではない）。順序A: 変換中に確定Enter。" },
+  "traces": [
+    { "eventType": "compositionstart", "value": "", "activeCell": { "row": 0, "col": 0 } },
+    { "eventType": "compositionupdate", "data": "に", "value": "に", "activeCell": { "row": 0, "col": 0 } },
+    { "eventType": "compositionupdate", "data": "日本", "value": "日本", "activeCell": { "row": 0, "col": 0 } },
+    { "eventType": "keydown", "key": "Enter", "isComposing": true, "value": "日本", "activeCell": { "row": 0, "col": 0 } },
+    { "eventType": "compositionend", "data": "日本", "value": "日本", "activeCell": { "row": 0, "col": 0 } },
+    { "eventType": "input", "isComposing": false, "value": "日本", "activeCell": { "row": 0, "col": 0 } },
+    { "eventType": "keyup", "key": "Enter", "isComposing": false, "value": "日本", "activeCell": { "row": 0, "col": 0 } },
+    { "eventType": "keydown", "key": "Enter", "isComposing": false, "value": "日本", "activeCell": { "row": 0, "col": 0 } }
+  ]
+}

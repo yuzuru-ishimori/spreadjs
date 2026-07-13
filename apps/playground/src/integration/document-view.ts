@@ -52,6 +52,9 @@ export function cellScalarToDisplay(value: CellScalar): string {
       return value.value;
     case 'number':
       return String(value.value);
+    case 'date':
+      // LocalDate は正準文字列（YYYY-MM-DD）をそのまま表示する（表示整形は R-18 で別途）。
+      return value.value;
   }
 }
 

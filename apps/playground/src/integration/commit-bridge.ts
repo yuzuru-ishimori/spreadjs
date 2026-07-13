@@ -15,7 +15,7 @@
 //   4. 編集開始時の beforeRevision を取得（= EditTarget.startRevision・編集開始で凍結）
 //   5. SetCells を生成（呼び出し側が ClientSession へ submit → ACK/reject）
 
-import { getCell } from '@nanairo-sheet/core';
+import { getCell, parseCellInput } from '@nanairo-sheet/core';
 import type { CellScalar, SetCellsOperation, SheetDocument } from '@nanairo-sheet/core';
 import type { ColumnId, RowId } from '@nanairo-sheet/types';
 
@@ -39,17 +39,13 @@ export function captureEditStartRevision(
   return getCell(doc, rowId, columnId)?.lastChangedRevision ?? 0;
 }
 
-const NUMERIC_RE = /^-?\d+(\.\d+)?$/;
-
-/** 確定ドラフト文字列を CellScalar へ変換する（空=blank・数値は number・他は string）。 */
+/**
+ * 確定ドラフト文字列を CellScalar へ変換する（型変換・標準セット）。
+ * 変換規則の正本は core の parseCellInput（受理書式表・偽陽性防止・DD-012-1）。
+ * commit 経路はここへ委譲し、composition 中の状態機械・textarea には触れない（IME 不変条件維持）。
+ */
 export function draftToScalar(text: string): CellScalar {
-  if (text === '') {
-    return { kind: 'blank' };
-  }
-  if (NUMERIC_RE.test(text)) {
-    return { kind: 'number', value: Number(text) };
-  }
-  return { kind: 'string', value: text };
+  return parseCellInput(text);
 }
 
 /** RowId が生存しているか（未知/tombstone は false）。削除判定は index 範囲でなく tombstone で行う（#4）。 */

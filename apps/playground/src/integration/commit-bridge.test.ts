@@ -39,6 +39,13 @@ describe('draftToScalar（ドラフト→CellScalar）', () => {
     expect(draftToScalar('漢字')).toEqual({ kind: 'string', value: '漢字' });
     expect(draftToScalar('12a')).toEqual({ kind: 'string', value: '12a' });
   });
+  it('標準セット（core parseCellInput 委譲）: 全角/桁区切り→number・西暦→date・電話番号→string', () => {
+    expect(draftToScalar('１２３')).toEqual({ kind: 'number', value: 123 });
+    expect(draftToScalar('1,234.5')).toEqual({ kind: 'number', value: 1234.5 });
+    expect(draftToScalar('2026-07-13')).toEqual({ kind: 'date', value: '2026-07-13' });
+    expect(draftToScalar('2026/7/3')).toEqual({ kind: 'date', value: '2026-07-03' });
+    expect(draftToScalar('090-1234-5678')).toEqual({ kind: 'string', value: '090-1234-5678' });
+  });
 });
 
 describe('captureEditStartRevision（#3 セル単位 beforeRevision の取得）', () => {

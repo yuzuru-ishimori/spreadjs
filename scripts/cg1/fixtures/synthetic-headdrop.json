@@ -1,0 +1,11 @@
+{
+  "meta": { "browser": "Chrome", "os": "Windows", "ime": "synthetic-headdrop", "note": "判定ロジックの否定検証: 先頭文字欠落（composed=日本 だが確定value=本）→ FAIL を検出できること。" },
+  "traces": [
+    { "eventType": "compositionstart", "value": "", "activeCell": { "row": 0, "col": 0 } },
+    { "eventType": "compositionupdate", "data": "日本", "value": "日本", "activeCell": { "row": 0, "col": 0 } },
+    { "eventType": "keydown", "key": "Enter", "isComposing": true, "value": "日本", "activeCell": { "row": 0, "col": 0 } },
+    { "eventType": "compositionend", "data": "日本", "value": "本", "activeCell": { "row": 0, "col": 0 } },
+    { "eventType": "input", "isComposing": false, "value": "本", "activeCell": { "row": 0, "col": 0 } },
+    { "eventType": "keydown", "key": "Enter", "isComposing": false, "value": "本", "activeCell": { "row": 0, "col": 0 } }
+  ]
+}

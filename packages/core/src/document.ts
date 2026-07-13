@@ -40,6 +40,8 @@ export function cloneCellScalar(value: CellScalar): CellScalar {
       return { kind: 'string', value: value.value };
     case 'number':
       return { kind: 'number', value: value.value };
+    case 'date':
+      return { kind: 'date', value: value.value };
   }
 }
 

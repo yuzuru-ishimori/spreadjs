@@ -111,6 +111,21 @@ describe('K. 復元後の継続（S-K3/K4）', () => {
     const restored = new Sequencer(deserializeSnapshot(data), createManualClock());
     expect(restored.operationsSince(2).map((e) => e.revision)).toEqual([3, 4]);
   });
+
+  it('date CellScalar を含む snapshot が round-trip で保存される（DD-012-1・Codex P2）', () => {
+    const seq = new Sequencer(freshSequencerState(COLUMNS), createManualClock(1000));
+    seq.submit(envelope({ clientId: 'cA', clientSequence: 1, operationId: 'i1', operation: insertRows(null, ['row-1']) }));
+    seq.submit(envelope({
+      clientId: 'cA', clientSequence: 2, operationId: 's1',
+      operation: setCells([{ rowId: row('row-1'), columnId: col('col-a'), value: { kind: 'date', value: '2026-07-13' } }]),
+    }));
+    const hashBefore = documentHash(seq.document);
+    const data = jsonRoundTrip(serializeSnapshot(seq.exportState()));
+    expect(data.version).toBe(SNAPSHOT_VERSION); // date variant 追加で 3 へ更新済み
+    const restored = new Sequencer(deserializeSnapshot(data), createManualClock());
+    expect(documentHash(restored.document)).toBe(hashBefore);
+    expect(getCell(restored.document, row('row-1'), col('col-a'))?.value).toEqual({ kind: 'date', value: '2026-07-13' });
+  });
 });
 
 describe('CG-2 証拠（DD-010）: 安定 ID serialization round-trip・replay 整合', () => {

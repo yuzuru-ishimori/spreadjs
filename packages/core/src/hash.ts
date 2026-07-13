@@ -34,6 +34,8 @@ export function canonicalSerialize(doc: SheetDocument): string {
       if (value.kind === 'blank') {
         continue; // 非空セルのみ（blank は不在と同一視）
       }
+      // number は String() で桁を確定、string/date は value.value（date=正準 YYYY-MM-DD）。
+      // kind フィールド（field(value.kind)）が string と date を区別するため、同一文字列でも hash が分岐する（正準性）。
       const valueText = value.kind === 'number' ? String(value.value) : value.value;
       parts.push(
         field(rowId) +

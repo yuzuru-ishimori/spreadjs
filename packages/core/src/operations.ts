@@ -13,10 +13,16 @@ import type {
 
 // セル値のスカラー（§6.4 の PoC サブセット）。文書モデル（document.ts の CellRecord.value）と
 // Operation（SetCells の value）の双方が参照する最小の値型。
+//
+// date（DD-012-1・ADR-012）: 日付は **LocalDate（`YYYY-MM-DD` 文字列・計画書 D-08）** で保持する。
+//   JS の `Date`（タイムゾーン/時刻を含む）を正規値にしない（cross-platform hash 決定性・環境非依存のため）。
+//   value は必ず正準化済み（4桁年-2桁月-2桁日・実在する暦日）。生成は parseCellInput が保証する。
+//   hash は `field(kind)`（'date' vs 'string'）で string と区別されるため、同じ文字列でも別値になる（正準性維持）。
 export type CellScalar =
   | { kind: 'blank' }
   | { kind: 'string'; value: string }
-  | { kind: 'number'; value: number };
+  | { kind: 'number'; value: number }
+  | { kind: 'date'; value: string /* LocalDate: YYYY-MM-DD（正準化済み） */ };
 
 /** SetCells の1件の変更。`beforeRevision` は Phase 2 サーバーの stale 検査用（apply 層は参照しない）。 */
 export interface SetCellsChange {

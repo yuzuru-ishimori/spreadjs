@@ -40,11 +40,13 @@ interface SerializedDocument {
 }
 
 /**
- * SnapshotData の版数。DD-010（安定 slot キー CellStore・CG-2）で形式世代を 2 に更新した。
- * PoC 形式で永続データは実在しない（互換層・migration なし）。不一致 version は fail-fast する
- * （ADR-0015 方針・要確認2 の決定）。正式 versioned snapshot・tail replay は DD-014 スコープ。
+ * SnapshotData の版数。DD-010（安定 slot キー CellStore・CG-2）で 2 に更新。
+ * DD-012-1 で CellScalar へ date wire variant を追加したため 3 に更新した（Codex P2）:
+ * date 分岐を持たない旧 deserialize が date snapshot を復元すると cloneCellScalar が undefined 化/例外に
+ * なりうるため、cross-version は fail-fast させる（version 不一致 throw）。
+ * PoC 形式で永続データは実在しない（互換層・migration なし）。正式 versioned snapshot・tail replay は DD-014 スコープ。
  */
-export const SNAPSHOT_VERSION = 2 as const;
+export const SNAPSHOT_VERSION = 3 as const;
 
 /** JSON セーフなスナップショット表現（Map→配列・cells→行×列配列。SerializedDocument の wire 形は不変）。 */
 export interface SnapshotData {

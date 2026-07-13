@@ -1,0 +1,13 @@
+{
+  "meta": { "browser": "Edge", "os": "Windows", "ime": "synthetic-orderB", "note": "判定ロジック検証用の合成トレース（実機ではない）。順序B: compositionend後に確定Enter。" },
+  "traces": [
+    { "eventType": "compositionstart", "value": "", "activeCell": { "row": 0, "col": 0 } },
+    { "eventType": "compositionupdate", "data": "か", "value": "か", "activeCell": { "row": 0, "col": 0 } },
+    { "eventType": "compositionupdate", "data": "かな", "value": "かな", "activeCell": { "row": 0, "col": 0 } },
+    { "eventType": "compositionend", "data": "かな", "value": "かな", "activeCell": { "row": 0, "col": 0 } },
+    { "eventType": "input", "isComposing": false, "value": "かな", "activeCell": { "row": 0, "col": 0 } },
+    { "eventType": "keydown", "key": "Enter", "isComposing": false, "value": "かな", "activeCell": { "row": 0, "col": 0 } },
+    { "eventType": "keyup", "key": "Enter", "isComposing": false, "value": "かな", "activeCell": { "row": 0, "col": 0 } },
+    { "eventType": "keydown", "key": "Enter", "isComposing": false, "value": "かな", "activeCell": { "row": 0, "col": 0 } }
+  ]
+}
