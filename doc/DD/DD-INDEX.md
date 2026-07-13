@@ -8,7 +8,7 @@
 |----|------|-----------|------|
 | DD-015 | reconnect・catch-up・idempotency | 検討中 | roadmap §4/§5 Alpha必須ライン・**CG-5担当**（D27/D34回収）。DD-014の次・DD-016の前 |
 | DD-014 | 永続化・snapshot復元 | 検討中 | roadmap §4/§5 Alpha必須ライン・**CG-3担当**。DD-013の次・DD-015（reconnect）の前 |
-| DD-013 | 共同編集同期・OCC | 検討中 | roadmap §4/§5 Alpha必須ライン。DD-012の次・DD-014（永続化）の前 |
+| DD-013 | 共同編集同期・OCC | 完了 | 同期/OCC harden（テスト実充足）・randomized収束スイート・Phase4 実WS 2タブ smoke PASS・Codex high 反映済 |
 | DD-012 | 単一利用者IME縦切り | 進行中 | 案Y 2分割・両子DD完了アーカイブ済（DD-012-1 入力縦切り＝**CG-1解除**／DD-012-2 性能縦切り＝**CG-6指標pass**）。milestone残（ime/selection/render物理抽出・baseline縮退・CG-1統合後スモーク・CG-6精密メモリ＋clean redraw）は**DD-016で確定**。DD-016完了でクローズ |
 
 ## 保留・見送り
