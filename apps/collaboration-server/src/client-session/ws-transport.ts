@@ -11,7 +11,7 @@ import { WebSocket } from 'ws';
 import type { RawData } from 'ws';
 
 import type { ClientMessage } from '@nanairo-sheet/core';
-import { decodeServerMessage } from '@nanairo-sheet/collab';
+import { decodeServerMessage } from '@nanairo-sheet/core';
 import type { ClientTransport, TransportListener } from '@nanairo-sheet/collab';
 
 import { rawDataToString } from '../ws-frame';

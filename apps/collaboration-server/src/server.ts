@@ -36,7 +36,7 @@ import {
   createTransactionId,
 } from '@nanairo-sheet/types';
 import type { RowId } from '@nanairo-sheet/types';
-import { decodeClientMessage } from '@nanairo-sheet/collab';
+import { decodeClientMessage } from '@nanairo-sheet/core';
 
 import {
   DEFAULT_INTEGRATION_DATASET,

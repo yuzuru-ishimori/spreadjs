@@ -16,8 +16,11 @@
     "build": "npm run build --workspace apps/playground",
     "test": "vitest run",
     "test:e2e": "playwright test --config apps/playground/playwright.config.ts",
+    "test:invariants": "vitest run tests/invariants",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "lint": "eslint ."
+    "lint": "eslint . && npm run lint:boundary",
+    "lint:boundary": "node scripts/boundary/check.mjs",
+    "consumer-harness": "bash scripts/consumer-harness.sh"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",

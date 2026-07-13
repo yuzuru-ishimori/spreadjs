@@ -6,12 +6,8 @@
 // （本番相当の完全バリデーションはスコープ外＝protocol-subset の予約項目）。不正は undefined を返し、
 // 呼び出し側が接続 close（server）または drop+log（client）で処理する。server.ts / ws-transport.ts が共有する。
 
-import type {
-  ClientMessage,
-  DocumentOperation,
-  PresencePayload,
-  ServerMessage,
-} from '@nanairo-sheet/core';
+import type { DocumentOperation } from './operations';
+import type { ClientMessage, PresencePayload, ServerMessage } from './protocol';
 
 /** unknown を「文字列キーの record」へ絞り込む（プロトタイプ無し null は除外）。 */
 export function isRecord(value: unknown): value is Record<string, unknown> {

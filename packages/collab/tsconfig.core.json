@@ -1,6 +1,6 @@
 {
   // DD-005 Phase 1 コア純度ゲート（Codex [P2] 反映）。実装ファイル（非テスト）を types:[] で型検査し、
-  // session/deps/message-codec/inprocess-transport/test-support/index に Node/DOM API が混入していないことを
+  // session/deps/inprocess-transport/test-support/index に Node/DOM API が混入していないことを
   // 回帰的に保証する（＝ブラウザートランスポート〔Phase 2 playground〕でも安全に import できる env-free の担保）。
   // 【なぜ *.test.ts を除外するか】各テストの `vitest` import が @types/node を program へ持ち込み、types:[] でも
   // process/Buffer 等が解決されてゲートが無効化されるため。DD-003 の旧 tsconfig.core.json がテストを除外して

@@ -1,0 +1,9 @@
+{
+  // grid は Canvas 描画グリッドの Facade。DOM 可（境界文書 §2.2）。
+  // stub のため内部パッケージへは依存しない（実束ねは DD-016）。
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM"]
+  },
+  "include": ["src/**/*.ts"]
+}

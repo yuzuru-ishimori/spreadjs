@@ -1,0 +1,9 @@
+{
+  // server-hono は Node 可の Facade（境界文書 §2.2）。stub のため内部パッケージへは依存しない
+  // （実束ね＝server/core/types の配線は DD-016）。
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022"]
+  },
+  "include": ["src/**/*.ts"]
+}

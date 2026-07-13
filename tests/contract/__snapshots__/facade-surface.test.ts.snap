@@ -1,0 +1,15 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`contract: Facade export surface snapshot > @nanairo-sheet/grid の公開 value surface 1`] = `
+[
+  "GRID_FACADE_STAGE",
+  "mount",
+]
+`;
+
+exports[`contract: Facade export surface snapshot > @nanairo-sheet/server-hono の公開 value surface 1`] = `
+[
+  "SERVER_HONO_FACADE_STAGE",
+  "serve",
+]
+`;

@@ -10,7 +10,7 @@
 // 【テスト容易性】native WebSocket と setTimeout を直接掴まず、SocketFactory / TransportTimer を注入で受ける
 // （既定は本ファイル内の DOM 実装）。これにより再接続の状態遷移・outbox flush・decode drop を DOM/WS なしの
 // node 環境でユニットテストできる（browser-transport.test.ts）。
-import { decodeServerMessage } from '@nanairo-sheet/collab';
+import { decodeServerMessage } from '@nanairo-sheet/core';
 import type { ClientTransport, TransportListener } from '@nanairo-sheet/collab';
 import type { ClientMessage } from '@nanairo-sheet/core';
 

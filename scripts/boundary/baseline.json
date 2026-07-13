@@ -1,0 +1,292 @@
+{
+  "_doc": "package boundary lint の既知例外（baseline）。新規違反のみ ERROR（scripts/boundary/check.mjs）。DD-011 設置・縮退は各抽出DD（DD-012〜016）・baseline 空の確認は DD-018（S1-1）。",
+  "entries": [
+    {
+      "rule": "R1",
+      "file": "apps/collaboration-server/src/client-session/ws-transport.ts",
+      "detail": "@nanairo-sheet/core",
+      "owner": "DD-016（server-hono Facade 統合で縮退）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
+      "file": "apps/collaboration-server/src/client-session/ws-transport.ts",
+      "detail": "@nanairo-sheet/collab",
+      "owner": "DD-016（server-hono Facade 統合で縮退）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
+      "file": "apps/collaboration-server/src/seed-dataset.ts",
+      "detail": "@nanairo-sheet/core",
+      "owner": "DD-016（server-hono Facade 統合で縮退）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
+      "file": "apps/collaboration-server/src/seed-dataset.ts",
+      "detail": "@nanairo-sheet/types",
+      "owner": "DD-016（server-hono Facade 統合で縮退）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
+      "file": "apps/collaboration-server/src/seed-dataset.ts",
+      "detail": "@nanairo-sheet/server",
+      "owner": "DD-016（server-hono Facade 統合で縮退）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
+      "file": "apps/collaboration-server/src/server.ts",
+      "detail": "@nanairo-sheet/core",
+      "owner": "DD-016（server-hono Facade 統合で縮退）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
+      "file": "apps/collaboration-server/src/server.ts",
+      "detail": "@nanairo-sheet/server",
+      "owner": "DD-016（server-hono Facade 統合で縮退）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
+      "file": "apps/collaboration-server/src/server.ts",
+      "detail": "@nanairo-sheet/types",
+      "owner": "DD-016（server-hono Facade 統合で縮退）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
+      "file": "apps/playground/src/integration/browser-transport.ts",
+      "detail": "@nanairo-sheet/core",
+      "owner": "DD-012/DD-016（grid consumer 抽出・統合で縮退）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
+      "file": "apps/playground/src/integration/browser-transport.ts",
+      "detail": "@nanairo-sheet/collab",
+      "owner": "DD-012/DD-016（grid consumer 抽出・統合で縮退）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
+      "file": "apps/playground/src/integration/commit-bridge.ts",
+      "detail": "@nanairo-sheet/core",
+      "owner": "DD-012/DD-016（grid consumer 抽出・統合で縮退）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
+      "file": "apps/playground/src/integration/commit-bridge.ts",
+      "detail": "@nanairo-sheet/types",
+      "owner": "DD-012/DD-016（grid consumer 抽出・統合で縮退）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
+      "file": "apps/playground/src/integration/document-view.ts",
+      "detail": "@nanairo-sheet/core",
+      "owner": "DD-012/DD-016（grid consumer 抽出・統合で縮退）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
+      "file": "apps/playground/src/integration/document-view.ts",
+      "detail": "@nanairo-sheet/types",
+      "owner": "DD-012/DD-016（grid consumer 抽出・統合で縮退）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
+      "file": "apps/playground/src/integration/ime-editing-session.ts",
+      "detail": "@nanairo-sheet/collab",
+      "owner": "DD-012/DD-016（grid consumer 抽出・統合で縮退）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
+      "file": "apps/playground/src/integration/ime-editing-session.ts",
+      "detail": "@nanairo-sheet/core",
+      "owner": "DD-012/DD-016（grid consumer 抽出・統合で縮退）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
+      "file": "apps/playground/src/integration/ime-editing-session.ts",
+      "detail": "@nanairo-sheet/types",
+      "owner": "DD-012/DD-016（grid consumer 抽出・統合で縮退）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
+      "file": "apps/playground/src/integration/integration-editor.ts",
+      "detail": "@nanairo-sheet/collab",
+      "owner": "DD-012/DD-016（grid consumer 抽出・統合で縮退）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
+      "file": "apps/playground/src/integration/integration-editor.ts",
+      "detail": "@nanairo-sheet/core",
+      "owner": "DD-012/DD-016（grid consumer 抽出・統合で縮退）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
+      "file": "apps/playground/src/integration/integration-editor.ts",
+      "detail": "@nanairo-sheet/types",
+      "owner": "DD-012/DD-016（grid consumer 抽出・統合で縮退）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
+      "file": "apps/playground/src/integration/main.ts",
+      "detail": "@nanairo-sheet/types",
+      "owner": "DD-012/DD-016（grid consumer 抽出・統合で縮退）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
+      "file": "apps/playground/src/integration/main.ts",
+      "detail": "@nanairo-sheet/core",
+      "owner": "DD-012/DD-016（grid consumer 抽出・統合で縮退）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
+      "file": "apps/playground/src/integration/main.ts",
+      "detail": "@nanairo-sheet/collab",
+      "owner": "DD-012/DD-016（grid consumer 抽出・統合で縮退）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
+      "file": "apps/playground/src/integration/presence-adapter.ts",
+      "detail": "@nanairo-sheet/core",
+      "owner": "DD-012/DD-016（grid consumer 抽出・統合で縮退）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
+      "file": "apps/playground/src/integration/presence-adapter.ts",
+      "detail": "@nanairo-sheet/types",
+      "owner": "DD-012/DD-016（grid consumer 抽出・統合で縮退）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
+      "file": "apps/playground/src/integration/session-sync.ts",
+      "detail": "@nanairo-sheet/collab",
+      "owner": "DD-012/DD-016（grid consumer 抽出・統合で縮退）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
+      "file": "apps/playground/src/integration/session-sync.ts",
+      "detail": "@nanairo-sheet/core",
+      "owner": "DD-012/DD-016（grid consumer 抽出・統合で縮退）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
+      "file": "apps/playground/src/main.ts",
+      "detail": "@nanairo-sheet/types",
+      "owner": "DD-012/DD-016（grid consumer 抽出・統合で縮退）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
+      "file": "apps/playground/src/pocb/main.ts",
+      "detail": "@nanairo-sheet/types",
+      "owner": "DD-012/DD-016（grid consumer 抽出・統合で縮退）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
+      "file": "apps/playground/src/pocb/scroll-anchor.ts",
+      "detail": "@nanairo-sheet/types",
+      "owner": "DD-012/DD-016（grid consumer 抽出・統合で縮退）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
+      "file": "apps/playground/src/pocb/viewport.ts",
+      "detail": "@nanairo-sheet/types",
+      "owner": "DD-012/DD-016（grid consumer 抽出・統合で縮退）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
+      "file": "apps/pocd-bench/src/bench-recalc.ts",
+      "detail": "@nanairo-sheet/formula",
+      "owner": "none（PoC-D throwaway・DD-006・製品憲章 §25 対象外）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
+      "file": "apps/pocd-bench/src/bench-replay.ts",
+      "detail": "@nanairo-sheet/core",
+      "owner": "none（PoC-D throwaway・DD-006・製品憲章 §25 対象外）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
+      "file": "apps/pocd-bench/src/bench-replay.ts",
+      "detail": "@nanairo-sheet/types",
+      "owner": "none（PoC-D throwaway・DD-006・製品憲章 §25 対象外）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
+      "file": "apps/pocd-bench/src/bench-replay.ts",
+      "detail": "@nanairo-sheet/formula",
+      "owner": "none（PoC-D throwaway・DD-006・製品憲章 §25 対象外）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
+      "file": "apps/pocd-bench/src/op-gen.ts",
+      "detail": "@nanairo-sheet/types",
+      "owner": "none（PoC-D throwaway・DD-006・製品憲章 §25 対象外）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
+      "file": "apps/pocd-bench/src/op-gen.ts",
+      "detail": "@nanairo-sheet/core",
+      "owner": "none（PoC-D throwaway・DD-006・製品憲章 §25 対象外）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
+      "file": "apps/pocd-bench/src/stores/chunked-rowslot-stable-store.ts",
+      "detail": "@nanairo-sheet/core",
+      "owner": "none（PoC-D throwaway・DD-006・製品憲章 §25 対象外）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R4",
+      "file": "apps/pocd-browser-bench/src/main.ts",
+      "detail": "../../pocd-bench/src/stores/chunked-rowslot-store",
+      "owner": "none（PoC-D throwaway・DD-006・製品憲章 §25 対象外）",
+      "reason": "package 境界越え相対 import（PoC-D throwaway・構造変更不要のため baseline）"
+    },
+    {
+      "rule": "R4",
+      "file": "apps/pocd-browser-bench/src/main.ts",
+      "detail": "../../pocd-bench/src/data-gen",
+      "owner": "none（PoC-D throwaway・DD-006・製品憲章 §25 対象外）",
+      "reason": "package 境界越え相対 import（PoC-D throwaway・構造変更不要のため baseline）"
+    },
+    {
+      "rule": "R4",
+      "file": "apps/pocd-browser-bench/src/main.ts",
+      "detail": "../../pocd-bench/src/cell-store",
+      "owner": "none（PoC-D throwaway・DD-006・製品憲章 §25 対象外）",
+      "reason": "package 境界越え相対 import（PoC-D throwaway・構造変更不要のため baseline）"
+    }
+  ]
+}

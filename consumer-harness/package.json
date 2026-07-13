@@ -1,0 +1,7 @@
+{
+  "name": "consumer-harness",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "独立 consumer 雛形（workspaces 対象外）。pack 済み Facade tarball（@nanairo-sheet/grid・server-hono）だけをインストールして型疎通を検証する。内部パッケージ直接 import・workspace link・source path 参照は不合格条件として scripts/consumer-harness.sh が検査する。実在アプリ統合（S1-3 本実証）は DD-016。"
+}
