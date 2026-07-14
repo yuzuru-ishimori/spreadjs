@@ -298,14 +298,17 @@ export async function highlightSelector(page: Page, selector: string): Promise<v
   }, selector);
 }
 
-/** DD-005/ 直下へスクショを保存するための絶対パスを返す（Windows でも正しい OS パスへ変換する）。 */
+/**
+ * DD-005 証跡（スクショ等）を保存する絶対パス。DD-005 はアーカイブ済み（正典は doc/archived/DD/DD-005/）
+ * ゆえ、テスト再実行の再生成分は git 追跡外の test-results/ 配下へ書く（active な doc/DD/ を汚さない）。
+ */
 export function evidencePath(fileName: string): string {
-  return fileURLToPath(new URL(`../../../doc/DD/DD-005/${fileName}`, import.meta.url));
+  return fileURLToPath(new URL(`../../../test-results/dd-evidence/DD-005/${fileName}`, import.meta.url));
 }
 
-/** DD-015/ 直下へ証跡（スクショ等）を保存する絶対パス。 */
+/** DD-015 証跡（スクショ等）を保存する絶対パス（DD-005 と同じ理由で test-results/ 配下）。 */
 export function evidencePathDD015(fileName: string): string {
-  return fileURLToPath(new URL(`../../../doc/DD/DD-015/${fileName}`, import.meta.url));
+  return fileURLToPath(new URL(`../../../test-results/dd-evidence/DD-015/${fileName}`, import.meta.url));
 }
 
 /** DD-015: 接続状態（online/offline/stopped）。実ブラウザー断線 headed smoke の可視確認に使う。 */

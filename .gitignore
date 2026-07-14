@@ -22,9 +22,3 @@ Thumbs.db
 test-results/
 playwright-report/
 .last-run.json
-
-# 完了・アーカイブ済みDDのテスト再生成証跡（正典スナップショットは doc/archived/DD/<DD>/ 側）。
-# E2E/invariant テストが評価用に書き出すが、アーカイブ済みDDゆえ git 追跡しない（DD-016-2 で整理）。
-doc/DD/DD-005/
-doc/DD/DD-014-1/
-doc/DD/DD-015/

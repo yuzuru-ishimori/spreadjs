@@ -366,8 +366,10 @@ describe('invariant/collab reconnect-fault（DD-015・§2.3 idempotency/reconnec
 
   afterAll(() => {
     // Evidence full: seed・config・収束 hash・fault カウンタを DD-015 証跡へ出力（再現コマンドは各 it のログに残す）。
+    // DD-015 はアーカイブ済み（正典スナップショットは doc/archived/DD/DD-015/）ゆえ、テスト再実行の再生成分は
+    // git 追跡外の test-results/ 配下へ書く（active な doc/DD/ を汚さない）。
     const here = dirname(fileURLToPath(import.meta.url));
-    const outDir = join(here, '..', '..', '..', 'doc', 'DD', 'DD-015');
+    const outDir = join(here, '..', '..', '..', 'test-results', 'dd-evidence', 'DD-015');
     mkdirSync(outDir, { recursive: true });
     writeFileSync(
       join(outDir, 'reconnect-fault-evidence.json'),

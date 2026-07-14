@@ -35,9 +35,12 @@ test.afterEach(async () => {
   }
 });
 
-/** DD-014-1/ 直下へ証跡スクショを保存する絶対パス。 */
+/**
+ * DD-014-1 証跡スクショを保存する絶対パス。DD-014-1 はアーカイブ済み（正典は doc/archived/DD/DD-014-1/）
+ * ゆえ、テスト再実行の再生成分は git 追跡外の test-results/ 配下へ書く（active な doc/DD/ を汚さない）。
+ */
 function evidencePath(fileName: string): string {
-  return fileURLToPath(new URL(`../../../doc/DD/DD-014-1/${fileName}`, import.meta.url));
+  return fileURLToPath(new URL(`../../../test-results/dd-evidence/DD-014-1/${fileName}`, import.meta.url));
 }
 
 function uniq(prefix: string): string {

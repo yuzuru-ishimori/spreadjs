@@ -33,18 +33,21 @@ try {
   console.log(`[cg6] navigate: ${url}`);
   await page.goto(url);
 
-  // ready（boot＋初回描画）待ち。
+  // ready（boot＋初回描画）待ち。以下のコールバックは Playwright がブラウザーページ内で評価する
+  // （node ではなくブラウザーの `window` を参照する。eslint の no-undef は node env で誤検知するため無効化）。
   console.log('[cg6] waiting for grid ready...');
-  await page.waitForFunction(() => (window).__integrationTestApi?.ready() === true, null, { timeout: 20000 });
-  const online = await page.evaluate(() => (window).__integrationTestApi.online());
-  const rowCount = await page.evaluate(() => (window).__integrationTestApi.rowCount());
+  /* eslint-disable no-undef */
+  await page.waitForFunction(() => window.__integrationTestApi?.ready() === true, null, { timeout: 20000 });
+  const online = await page.evaluate(() => window.__integrationTestApi.online());
+  const rowCount = await page.evaluate(() => window.__integrationTestApi.rowCount());
   console.log(`[cg6] ready. online=${online} rowCount=${rowCount}`);
 
   // ハーネス登録待ち（dynamic import）。
-  await page.waitForFunction(() => typeof (window).__cg6Run === 'function', null, { timeout: 10000 });
+  await page.waitForFunction(() => typeof window.__cg6Run === 'function', null, { timeout: 10000 });
 
   console.log(`[cg6] running clean-run measurement for ~${Math.round(durationMs / 1000)}s ...`);
-  const report = await page.evaluate((ms) => (window).__cg6Run(ms), durationMs);
+  const report = await page.evaluate((ms) => window.__cg6Run(ms), durationMs);
+  /* eslint-enable no-undef */
 
   fs.writeFileSync(OUT, JSON.stringify(report, null, 2));
   console.log(`[cg6] report saved: ${OUT}`);
