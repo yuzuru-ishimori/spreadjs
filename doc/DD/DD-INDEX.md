@@ -7,7 +7,8 @@
 | DD | 件名 | ステータス | 補足 |
 |----|------|-----------|------|
 | DD-016 | Facade・実consumer統合 | 進行中 | 案Y 2分割＝アンブレラ化。**DD-016-1 完了・アーカイブ済**（Facade実装・物理抽出・720 test/8 E2E・Codex xhigh 反映）／DD-016-2 残（独立consumer実証・CG-1/CG-6 Manual Gate）。要確認①〜⑤ 確定済 |
-| DD-016-2 | 独立consumer実証・統合後実機スモーク | 検討中 | 親=DD-016（案Y 2分割）。前提=DD-016-1 完了＝充足。**要確認A〜C 確定済（全て既定案・2026-07-14 ユーザー）＝Phase 0 から着手可**（実装は別セッション開始予定）。S1-3実証・CG-1/CG-6 Manual Gate・P2-1委譲受領 |
+| DD-016-2 | 独立consumer実証・統合後実機スモーク | 進行中 | 親=DD-016（案Y 2分割）。前提=DD-016-1 完了＝充足。**Phase 0/3 完了＝S1-3 実証・pack closure・再mount leak なし green**。**Phase 4 は最小スコープで順次実施へ切替（2026-07-14・先送り撤回）**: Step 0=trace 採取ハーネス配線＋**CG-1 統合後スモーク PASS（Chrome6＋Edge3＝9 sessions・先頭欠落0・順序B・両ブラウザ・2026-07-14）＝AC3 充足・cg-ledger CG-1 消し込み済**／残=**Step 4 CG-6 精密メモリのみ**（`--enable-precise-memory-info` flag run）→AC4→DD-012 クローズ連絡→完了。P2-1委譲受領・反映済 |
+| DD-016-3 | アクティブセルキーボードナビ・focus保持scroll-follow | 完了 | 発見元=DD-016-2 CG-1 実機テスト中（ユーザー報告）。**「今すぐ軽く修正＝DDは後追い記録」方針（2026-07-14 ユーザー）**。既存バグ（DD-016-1 リグレッションではない）＋未実装機能を修正。実機ドライブ（Playwright）＋ユーザー実機確認で green |
 | DD-012 | 単一利用者IME縦切り | 進行中 | 案Y 2分割・両子DD完了アーカイブ済（DD-012-1 入力縦切り＝**CG-1解除**／DD-012-2 性能縦切り＝**CG-6指標pass**）。milestone残（ime/selection/render物理抽出・baseline縮退・CG-1統合後スモーク・CG-6精密メモリ＋clean redraw）は**DD-016で確定**。DD-016完了でクローズ |
 
 ## 保留・見送り

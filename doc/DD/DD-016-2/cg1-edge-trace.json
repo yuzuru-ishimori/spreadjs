@@ -1,0 +1,3787 @@
+{
+  "meta": {
+    "browser": "Edge",
+    "os": "Windows",
+    "ime": "Microsoft IME",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0",
+    "capturedAt": "2026-07-14T10:28:04.632Z"
+  },
+  "traces": [
+    {
+      "timestamp": 7516,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "focus",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      }
+    },
+    {
+      "timestamp": 7919,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "keydown",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "ArrowDown",
+      "code": "ArrowDown",
+      "isComposing": false
+    },
+    {
+      "timestamp": 8006,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "keyup",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "ArrowDown",
+      "code": "ArrowDown",
+      "isComposing": false
+    },
+    {
+      "timestamp": 8168,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "keydown",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "ArrowRight",
+      "code": "ArrowRight",
+      "isComposing": false
+    },
+    {
+      "timestamp": 8287,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "keyup",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "ArrowRight",
+      "code": "ArrowRight",
+      "isComposing": false
+    },
+    {
+      "timestamp": 8495,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "keydown",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "ArrowUp",
+      "code": "ArrowUp",
+      "isComposing": false
+    },
+    {
+      "timestamp": 8994,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "keydown",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "ArrowUp",
+      "code": "ArrowUp",
+      "isComposing": false
+    },
+    {
+      "timestamp": 9026,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "keydown",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "ArrowUp",
+      "code": "ArrowUp",
+      "isComposing": false
+    },
+    {
+      "timestamp": 9059,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "keydown",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "ArrowUp",
+      "code": "ArrowUp",
+      "isComposing": false
+    },
+    {
+      "timestamp": 9092,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "keydown",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "ArrowUp",
+      "code": "ArrowUp",
+      "isComposing": false
+    },
+    {
+      "timestamp": 9125,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "keydown",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "ArrowUp",
+      "code": "ArrowUp",
+      "isComposing": false
+    },
+    {
+      "timestamp": 9141,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "keyup",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "ArrowUp",
+      "code": "ArrowUp",
+      "isComposing": false
+    },
+    {
+      "timestamp": 9214,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "keydown",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "ArrowLeft",
+      "code": "ArrowLeft",
+      "isComposing": false
+    },
+    {
+      "timestamp": 9715,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "keydown",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "ArrowLeft",
+      "code": "ArrowLeft",
+      "isComposing": false
+    },
+    {
+      "timestamp": 9741,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "keyup",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "ArrowLeft",
+      "code": "ArrowLeft",
+      "isComposing": false
+    },
+    {
+      "timestamp": 9883,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "keydown",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "ArrowUp",
+      "code": "ArrowUp",
+      "isComposing": false
+    },
+    {
+      "timestamp": 9986,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "keyup",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "ArrowUp",
+      "code": "ArrowUp",
+      "isComposing": false
+    },
+    {
+      "timestamp": 10137,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "keydown",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "ArrowRight",
+      "code": "ArrowRight",
+      "isComposing": false
+    },
+    {
+      "timestamp": 10208,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "keyup",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "ArrowRight",
+      "code": "ArrowRight",
+      "isComposing": false
+    },
+    {
+      "timestamp": 10353,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "keydown",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "ArrowDown",
+      "code": "ArrowDown",
+      "isComposing": false
+    },
+    {
+      "timestamp": 10480,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "keyup",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "ArrowDown",
+      "code": "ArrowDown",
+      "isComposing": false
+    },
+    {
+      "timestamp": 13183,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "keydown",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Alt",
+      "code": "AltLeft",
+      "isComposing": false
+    },
+    {
+      "timestamp": 13250,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "keydown",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "KanjiMode",
+      "code": "Backquote",
+      "isComposing": false
+    },
+    {
+      "timestamp": 13367,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "keyup",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Alt",
+      "code": "AltLeft",
+      "isComposing": false
+    },
+    {
+      "timestamp": 13370,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "keydown",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyN",
+      "isComposing": false
+    },
+    {
+      "timestamp": 13371,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "compositionstart",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "data": ""
+    },
+    {
+      "timestamp": 13372,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "data": "ｎ"
+    },
+    {
+      "timestamp": 13372,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "ｎ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 13373,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "ｎ",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "ｎ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 13429,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "ｎ",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 13432,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "ｎ",
+      "selectionStart": 0,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "data": "に"
+    },
+    {
+      "timestamp": 13433,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "ｎ",
+      "selectionStart": 0,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "に",
+      "isComposing": true
+    },
+    {
+      "timestamp": 13433,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "に",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "に",
+      "isComposing": true
+    },
+    {
+      "timestamp": 13468,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "に",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyN",
+      "isComposing": true
+    },
+    {
+      "timestamp": 13480,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "に",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "n",
+      "code": "KeyN",
+      "isComposing": true
+    },
+    {
+      "timestamp": 13507,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "に",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 13513,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "に",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "i",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 13582,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "に",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyH",
+      "isComposing": true
+    },
+    {
+      "timestamp": 13585,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "に",
+      "selectionStart": 0,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "data": "にｈ"
+    },
+    {
+      "timestamp": 13586,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "に",
+      "selectionStart": 0,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "にｈ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 13586,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "にｈ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "にｈ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 13630,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "にｈ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 13633,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "にｈ",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "data": "にほ"
+    },
+    {
+      "timestamp": 13633,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "にｈ",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "にほ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 13633,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "にほ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "にほ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 13692,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyH",
+      "isComposing": true
+    },
+    {
+      "timestamp": 13698,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "h",
+      "code": "KeyH",
+      "isComposing": true
+    },
+    {
+      "timestamp": 13708,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 13710,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "o",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 13798,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "にほ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyN",
+      "isComposing": true
+    },
+    {
+      "timestamp": 13800,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "にほ",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "data": "にほｎ"
+    },
+    {
+      "timestamp": 13801,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "にほ",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "にほｎ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 13801,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "にほｎ",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "にほｎ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 13981,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほｎ",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyN",
+      "isComposing": true
+    },
+    {
+      "timestamp": 13982,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほｎ",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "n",
+      "code": "KeyN",
+      "isComposing": true
+    },
+    {
+      "timestamp": 14071,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "にほｎ",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyG",
+      "isComposing": true
+    },
+    {
+      "timestamp": 14074,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "にほｎ",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "data": "にほんｇ"
+    },
+    {
+      "timestamp": 14074,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "にほｎ",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "にほんｇ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 14075,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "にほんｇ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "にほんｇ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 14196,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほんｇ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyG",
+      "isComposing": true
+    },
+    {
+      "timestamp": 14198,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほんｇ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "g",
+      "code": "KeyG",
+      "isComposing": true
+    },
+    {
+      "timestamp": 14915,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "にほんｇ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 14917,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "にほんｇ",
+      "selectionStart": 0,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "data": "にほんご"
+    },
+    {
+      "timestamp": 14917,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "にほんｇ",
+      "selectionStart": 0,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "にほんご",
+      "isComposing": true
+    },
+    {
+      "timestamp": 14918,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "にほんご",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "にほんご",
+      "isComposing": true
+    },
+    {
+      "timestamp": 15058,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほんご",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 15059,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほんご",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "o",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 16972,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "にほんご",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "Enter",
+      "isComposing": true
+    },
+    {
+      "timestamp": 16977,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "にほんご",
+      "selectionStart": 0,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "data": "にほんご"
+    },
+    {
+      "timestamp": 16977,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "にほんご",
+      "selectionStart": 0,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "にほんご",
+      "isComposing": true
+    },
+    {
+      "timestamp": 16978,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "にほんご",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "にほんご",
+      "isComposing": true
+    },
+    {
+      "timestamp": 16978,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "compositionend",
+      "value": "にほんご",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "data": "にほんご"
+    },
+    {
+      "timestamp": 17075,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "keyup",
+      "value": "にほんご",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "Enter",
+      "isComposing": false
+    },
+    {
+      "timestamp": 17301,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "keydown",
+      "value": "にほんご",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Tab",
+      "code": "Tab",
+      "isComposing": false
+    },
+    {
+      "timestamp": 17403,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "keyup",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Tab",
+      "code": "Tab",
+      "isComposing": false
+    },
+    {
+      "timestamp": 17480,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "keydown",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyN",
+      "isComposing": false
+    },
+    {
+      "timestamp": 17481,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "compositionstart",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "data": ""
+    },
+    {
+      "timestamp": 17481,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "data": "ｎ"
+    },
+    {
+      "timestamp": 17481,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "ｎ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 17482,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "ｎ",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "ｎ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 17540,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "ｎ",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 17554,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "ｎ",
+      "selectionStart": 0,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "data": "に"
+    },
+    {
+      "timestamp": 17555,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "ｎ",
+      "selectionStart": 0,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "に",
+      "isComposing": true
+    },
+    {
+      "timestamp": 17555,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "に",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "に",
+      "isComposing": true
+    },
+    {
+      "timestamp": 17571,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "に",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyN",
+      "isComposing": true
+    },
+    {
+      "timestamp": 17574,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "に",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "n",
+      "code": "KeyN",
+      "isComposing": true
+    },
+    {
+      "timestamp": 17604,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "に",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 17619,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "に",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "i",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 17696,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "に",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyH",
+      "isComposing": true
+    },
+    {
+      "timestamp": 17699,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "に",
+      "selectionStart": 0,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "data": "にｈ"
+    },
+    {
+      "timestamp": 17700,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "に",
+      "selectionStart": 0,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "にｈ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 17700,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "にｈ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "にｈ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 17744,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "にｈ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 17747,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "にｈ",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "data": "にほ"
+    },
+    {
+      "timestamp": 17747,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "にｈ",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "にほ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 17748,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "にほ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "にほ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 17796,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyH",
+      "isComposing": true
+    },
+    {
+      "timestamp": 17847,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "h",
+      "code": "KeyH",
+      "isComposing": true
+    },
+    {
+      "timestamp": 17851,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 17861,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "o",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 17903,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "にほ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyN",
+      "isComposing": true
+    },
+    {
+      "timestamp": 17905,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "にほ",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "data": "にほｎ"
+    },
+    {
+      "timestamp": 17906,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "にほ",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "にほｎ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 17906,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "にほｎ",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "にほｎ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18062,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほｎ",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyN",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18063,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほｎ",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "n",
+      "code": "KeyN",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18547,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "にほｎ",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyN",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18550,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "にほｎ",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "data": "にほん"
+    },
+    {
+      "timestamp": 18550,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "にほｎ",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "にほん",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18551,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "にほん",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "にほん",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18690,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほん",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyN",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18691,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほん",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "n",
+      "code": "KeyN",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18871,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "にほん",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyG",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18874,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "にほん",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "data": "にほんｇ"
+    },
+    {
+      "timestamp": 18875,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "にほん",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "にほんｇ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18875,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "にほんｇ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "にほんｇ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18992,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "にほんｇ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18995,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "にほんｇ",
+      "selectionStart": 0,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "data": "にほんご"
+    },
+    {
+      "timestamp": 18995,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "にほんｇ",
+      "selectionStart": 0,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "にほんご",
+      "isComposing": true
+    },
+    {
+      "timestamp": 18996,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "にほんご",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "にほんご",
+      "isComposing": true
+    },
+    {
+      "timestamp": 19022,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほんご",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyG",
+      "isComposing": true
+    },
+    {
+      "timestamp": 19023,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほんご",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "g",
+      "code": "KeyG",
+      "isComposing": true
+    },
+    {
+      "timestamp": 19073,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "にほんご",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "Space",
+      "isComposing": true
+    },
+    {
+      "timestamp": 19163,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "にほんご",
+      "selectionStart": 0,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "data": "日本語"
+    },
+    {
+      "timestamp": 19163,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "にほんご",
+      "selectionStart": 0,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "日本語",
+      "isComposing": true
+    },
+    {
+      "timestamp": 19164,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "日本語",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "日本語",
+      "isComposing": true
+    },
+    {
+      "timestamp": 19197,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "日本語",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 19200,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "日本語",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "o",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 19214,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "日本語",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "Space",
+      "isComposing": true
+    },
+    {
+      "timestamp": 19215,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "日本語",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": " ",
+      "code": "Space",
+      "isComposing": true
+    },
+    {
+      "timestamp": 19865,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "日本語",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "Tab",
+      "isComposing": true
+    },
+    {
+      "timestamp": 19867,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "日本語",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Tab",
+      "code": "Tab",
+      "isComposing": true
+    },
+    {
+      "timestamp": 20056,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "日本語",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "Tab",
+      "isComposing": true
+    },
+    {
+      "timestamp": 20057,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "日本語",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Tab",
+      "code": "Tab",
+      "isComposing": true
+    },
+    {
+      "timestamp": 20587,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "日本語",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "Enter",
+      "isComposing": true
+    },
+    {
+      "timestamp": 20588,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "日本語",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "data": "日本語"
+    },
+    {
+      "timestamp": 20589,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "日本語",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "日本語",
+      "isComposing": true
+    },
+    {
+      "timestamp": 20589,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "日本語",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "日本語",
+      "isComposing": true
+    },
+    {
+      "timestamp": 20589,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "compositionend",
+      "value": "日本語",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "data": "日本語"
+    },
+    {
+      "timestamp": 20681,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "keyup",
+      "value": "日本語",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "Enter",
+      "isComposing": false
+    },
+    {
+      "timestamp": 20819,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "keydown",
+      "value": "日本語",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Tab",
+      "code": "Tab",
+      "isComposing": false
+    },
+    {
+      "timestamp": 21050,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "keyup",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Tab",
+      "code": "Tab",
+      "isComposing": false
+    },
+    {
+      "timestamp": 21375,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "keydown",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyN",
+      "isComposing": false
+    },
+    {
+      "timestamp": 21376,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "compositionstart",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "data": ""
+    },
+    {
+      "timestamp": 21376,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "data": "ｎ"
+    },
+    {
+      "timestamp": 21376,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "ｎ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21377,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "ｎ",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "ｎ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21436,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "ｎ",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21439,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "ｎ",
+      "selectionStart": 0,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "data": "に"
+    },
+    {
+      "timestamp": 21439,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "ｎ",
+      "selectionStart": 0,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "に",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21439,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "に",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "に",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21491,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "に",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyN",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21493,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "に",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "n",
+      "code": "KeyN",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21515,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "に",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21516,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "に",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "i",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21627,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "に",
+      "selectionStart": 1,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyH",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21630,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "に",
+      "selectionStart": 0,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "data": "にｈ"
+    },
+    {
+      "timestamp": 21630,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "に",
+      "selectionStart": 0,
+      "selectionEnd": 1,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "にｈ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21631,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "にｈ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "にｈ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21707,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "にｈ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21709,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "にｈ",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "data": "にほ"
+    },
+    {
+      "timestamp": 21709,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "にｈ",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "にほ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21710,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "にほ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "にほ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21849,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyH",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21851,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "h",
+      "code": "KeyH",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21898,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 21899,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "o",
+      "code": "KeyO",
+      "isComposing": true
+    },
+    {
+      "timestamp": 22702,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "にほ",
+      "selectionStart": 2,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyN",
+      "isComposing": true
+    },
+    {
+      "timestamp": 22705,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "にほ",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "data": "にほｎ"
+    },
+    {
+      "timestamp": 22705,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "にほ",
+      "selectionStart": 0,
+      "selectionEnd": 2,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "にほｎ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 22706,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "にほｎ",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "にほｎ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 22909,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほｎ",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyN",
+      "isComposing": true
+    },
+    {
+      "timestamp": 22910,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほｎ",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "n",
+      "code": "KeyN",
+      "isComposing": true
+    },
+    {
+      "timestamp": 23066,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "にほｎ",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyJ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 23068,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "にほｎ",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "data": "にほんｊ"
+    },
+    {
+      "timestamp": 23068,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "にほｎ",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "にほんｊ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 23069,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "にほんｊ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "にほんｊ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 23129,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "にほんｊ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 23131,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "にほんｊ",
+      "selectionStart": 0,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "data": "にほんじ"
+    },
+    {
+      "timestamp": 23131,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "にほんｊ",
+      "selectionStart": 0,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "にほんじ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 23132,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "にほんじ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "にほんじ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 23176,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほんじ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyJ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 23177,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほんじ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "j",
+      "code": "KeyJ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 23207,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほんじ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 23209,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほんじ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "i",
+      "code": "KeyI",
+      "isComposing": true
+    },
+    {
+      "timestamp": 23323,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "にほんじ",
+      "selectionStart": 4,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyN",
+      "isComposing": true
+    },
+    {
+      "timestamp": 23325,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "にほんじ",
+      "selectionStart": 0,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "data": "にほんじｎ"
+    },
+    {
+      "timestamp": 23325,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "にほんじ",
+      "selectionStart": 0,
+      "selectionEnd": 4,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "にほんじｎ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 23325,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "にほんじｎ",
+      "selectionStart": 5,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "にほんじｎ",
+      "isComposing": true
+    },
+    {
+      "timestamp": 23378,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほんじｎ",
+      "selectionStart": 5,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyN",
+      "isComposing": true
+    },
+    {
+      "timestamp": 23379,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "にほんじｎ",
+      "selectionStart": 5,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "n",
+      "code": "KeyN",
+      "isComposing": true
+    },
+    {
+      "timestamp": 23448,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "にほんじｎ",
+      "selectionStart": 5,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyN",
+      "isComposing": true
+    },
+    {
+      "timestamp": 23451,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "にほんじｎ",
+      "selectionStart": 0,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "data": "にほんじん"
+    },
+    {
+      "timestamp": 23452,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "にほんじｎ",
+      "selectionStart": 0,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "にほんじん",
+      "isComposing": true
+    },
+    {
+      "timestamp": 23452,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "にほんじん",
+      "selectionStart": 5,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "にほんじん",
+      "isComposing": true
+    },
+    {
+      "timestamp": 23545,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "にほんじん",
+      "selectionStart": 5,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "Space",
+      "isComposing": true
+    },
+    {
+      "timestamp": 23553,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "にほんじん",
+      "selectionStart": 0,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "data": "日本人"
+    },
+    {
+      "timestamp": 23553,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "にほんじん",
+      "selectionStart": 0,
+      "selectionEnd": 5,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "日本人",
+      "isComposing": true
+    },
+    {
+      "timestamp": 23554,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "日本人",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "日本人",
+      "isComposing": true
+    },
+    {
+      "timestamp": 23574,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "日本人",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "KeyN",
+      "isComposing": true
+    },
+    {
+      "timestamp": 23576,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "日本人",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "n",
+      "code": "KeyN",
+      "isComposing": true
+    },
+    {
+      "timestamp": 23623,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "日本人",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "Space",
+      "isComposing": true
+    },
+    {
+      "timestamp": 23625,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keyup",
+      "value": "日本人",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": " ",
+      "code": "Space",
+      "isComposing": true
+    },
+    {
+      "timestamp": 24169,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "keydown",
+      "value": "日本人",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "Enter",
+      "isComposing": true
+    },
+    {
+      "timestamp": 24174,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "compositionupdate",
+      "value": "日本人",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "data": "日本人"
+    },
+    {
+      "timestamp": 24175,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "beforeinput",
+      "value": "日本人",
+      "selectionStart": 0,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "日本人",
+      "isComposing": true
+    },
+    {
+      "timestamp": 24175,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Composing",
+      "eventType": "input",
+      "value": "日本人",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "inputType": "insertCompositionText",
+      "data": "日本人",
+      "isComposing": true
+    },
+    {
+      "timestamp": 24175,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "compositionend",
+      "value": "日本人",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "data": "日本人"
+    },
+    {
+      "timestamp": 24278,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "keyup",
+      "value": "日本人",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Process",
+      "code": "Enter",
+      "isComposing": false
+    },
+    {
+      "timestamp": 24870,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "keydown",
+      "value": "日本人",
+      "selectionStart": 3,
+      "selectionEnd": 3,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Enter",
+      "code": "Enter",
+      "isComposing": false
+    },
+    {
+      "timestamp": 24940,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "keyup",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Enter",
+      "code": "Enter",
+      "isComposing": false
+    },
+    {
+      "timestamp": 25175,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "keydown",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Enter",
+      "code": "Enter",
+      "isComposing": false
+    },
+    {
+      "timestamp": 25271,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "keyup",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      },
+      "key": "Enter",
+      "code": "Enter",
+      "isComposing": false
+    },
+    {
+      "timestamp": 32713,
+      "browser": "Edge",
+      "os": "Windows",
+      "ime": "Microsoft IME",
+      "state": "Editing",
+      "eventType": "blur",
+      "value": "",
+      "selectionStart": 0,
+      "selectionEnd": 0,
+      "activeCell": {
+        "row": 0,
+        "col": 0
+      }
+    }
+  ]
+}

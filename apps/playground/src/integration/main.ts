@@ -81,3 +81,11 @@ const instance = mount(
 // E2E 用 introspection（旧 window.__integrationTestApi の後継。test-support 経由・mount 直後に登録済み）。
 window.__gridInstance = instance;
 window.__integrationTestApi = getDebugApi(instance);
+
+// CG-1 実機 IME trace 採取（DD-016-2 Phase 4）。`?trace=1` のときだけ dynamic import で有効化する
+// （通常利用・E2E には無影響。trace-capture は内部 @nanairo-sheet/* を import しない＝R1 維持）。
+if (params.get('trace') === '1') {
+  void import('./trace-capture').then((m) => {
+    m.installTraceCapture(stage);
+  });
+}

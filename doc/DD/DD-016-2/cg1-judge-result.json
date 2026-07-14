@@ -1,0 +1,40 @@
+{
+  "verdict": "PASS",
+  "orderBPresent": true,
+  "headDropSessions": 0,
+  "sessionTotal": 9,
+  "tier1Browsers": {
+    "chrome": true,
+    "edge": true,
+    "bothCovered": true
+  },
+  "orderAPresent_informational": false,
+  "orderANote": "順序A（keydown Enter isComposing:true）は現行 Tier-1(Chromium 150) で構造的に発生せず（実機25セッションで0）。自動不変条件・E2E で担保。実機 PASS 条件からは除外（DD-012-1 evidence.md）。",
+  "perFile": [
+    {
+      "file": "doc/DD/DD-016-2/cg1-chrome-trace.json",
+      "env": {
+        "browser": "Chrome",
+        "os": "Windows",
+        "ime": "Microsoft IME"
+      },
+      "sessions": 6,
+      "orderA": false,
+      "orderB": true,
+      "headDrops": 0
+    },
+    {
+      "file": "doc/DD/DD-016-2/cg1-edge-trace.json",
+      "env": {
+        "browser": "Edge",
+        "os": "Windows",
+        "ime": "Microsoft IME"
+      },
+      "sessions": 3,
+      "orderA": false,
+      "orderB": true,
+      "headDrops": 0
+    }
+  ],
+  "criteria": "先頭欠落0・順序B採取・Chrome/Edge両カバー・セッション1件以上 で PASS（AC8・2026-07-13改訂）"
+}
