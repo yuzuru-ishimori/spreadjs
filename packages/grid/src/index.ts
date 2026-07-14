@@ -1,50 +1,89 @@
-// @nanairo-sheet/grid — Facade skeleton（stub）。
+// @nanairo-sheet/grid — Canvas 描画グリッドの唯一の公開面（Facade・Experimental 0.x・ADR-0015）。
 //
-// DD-011（基盤実装DD）で設置した「唯一の公開面」の骨格。consumer は内部パッケージ
-// （core/collab/render/selection/ime/types）を直接 import せず、この Facade だけを import する（R1）。
+// consumer は内部パッケージ（core/collab/render/selection/ime/types）を直接 import せず、この Facade だけを
+// import する（R1）。mount() が内部パッケージを束ね、container 内に Canvas/scroller/常駐 textarea を構築し、
+// 共同編集セッション・IME・仮想スクロール描画を配線する。destroy() で全リソース（listener/RAF/WS/canvas/
+// textarea）を解放する（再mountで leak しない）。
 //
-// 【B→A 昇格の境界】本ファイルは **stub に留める**。実 API（Command/Event/Options・lifecycle 契約・
-// 内部パッケージの束ね）は DD-016（Facade/実consumer統合DD）で確定する。stub が実 API を固定し始めたら
-// Risk Class A へ昇格する（roadmap §2.4）。ここでは「型の置き場」と mount/destroy の signature だけを置く。
-//
-// 【R7】内部パッケージを再エクスポートしない・公開シグネチャへ内部型を漏らさない（境界文書 §3/§4.2 R7）。
-// そのため本 stub は内部パッケージへ一切依存しない（package.json も依存ゼロ）。
+// 【R7】公開シグネチャに内部パッケージ由来の型を出さない（GridEvent/GridConflict/GridConnectionState は
+// 本 Facade が定義する。内部 SessionEvent/ConflictQueueEntry を写像して露出する）。boundary lint が本 index.ts を検査する。
 
-/** grid をマウントする DOM ターゲット（Canvas 描画のため DOM コンテナが必須）。 */
+import { createGridController } from './mount-controller';
+
+/** 接続状態（consumer 表示用）。内部 collab の ConnectionState を写像した公開型（型は再exportしない）。 */
+export type GridConnectionState = 'online' | 'offline' | 'stopped';
+
+/** reject（競合）の理由。内部 collab の ConflictReason を写像した公開型。 */
+export type GridConflictReason = 'rejected' | 'revalidation-failed' | 'dependency';
+
+/**
+ * 競合の公開サマリ（R7: 内部 ConflictQueueEntry の DocumentOperation/OperationViolation/RejectDetails は露出しない）。
+ * Alpha は「競合の通知」を保証し、プログラム的な競合解決 UI の材料公開は Stage 2。
+ */
+export interface GridConflict {
+  /** 競合したローカル Operation の ID（文字列化）。 */
+  readonly operationId: string;
+  /** 競合理由。 */
+  readonly reason: GridConflictReason;
+  /** server reject code（'cell-conflict' 等）を文字列化（reason==='rejected' のとき）。 */
+  readonly code?: string;
+}
+
+/**
+ * grid が発火する公開イベント（lifecycle 契約: connection state・error notification）。
+ * 内部 SessionEvent（connection/pending/rejected/divergence）を写像し、boot/transport 例外を error として整形する。
+ */
+export type GridEvent =
+  | { readonly type: 'connection'; readonly state: GridConnectionState; readonly pendingCount: number }
+  | { readonly type: 'pending'; readonly pendingCount: number }
+  | { readonly type: 'rejected'; readonly pendingCount: number; readonly conflict: GridConflict }
+  | { readonly type: 'divergence'; readonly serverRevision: number; readonly committedRevision: number }
+  | { readonly type: 'error'; readonly phase: 'config' | 'connect' | 'runtime'; readonly message: string };
+
+export type GridEventListener = (event: GridEvent) => void;
+
+/** grid をマウントする DOM ターゲット（Facade が container 内部に Canvas/scroller/textarea を構築する）。 */
 export interface GridMountTarget {
   readonly container: HTMLElement;
 }
 
-/** mount 時オプション（stub。実 Options 契約は DD-016 で確定）。 */
+/** mount 時オプション（Experimental 0.x）。 */
 export interface GridMountOptions {
-  /** 編集対象ドキュメント ID。 */
-  readonly documentId: string;
+  /** 同期サーバーの HTTP オリジン（例 'http://127.0.0.1:8787'）。ws URL・/config はここから導出する。 */
+  readonly serverUrl: string;
+  /** 編集対象ドキュメント ID。未指定なら /config の documentId を使う。 */
+  readonly documentId?: string;
+  /** 列順。未指定なら serverUrl の /config から取得する（server-hono と対で運用・D1）。 */
+  readonly columnOrder?: readonly string[];
+  /** Presence 表示名。未指定なら匿名生成する。 */
+  readonly displayName?: string;
+  /** 再接続で不変のクライアント ID。未指定なら生成する（crypto.randomUUID）。 */
+  readonly clientId?: string;
+  /** 初期イベント購読（mount 直後の connection/error を取りこぼさない）。 */
+  readonly onEvent?: GridEventListener;
 }
 
-/**
- * mount が返すハンドル（consumer lifecycle 契約の最小骨格・境界文書 §5）。
- * 実装（event unsubscribe・connection state・error notification 等）は DD-016。
- */
+/** mount が返すハンドル（consumer lifecycle 契約）。 */
 export interface GridInstance {
+  /** 編集対象ドキュメント ID（/config 解決後に確定。未解決時は options.documentId ?? ''）。 */
   readonly documentId: string;
-  /** グリッドを破棄し DOM/リスナー/接続リソースを解放する。 */
+  /** 現在の接続状態。 */
+  connectionState(): GridConnectionState;
+  /** イベント購読。返り値の関数で解除（unsubscribe）する。 */
+  subscribe(listener: GridEventListener): () => void;
+  /** グリッドへフォーカスする（入力受け口の常駐 textarea へ）。 */
+  focus(): void;
+  /** グリッドを破棄し DOM/listener/RAF/WS/canvas/textarea を解放する（再mountで leak しない）。 */
   destroy(): void;
 }
 
-/**
- * Facade skeleton のステージマーカー。contract test の export surface snapshot と
- * consumer harness の疎通確認に使う（実 API バージョンは DD-016/017 で付与）。
- */
-export const GRID_FACADE_STAGE = 'stage1-alpha-skeleton' as const;
+/** 公開 API バージョン（Experimental 0.x・ADR-0015。破壊的変更は CHANGELOG=DD-017 で記録）。 */
+export const GRID_API_VERSION = '0.1.0-experimental' as const;
 
 /**
- * Canvas グリッドを DOM コンテナへマウントする（**stub**）。
- * 実装は DD-016。呼び出すと未実装エラーを投げる（型の疎通・contract のためだけの骨格）。
+ * Canvas グリッドを container へマウントする。同期 return（boot＝/config 取得・WS 接続は内部で非同期進行し、
+ * 進捗・失敗は GridEvent で通知する）。destroy() は boot 進行中に呼んでも安全。
  */
 export function mount(target: GridMountTarget, options: GridMountOptions): GridInstance {
-  void target;
-  void options;
-  throw new Error(
-    '@nanairo-sheet/grid: mount() は Facade skeleton の stub です（実装は DD-016）。',
-  );
+  return createGridController(target, options);
 }

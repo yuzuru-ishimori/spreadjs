@@ -22,7 +22,8 @@ const BASE_URL = `http://localhost:${PORT}`;
 // integration-scenario.spec.ts の WS_ORIGIN と一致させること（ズレたら接続失敗で即赤くなる）。
 const WS_PORT = 8799;
 
-const collaborationServerDir = fileURLToPath(new URL('../collaboration-server', import.meta.url));
+// 統合 E2E の WS サーバーは @nanairo-sheet/server-hono（DD-016 で collaboration-server を昇華）。
+const serverHonoDir = fileURLToPath(new URL('../../packages/server-hono', import.meta.url));
 
 export default defineConfig({
   testDir: 'e2e',
@@ -47,8 +48,9 @@ export default defineConfig({
   webServer: [
     {
       // 設定ファイルの位置（apps/playground）が cwd。playground の `dev` = vite を明示ポートで起動。
+      // 統合デモ（poc-integration.html）を readiness url にする（PoC-A の index.html は DD-016 で削除ゆえ '/' は 404）。
       command: `npm run dev -- --port ${PORT} --strictPort`,
-      url: BASE_URL,
+      url: `${BASE_URL}/poc-integration.html`,
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
       stdout: 'ignore',
@@ -60,7 +62,7 @@ export default defineConfig({
       // SEED_NONEMPTY で非空セル数を絞る: **行数 50,000 は保ったまま**初期 replay を軽くして E2E を安定・高速化する
       // （機能成立の検証がスコープ・データ密度検証は DD-004/006 担当。既定 dev:integration は 100,000 のまま）。
       command: 'npm run dev:integration',
-      cwd: collaborationServerDir,
+      cwd: serverHonoDir,
       env: { PORT: String(WS_PORT), SEED_NONEMPTY: '3000' },
       url: `http://127.0.0.1:${WS_PORT}/health`,
       reuseExistingServer: !process.env.CI,

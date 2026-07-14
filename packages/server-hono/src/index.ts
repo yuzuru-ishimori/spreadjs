@@ -1,41 +1,57 @@
-// @nanairo-sheet/server-hono — Facade skeleton（stub）。
+// @nanairo-sheet/server-hono — 同期サーバーの唯一の公開面（Facade・Experimental 0.x・ADR-0015）。
 //
-// DD-011（基盤実装DD）で設置したサーバー側「唯一の公開面」の骨格。consumer は内部パッケージ
-// （server/core/types）を直接 import せず、この Facade だけを import する（R1）。
-//
-// 【B→A 昇格の境界】本ファイルは **stub に留める**。実 API（起動/停止・接続 lifecycle・heartbeat/TTL・
-// Room/Sequencer/Presence の実トランスポート配線）は DD-016 で確定する。stub が実 API を固定し始めたら
-// Risk Class A へ昇格する（roadmap §2.4）。
-//
-// 【R7】server の内部型を公開シグネチャへ漏らさない（境界文書 §3/§4.2 R7）。stub は内部依存ゼロ。
+// Hono + @hono/node-server + ws による実 WS サーバー（Room/Sequencer/PersistentRoom を配線）を serve() で起動する。
+// 内部実装（startServer/RunningServer・StartServerOptions・SnapshotData/RecoveryReport）は ./server が持ち、本 index は
+// consumer 向けに **最小の公開契約**へ整形する（R7: SnapshotData/RecoveryReport・restoreFrom・integrationDataset 等の
+// 内部型/デモ専用オプションは露出しない）。
 
-/** serve 時オプション（stub。実 Options は DD-016 で確定）。 */
+import { startServer } from './server';
+
+/** serve 時オプション（Experimental 0.x・内部 StartServerOptions の公開最小サブセット）。 */
 export interface ServeOptions {
-  /** listen ポート。 */
-  readonly port: number;
+  /** listen ポート（既定 8787。0=OS 任せのランダムポート＝テスト）。 */
+  readonly port?: number;
+  /** listen ホスト（既定 '127.0.0.1'）。 */
+  readonly host?: string;
+  /** ドキュメント ID（既定 'demo-doc'）。 */
+  readonly documentId?: string;
+  /** 列順（既定 ['col-a','col-b','col-c']）。 */
+  readonly columnOrder?: readonly string[];
+  /** 初期グリッド行数（既定 5）。 */
+  readonly seedRows?: number;
+  /** 指定でファイル永続化（oplog＋snapshot）を有効化する。再起動で snapshot＋tail から復旧する。 */
+  readonly persistenceDir?: string;
 }
 
-/**
- * serve が返すハンドル（lifecycle 契約の最小骨格）。
- * 実装（接続 lifecycle・heartbeat/TTL・graceful shutdown）は DD-016。
- */
+/** serve が返すハンドル（consumer lifecycle 契約）。 */
 export interface ServerInstance {
   readonly port: number;
-  /** サーバーを停止し接続を解放する。 */
+  readonly url: string;
+  readonly documentId: string;
+  /** 現在の接続数（診断用）。 */
+  connectionCount(): number;
+  /** サーバーを停止し接続・永続化ハンドルを解放する。 */
   stop(): Promise<void>;
 }
 
-/**
- * Facade skeleton のステージマーカー（contract test / consumer harness 用）。
- */
-export const SERVER_HONO_FACADE_STAGE = 'stage1-alpha-skeleton' as const;
+/** 公開 API バージョン（Experimental 0.x・ADR-0015）。 */
+export const SERVER_HONO_API_VERSION = '0.1.0-experimental' as const;
 
-/**
- * 同期サーバーを起動する（**stub**）。実装は DD-016。呼び出すと未実装エラーを投げる。
- */
-export function serve(options: ServeOptions): ServerInstance {
-  void options;
-  throw new Error(
-    '@nanairo-sheet/server-hono: serve() は Facade skeleton の stub です（実装は DD-016）。',
-  );
+/** 同期サーバーを起動する（listening 後に解決＝port 0 対応で async）。 */
+export async function serve(options: ServeOptions = {}): Promise<ServerInstance> {
+  const running = await startServer({
+    port: options.port,
+    host: options.host,
+    documentId: options.documentId,
+    columnOrder: options.columnOrder !== undefined ? [...options.columnOrder] : undefined,
+    seedRows: options.seedRows,
+    persistenceDir: options.persistenceDir,
+  });
+  return {
+    port: running.port,
+    url: running.url,
+    documentId: running.documentId,
+    connectionCount: () => running.connectionCount(),
+    stop: () => running.close(),
+  };
 }

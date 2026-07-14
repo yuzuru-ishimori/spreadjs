@@ -44,9 +44,9 @@ export const CONSUMER_ALLOWED = [...FACADE_PACKAGES];
 export const ALL_SDK_PACKAGES = [...INTERNAL_PACKAGES, ...FACADE_PACKAGES];
 
 /** 現行 apps/* の package 名（R5: apps 間 import 禁止の by-name 判定用）。 */
+// collaboration-server は DD-016 で server-hono へ昇華（apps から削除）。
 export const APP_PACKAGES = [
   'playground',
-  'collaboration-server',
   'pocd-bench',
   'pocd-browser-bench',
 ];

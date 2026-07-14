@@ -1,0 +1,9 @@
+{
+  // selection は DOM 非依存の純粋ユーティリティ（core/collab と同じく DOM/Node を持ち込まない）。
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "types": []
+  },
+  "include": ["src/**/*.ts"]
+}

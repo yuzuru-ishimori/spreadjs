@@ -12,28 +12,28 @@
 //   5. remote update・rollback/replay 中も draft 不変（MarkConflict のみ・値を上書きしない）
 //   6. synthetic と実 IME を混同しない（isComposing / 'Process' / 内部 composing フラグで区別）
 //
-// 素材: apps/playground の編集状態機械。DD-012-1 では `@nanairo-sheet/ime` への物理抽出を見送ったため
-//   （grid Facade=DD-016・render=DD-012-2 未成立で apps→internal の R1 baseline が増える）、import 先は
-//   現行の apps/playground を指す。抽出完了時（DD-016）に `@nanairo-sheet/ime` へ差し替える。
+// 素材: `@nanairo-sheet/ime` の編集状態機械（editor-state-machine＋geometry）。DD-012-1 で抽出を見送った
+//   ため import 先は apps/playground を指していたが、**DD-016-1 で物理抽出完了**し `@nanairo-sheet/ime` へ差し替えた
+//   （glue の cellScalarToDisplay/ime-editing-session は grid 内部＝package 相対で参照＝公開面ではないテスト白箱）。
 import { describe, expect, it } from 'vitest';
 
 import { applyOperation, createDocument, displayRowOrder, getCell } from '@nanairo-sheet/core';
 import type { DocumentOperation, SetCellsOperation } from '@nanairo-sheet/core';
 import { createColumnId, createRowId } from '@nanairo-sheet/types';
 
-import { DEFAULT_GRID_LAYOUT, cellKey } from '../../../apps/playground/src/grid/geometry';
-import type { CellPosition, GridLayout } from '../../../apps/playground/src/grid/geometry';
+import { DEFAULT_GRID_LAYOUT, cellKey } from '@nanairo-sheet/ime';
+import type { CellPosition, GridLayout } from '@nanairo-sheet/ime';
 import {
   createEditorStateMachine,
   type EditorEvent,
   type Effect,
-} from '../../../apps/playground/src/ime/editor-state-machine';
-import { cellScalarToDisplay } from '../../../apps/playground/src/integration/document-view';
+} from '@nanairo-sheet/ime';
+import { cellScalarToDisplay } from '../../../packages/grid/src/document-view';
 import {
   createImeEditingSession,
   type EditingDocumentPort,
   type TextareaPort,
-} from '../../../apps/playground/src/integration/ime-editing-session';
+} from '../../../packages/grid/src/ime-editing-session';
 
 const A1: CellPosition = { row: 0, col: 0 };
 

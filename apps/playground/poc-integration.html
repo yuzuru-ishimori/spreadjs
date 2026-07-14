@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>spreadjs playground — 統合PoC（IME・Canvas・共同編集）DD-005 Phase 3</title>
+    <title>spreadjs playground — 統合PoC（@nanairo-sheet/grid Facade consumer）</title>
     <style>
       html,
       body {
@@ -43,8 +43,9 @@
         margin-bottom: 6px;
       }
 
-      /* §13.1: DOM viewport（native scroll）＋ spacer ＋ viewport 同サイズ固定 Canvas。 */
-      .int-stage {
+      /* Facade（grid.mount）が #int-stage 内に Canvas/scroller/常駐 textarea を構築する（D4）。
+         consumer は size 済みの container を 1 つ渡すだけでよい。 */
+      #int-stage {
         position: relative;
         flex: 1 1 auto;
         min-height: 240px;
@@ -52,47 +53,12 @@
         background: #fff;
         overflow: hidden;
       }
-
-      #int-base,
-      #int-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        display: block;
-      }
-
-      #int-scroller {
-        position: absolute;
-        inset: 0;
-        overflow: auto;
-      }
-
-      #int-spacer {
-        width: 1px;
-        height: 1px;
-      }
-
-      /* IME 常駐 textarea・競合 badge は integration-editor が動的に生成する（.int-cell-editor / .int-conflict-badge）。 */
-
-      .int-readout {
-        flex: 0 0 auto;
-        font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-        font-size: 11px;
-        color: #333;
-        white-space: pre-wrap;
-        margin-top: 6px;
-        max-height: 72px;
-        overflow: auto;
-        background: #fff;
-        border: 1px solid #ddd;
-        padding: 4px 8px;
-      }
     </style>
   </head>
   <body>
     <div class="int-wrap">
       <div class="int-header">
-        <h1>統合PoC — IME×Canvas×共同編集（DD-005 Phase 3）</h1>
+        <h1>統合PoC — IME×Canvas×共同編集（@nanairo-sheet/grid Facade）</h1>
         <div class="int-status" id="int-status">未接続</div>
         <div class="int-hint">
           セルをクリックで選択 → そのまま入力（日本語 IME 可）→ Enter で確定（cell-level beforeRevision の
@@ -101,12 +67,7 @@
           接続先は <code>?server=http://host:port</code>、表示名は <code>?name=Alice</code> で指定。
         </div>
       </div>
-      <div class="int-stage" id="int-stage">
-        <canvas id="int-base"></canvas>
-        <canvas id="int-overlay"></canvas>
-        <div id="int-scroller"><div id="int-spacer"></div></div>
-      </div>
-      <div class="int-readout" id="int-readout">初期ロード計測待ち…</div>
+      <div id="int-stage"></div>
     </div>
     <script type="module" src="/src/integration/main.ts"></script>
   </body>

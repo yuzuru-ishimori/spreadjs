@@ -2,14 +2,14 @@
 
 exports[`contract: Facade export surface snapshot > @nanairo-sheet/grid の公開 value surface 1`] = `
 [
-  "GRID_FACADE_STAGE",
+  "GRID_API_VERSION",
   "mount",
 ]
 `;
 
 exports[`contract: Facade export surface snapshot > @nanairo-sheet/server-hono の公開 value surface 1`] = `
 [
-  "SERVER_HONO_FACADE_STAGE",
+  "SERVER_HONO_API_VERSION",
   "serve",
 ]
 `;

@@ -1,0 +1,9 @@
+{
+  // render は Canvas 2D 描画を含むため DOM lib を足す（playground と同様。base には DOM を入れない方針）。
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": []
+  },
+  "include": ["src/**/*.ts"]
+}

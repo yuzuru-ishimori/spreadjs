@@ -6,6 +6,9 @@
 
 | DD | 件名 | ステータス | 補足 |
 |----|------|-----------|------|
+| DD-016 | Facade・実consumer統合 | 進行中 | 案Y 2分割＝アンブレラ化。DD-016-1（Facade実装・物理抽出・Codex xhigh）／DD-016-2（独立consumer実証・CG-1/CG-6 Manual Gate）。要確認①〜⑤ 確定済 |
+| DD-016-1 | Facade実装・物理抽出 | 進行中 | 親=DD-016（案Y 2分割）。**実装完了・全検証green**（720 test＋8 E2E＋typecheck/lint/build＋R7 .d.ts＋boundary 41→10）。Codex xhigh triage 後に完了 |
+| DD-016-2 | 独立consumer実証・統合後実機スモーク | 検討中 | 親=DD-016（案Y 2分割）。前提=DD-016-1 完了。独立consumer実証(S1-3)・CG-1統合後スモーク・CG-6精密確定・DD-012クローズ連絡。Manual Gate |
 | DD-012 | 単一利用者IME縦切り | 進行中 | 案Y 2分割・両子DD完了アーカイブ済（DD-012-1 入力縦切り＝**CG-1解除**／DD-012-2 性能縦切り＝**CG-6指標pass**）。milestone残（ime/selection/render物理抽出・baseline縮退・CG-1統合後スモーク・CG-6精密メモリ＋clean redraw）は**DD-016で確定**。DD-016完了でクローズ |
 
 ## 保留・見送り

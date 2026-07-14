@@ -136,7 +136,7 @@ export async function selectCell(page: Page, row: number, col: number): Promise<
     throw new Error(`セル (${row},${col}) が可視範囲にない`);
   }
   await page
-    .locator('#int-scroller')
+    .locator('.nsheet-scroller')
     .click({ position: { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 } });
 }
 
@@ -204,9 +204,9 @@ export async function plainTypeAndCommit(page: Page, text: string): Promise<void
 export async function scrollTo(page: Page, top: number, left: number): Promise<void> {
   await page.evaluate(
     (pos: { top: number; left: number }) => {
-      const sc = document.getElementById('int-scroller');
+      const sc = document.querySelector('.nsheet-scroller');
       if (sc === null) {
-        throw new Error('int-scroller が見つからない');
+        throw new Error('.nsheet-scroller が見つからない');
       }
       sc.scrollTop = pos.top;
       sc.scrollLeft = pos.left;

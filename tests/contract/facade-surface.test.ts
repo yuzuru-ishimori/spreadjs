@@ -1,24 +1,51 @@
-// Facade 公開面 contract test（骨格）。DD-011 設置・実 API 確定は DD-016。
+// Facade 公開面 contract test（DD-016 で実 API 確定）。
 //
-// Facade（grid・server-hono）の **export surface（公開 value シンボル名）** を snapshot 契約として固定する。
-// 意図しない export の追加/削除で fail する（＝公開 API の破壊的変更検出・§2.3 公開API不変条件）。
+// ① export surface（公開 value シンボル名）を snapshot 契約として固定する（意図しない export の追加/削除で fail
+//    ＝公開 API の破壊的変更検出・§2.3 公開API不変条件）。
+// ② R7 型漏洩0: Facade エントリ（src/index.ts）の公開 .d.ts を in-memory で emit し、内部パッケージ
+//    （core/collab/server/types/selection/render/ime/formula）の specifier が公開宣言に現れないことを検証する
+//    （公開シグネチャへ内部型を漏らさない・境界文書 §4.2 R7。boundary lint の AST 検査〔check.mjs〕と二重化）。
 //
-// 【意図的な変更の手順】
-//   1. Facade の公開 export を変える（DD-016 等）。
+// 【意図的な surface 変更の手順】
+//   1. Facade の公開 export を変える。
 //   2. `npx vitest run tests/contract -u` で snapshot を更新する。
-//   3. 変更を CHANGELOG（Experimental `0.x`・ADR-0015）へ記録し、DD の公開API影響へ明記する。
-// snapshot 更新なしに surface を変えると本テストが fail する（レビュー無しの契約変更を防ぐ）。
-//
-// 注記: 本骨格は **value export 名**を固定する（stub 段階で最も安く破壊的変更を捕捉できる面）。
-// 型シグネチャ全体（引数・戻り値の型）の contract は、実 API が入る DD-016 で `.d.ts`/API extractor
-// ベースへ拡張する（R7 型漏洩検査と対）。
+//   3. 変更を CHANGELOG（Experimental `0.x`・ADR-0015・DD-017）へ記録し、DD の公開API影響へ明記する。
+import { fileURLToPath } from 'node:url';
+
+import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 
 import * as grid from '@nanairo-sheet/grid';
 import * as serverHono from '@nanairo-sheet/server-hono';
 
+const INTERNAL_PACKAGE_RE = /@nanairo-sheet\/(core|collab|server|types|selection|render|ime|formula)\b/;
+
 function valueSurface(mod: Record<string, unknown>): string[] {
   return Object.keys(mod).sort();
+}
+
+/** Facade エントリの**公開 .d.ts** を in-memory で emit する（依存 package の .d.ts は対象外＝公開面のみ走査）。 */
+function publicDeclaration(entryRelPath: string): string {
+  const entry = fileURLToPath(new URL(`../../${entryRelPath}`, import.meta.url)).replace(/\\/g, '/');
+  const program = ts.createProgram([entry], {
+    declaration: true,
+    emitDeclarationOnly: true,
+    module: ts.ModuleKind.ESNext,
+    moduleResolution: ts.ModuleResolutionKind.Bundler,
+    target: ts.ScriptTarget.ES2022,
+    lib: ['lib.es2022.d.ts', 'lib.dom.d.ts', 'lib.dom.iterable.d.ts'],
+    strict: true,
+    skipLibCheck: true,
+    types: ['node'],
+  });
+  let dts = '';
+  program.emit(undefined, (fileName, data) => {
+    // エントリ index.ts に対応する .d.ts のみを採取する（内部 package の .d.ts は公開面ではない）。
+    if (fileName.replace(/\\/g, '/').replace(/\.d\.ts$/, '.ts') === entry) {
+      dts = data;
+    }
+  });
+  return dts;
 }
 
 describe('contract: Facade export surface snapshot', () => {
@@ -28,5 +55,19 @@ describe('contract: Facade export surface snapshot', () => {
 
   it('@nanairo-sheet/server-hono の公開 value surface', () => {
     expect(valueSurface(serverHono)).toMatchSnapshot();
+  });
+});
+
+describe('contract: R7 内部型漏洩0（公開 .d.ts に内部パッケージ型が現れない）', () => {
+  it('@nanairo-sheet/grid の公開宣言は内部パッケージ型を漏らさない', () => {
+    const dts = publicDeclaration('packages/grid/src/index.ts');
+    expect(dts.length).toBeGreaterThan(0);
+    expect(dts).not.toMatch(INTERNAL_PACKAGE_RE);
+  });
+
+  it('@nanairo-sheet/server-hono の公開宣言は内部パッケージ型を漏らさない', () => {
+    const dts = publicDeclaration('packages/server-hono/src/index.ts');
+    expect(dts.length).toBeGreaterThan(0);
+    expect(dts).not.toMatch(INTERNAL_PACKAGE_RE);
   });
 });

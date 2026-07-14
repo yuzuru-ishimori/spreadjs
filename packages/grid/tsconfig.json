@@ -1,9 +1,11 @@
 {
-  // grid は Canvas 描画グリッドの Facade。DOM 可（境界文書 §2.2）。
-  // stub のため内部パッケージへは依存しない（実束ねは DD-016）。
+  // grid は Canvas 描画グリッドの Facade。DOM 可（境界文書 §2.2）。内部 package（core/collab/render/
+  // selection/ime）を束ねて mount/destroy・GridEvent を配線する。types:[] で @types/node を持ち込まない
+  // （ブラウザーランタイム＝WebSocket/fetch/Canvas/rAF のみ）。
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "lib": ["ES2022", "DOM"]
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": []
   },
   "include": ["src/**/*.ts"]
 }

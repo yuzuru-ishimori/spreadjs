@@ -3,16 +3,14 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "単体検証・IME event recorder 用の土台（PoC-A/B の実装先）",
+  "description": "統合PoC ページ（@nanairo-sheet/grid Facade の consumer・E2E 検証の土台）",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@nanairo-sheet/collab": "*",
-    "@nanairo-sheet/core": "*",
-    "@nanairo-sheet/types": "*",
+    "@nanairo-sheet/grid": "*",
     "vite": "^6.0.5"
   }
 }

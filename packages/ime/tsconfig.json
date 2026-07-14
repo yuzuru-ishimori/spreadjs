@@ -1,0 +1,10 @@
+{
+  // ime は DOM 非依存（状態機械は Effect 記述を返し、DOM 反映は Facade=grid が担う・§11.3）。
+  // geometry/navigation/event-recorder も純粋。core/collab と同じく lib は ES2022 のみ・types:[]。
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "types": []
+  },
+  "include": ["src/**/*.ts"]
+}

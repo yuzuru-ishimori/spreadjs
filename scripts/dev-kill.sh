@@ -1,6 +1,6 @@
 #!/bin/bash
 # dev-start.sh が使うポートのプロセスを全て kill
-#   5885 (Vite playground) / 9499 (collaboration-server)
+#   5885 (Vite playground) / 9499 (server-hono)
 # ポートは標準 +712（他プロジェクトと重複させないため）
 
 kill_port() {

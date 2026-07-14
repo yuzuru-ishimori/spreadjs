@@ -168,6 +168,12 @@ for (const abs of collectSourceFiles()) {
   const rel = toRel(abs);
   const owner = packageOfFile(rel);
   if (!owner) continue;
+  // R7 は Facade の**公開エントリ（package.json "exports" が指す src/index.ts）**のみを対象にする。
+  // Facade package 内の内部実装ファイル（glue）は公開面ではないため R7 検査から除外する（DD-016）:
+  // grid Facade は collab+render+selection+ime を束ねる glue を内包し、glue の export は内部 package 型を
+  // 使うが、これは「公開シグネチャ」ではない。R7 の意図＝公開面（src/index.ts）の非漏洩を担保する。
+  // test-support.ts は collectSourceFiles で既に除外済み（TEST_INFRA_FILES）。
+  const isFacadeEntry = owner.kind === 'facade' && rel === `${owner.root}/src/index.ts`;
   const text = fs.readFileSync(abs, 'utf8');
   const { sf, refs } = readModuleRefs(abs, text);
 
@@ -191,14 +197,14 @@ for (const abs of collectSourceFiles()) {
       add('R1', rel, spec, `consumer/apps は内部パッケージ（@nanairo-sheet/${target}）を直接 import できない。Facade 経由にする`);
     }
 
-    // ---- R7（再エクスポート）: Facade が `export … from '@nanairo-sheet/内部'` で内部を素通し ----
-    if (owner.kind === 'facade' && ref.isReexport && ALL_SDK_PACKAGES.includes(target)) {
+    // ---- R7（再エクスポート）: Facade の公開エントリが `export … from '@nanairo-sheet/内部'` で内部を素通し ----
+    if (isFacadeEntry && ref.isReexport && ALL_SDK_PACKAGES.includes(target)) {
       add('R7', rel, `reexport-from:${spec}`, `Facade は内部/他 package（@nanairo-sheet/${target}）を再エクスポートできない（内部 API 漏洩）`);
     }
   }
 
-  // ---- R7（内部型の公開シグネチャ漏洩・named re-export）: §4.1 で許可された内部 import 自体は妨げない ----
-  if (owner.kind === 'facade') {
+  // ---- R7（内部型の公開シグネチャ漏洩・named re-export）: 公開エントリ（src/index.ts）のみ検査する ----
+  if (isFacadeEntry) {
     analyzeFacadeR7(sf, rel, add);
   }
 }

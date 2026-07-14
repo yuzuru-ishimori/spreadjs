@@ -1,0 +1,68 @@
+// grid Facade の内部レジストリ（test-support 経由の E2E 検査用）。
+//
+// 公開 GridInstance は最小面（documentId/connectionState/subscribe/focus/destroy）に留め、E2E が必要とする
+// 深い introspection（committedHash・pendingCount・editingTarget・行操作 submit・断線注入 等）は本レジストリ経由で
+// `@nanairo-sheet/grid/test-support` からのみ取得できる。mount() が debug オブジェクトを構築して登録する。
+// 本ファイルは公開エントリ（index.ts）ではないため boundary R7 の対象外（DD-016・check.mjs）。
+
+import type { GridInstance } from './index';
+
+/** E2E 検査用 introspection API（旧 apps/playground の __integrationTestApi 契約を Facade 内へ移設）。 */
+export interface GridDebugCellRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+export interface GridDebugCellAddress {
+  rowId: string;
+  columnId: string;
+}
+export interface GridDebugSelectionRange {
+  startRowId: string;
+  startColumnId: string;
+  endRowId: string;
+  endColumnId: string;
+}
+export interface GridDebugPresenceView {
+  displayName: string;
+  activeCell: GridDebugCellAddress | null;
+  editingCell: GridDebugCellAddress | null;
+  selectionRanges: GridDebugSelectionRange[];
+}
+
+/** grid Facade の深い introspection API（test-support 経由・E2E 専用）。 */
+export interface GridDebugApi {
+  ready(): boolean;
+  online(): boolean;
+  connectionState(): 'online' | 'offline' | 'stopped';
+  lastEventType(): string;
+  rowCount(): number;
+  committedRevision(): number;
+  committedHash(): string;
+  pendingCount(): number;
+  conflictCount(): number;
+  divertedCount(): number;
+  knownPresenceCount(): number;
+  bootstrapRevision(): number;
+  appliedServerOpCount(): number;
+  presences(): GridDebugPresenceView[];
+  isConflicting(): boolean;
+  isComposing(): boolean;
+  draft(): string;
+  activeCell(): { row: number; col: number };
+  editingTarget(): GridDebugCellAddress | null;
+  rowIdAt(index: number): string | undefined;
+  colIdAt(index: number): string | undefined;
+  rowIndexOf(rowId: string): number;
+  cellRectAt(row: number, col: number): GridDebugCellRect | null;
+  committedCell(rowId: string, columnId: string): string;
+  displayCell(rowId: string, columnId: string): string;
+  submitInsertRowsAfter(afterRowId: string | null, newRowId: string): void;
+  submitDeleteRow(rowId: string): void;
+  simulateDrop(): void;
+  simulateReconnect(): void;
+}
+
+/** GridInstance → debug API のレジストリ（WeakMap＝instance 破棄で自動回収）。 */
+export const debugRegistry = new WeakMap<GridInstance, GridDebugApi>();
