@@ -181,9 +181,9 @@ DD-009 基盤判断DD（CG-4）
 
 | 既知制約（DD-005） | 影響 | 放置期限 | 解消予定 | 未解消時の製品制約 |
 |---|---|---|---|---|
-| client→server 欠落時の完全再整列（D27/D34） | データ損失リスク | **Alpha exit前（CG-5）** | **reconnect DD** | **Alpha必須ゆえ未解消はAlpha不可** |
+| ~~client→server 欠落時の完全再整列（D27/D34）~~ **解消済**（DD-015・2026-07-14・CG-5解除） | データ損失リスク | ~~Alpha exit前（CG-5）~~ | **DD-015 reconnect DD** | 解消済＝reconcile〔join.pending＋welcome.reconcile・durable frontier 判定〕＋再送＋fault injection〔C→S欠落含む・全submit説明責任〕で完全再整列・サイレント喪失0を実証 |
 | 行挿入後のローカル選択・Enter移動先の再ベース | 操作の一貫性 | Stage 2 開始前 | 行操作DD | 行操作は Alpha 範囲外表示 |
-| snapshotベース初期化 | 大規模文書の初期ロード | Alpha exit前 | 永続化DD/reconnect DD | 初期ロードが log全replay依存 |
+| ~~snapshotベース初期化~~ **解消済**（DD-014-1 bootstrap＋DD-015 reconnect 差分>閾値の snapshot 再取得） | 大規模文書の初期ロード | Alpha exit前 | 永続化DD/reconnect DD | 解消済＝fresh/再読込は bootstrap（document@frontier）1通・再接続の大量差分も snapshot 再取得で log全replay非依存 |
 | 実IME変換中に対象行が削除された場合の挙動 | IME×行削除の競合 | Stage 2 開始前 | 行操作DD | 該当操作を Alpha で非推奨 |
 | 新 integration-editor アダプタ×実IME候補ウィンドウ・順序A/B の実機記録 | IME正しさの実機担保（CG-1） | 単一利用者IME DD 実機ゲート＋最終consumer統合後スモーク | 単一利用者IME DD | **CG-1 未解除はAlpha不可** |
 

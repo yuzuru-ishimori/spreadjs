@@ -5,15 +5,18 @@
 // connectionId はサーバーが払い出す（welcome.sessionId＝Presence 管理単位）。clientId（envelope）は clientSequence/
 // 冪等キーで再接続不変（protocol-subset §2）。時刻・ID は注入（clock / idGenerator）でテスト再現可能。
 
-import { serializeDocument } from '@nanairo-sheet/core';
+import { CATCHUP_SNAPSHOT_THRESHOLD, serializeDocument } from '@nanairo-sheet/core';
 import type {
   ClientMessageExceptJoin,
   ClientOperationEnvelope,
   JoinMessage,
+  ReconcileInfo,
   ServerMessage,
   ServerOperationEnvelope,
   SheetDocument,
 } from '@nanairo-sheet/core';
+
+import type { OperationId } from '@nanairo-sheet/types';
 
 import { createCounterIdGenerator } from './deps';
 import type { Clock, IdGenerator } from './deps';
@@ -28,6 +31,7 @@ import type { Sequencer, SequencerState } from './sequencer';
 export interface DurableBoundary {
   frontierRevision(): number; // fsync 済み最大 revision（この revision 以下のみ配布する）
   frontierDocument(): SheetDocument; // document@frontierRevision（COW ゆえ以降の op で不変・snapshot bootstrap の源）
+  frontierClientSequenceTable(): ReadonlyMap<string, number>; // frontier 時点の clientId→処理済み clientSequence（再接続 reconcile・DD-015 P1-1）
 }
 
 /** Outbound の宛先。transport が 'all'/'others' を活性接続へ fan-out する。 */
@@ -106,38 +110,31 @@ export class Room {
     const colorKey = this.presence.register(connectionId); // colorKey を welcome で返す（Phase 3 指示 3）
 
     const frontier = this.frontierRevision(); // welcome/配布は durable frontier 以下に限定（P1-3・未 durable を隠す）
-    const outbound: Outbound[] = [
-      {
-        target: { kind: 'connection', connectionId },
-        message: {
-          type: 'welcome',
-          sessionId: connectionId,
-          colorKey,
-          currentRevision: frontier,
-          capabilities: { protocolVersion: PROTOCOL_VERSION },
-        },
-      },
-    ];
+    const reconcile = this.computeReconcile(join); // DD-015: 再接続 pending の受理済/未処理判定（join.pending 省略時は undefined）
+    // revision 連続性 fail-fast（DD-015・C11）: client が権威 frontier より先を持つ＝server が巻き戻った（分岐した歴史）。
+    // frontier は権威ゆえ join 処理時点で判定でき、応答（welcome/operations）の順序入れ替えに非依存（in-process reorder で誤検出しない）。
+    const diverged = join.lastAppliedRevision > frontier;
+    const welcome: ServerMessage = {
+      type: 'welcome',
+      sessionId: connectionId,
+      colorKey,
+      currentRevision: frontier,
+      capabilities: { protocolVersion: PROTOCOL_VERSION },
+      ...(reconcile !== undefined ? { reconcile } : {}),
+      ...(diverged ? { diverged: true } : {}),
+    };
+    const outbound: Outbound[] = [{ target: { kind: 'connection', connectionId }, message: welcome }];
 
-    // snapshot bootstrap（P1-6/P1-7・§8 既知制約回収）: fresh join（lastAppliedRevision<=0）で文書が空でなければ、
-    // 全 operationLog を送らず document@frontier（snapshot）1 通で committed を確立させる（全 replay 経路を廃止）。
-    if (join.lastAppliedRevision <= 0 && frontier > 0) {
-      outbound.push({
-        target: { kind: 'connection', connectionId },
-        message: {
-          type: 'bootstrap',
-          document: serializeDocument(this.frontierDocument()),
-          revision: frontier,
-        },
-      });
+    // snapshot bootstrap: ①fresh join（lastAppliedRevision<=0・§8 既知制約回収 P1-6/P1-7）②再接続で差分>閾値T
+    // （DD-015 要確認②: 大量差分の catch-up を避け document@frontier〔snapshot〕1 通で committed を確立）。
+    // client は同一の (frontier, lastAppliedRevision) から同一判定を導き bootstrap を待つ（session.handleWelcome 対称）。
+    if (this.shouldBootstrap(join.lastAppliedRevision, frontier)) {
+      outbound.push({ target: { kind: 'connection', connectionId }, message: this.bootstrapMessage(frontier) });
     } else {
       // tail 経路（reconnect/catch-up・lastAppliedRevision>0）: frontier 以下の未受信 op だけを送る。
       const missed = this.operationsUpToFrontier(join.lastAppliedRevision, frontier);
       if (missed.length > 0) {
-        outbound.push({
-          target: { kind: 'connection', connectionId },
-          message: operationsMessage(missed),
-        });
+        outbound.push({ target: { kind: 'connection', connectionId }, message: operationsMessage(missed) });
       }
     }
 
@@ -147,6 +144,55 @@ export class Room {
     });
 
     return { connectionId, outbound };
+  }
+
+  /**
+   * 再接続 reconcile（DD-015・exactly-once・fault matrix C2〜C4）を計算する。join.pending（未ACK pending 参照）を受け、
+   * ①この clientId の処理済み clientSequence 高水位 ②pending のうち確定ログ（ackCache＝accepted/noop）に在る operationId 集合
+   * を返す。join.pending 省略（legacy/synthetic）時は undefined（従来の再送経路）。scan は pending 件数分（bounded ≤ maxOfflinePending）
+   * ゆえ差分サイズ非依存（snapshot 再取得の大量差分でも O(pending)）。
+   */
+  private computeReconcile(join: JoinMessage): ReconcileInfo | undefined {
+    if (join.pending === undefined) {
+      return undefined;
+    }
+    const frontier = this.frontierRevision();
+    // ackedClientSequence は **live** clientSequenceTable の高水位を使う（Codex P1-e）: reject/no-op も clientSequence を消費するが
+    // durable frontier の表には反映されない（accepted のみ frontier を前進させる）。frontier 表を使うと reject 済み op（seq 消費済み・
+    // frontier 表では未消費に見える）を「未処理」と誤判定して再送→client-sequence-violation ループになる。live 表なら reject 済みを
+    // 正しく「seq≦acked かつ非accepted＝reject」と分類できる。
+    const ackedClientSequence = this.sequencer.clientSequenceTable.get(join.clientId) ?? 0;
+    // pending を「durable-accepted（除去）／in-flight（未 durable・保持）／それ以外（client 側で reject or 未処理）」に分類する。
+    // acceptedOperationIds: ackCache 在 かつ revision≦frontier＝durable ＝client は除去（committed@frontier に反映済み・Codex P1-1）。
+    // inFlightOperationIds: ackCache 在 だが revision>frontier＝pre-fsync accepted（未 durable）＝client は保持（再送）＝除去も reject も
+    //   しない（除去は append 失敗時の喪失・reject は durable 化後の false conflict を招く・Codex 第3回 P1-b）。
+    const acceptedOperationIds: OperationId[] = [];
+    const inFlightOperationIds: OperationId[] = [];
+    for (const ref of join.pending) {
+      const revision = this.sequencer.ackedRevisionOf(ref.operationId);
+      if (revision === undefined) {
+        continue; // 未処理 or reject（client 側で seq と突合せ）
+      }
+      if (revision <= frontier) {
+        acceptedOperationIds.push(ref.operationId);
+      } else {
+        inFlightOperationIds.push(ref.operationId);
+      }
+    }
+    return {
+      ackedClientSequence,
+      acceptedOperationIds,
+      ...(inFlightOperationIds.length > 0 ? { inFlightOperationIds } : {}),
+    };
+  }
+
+  /** bootstrap（snapshot 再取得）を返すべきか（fresh〔afterRevision≦0〕or 差分>閾値T）。join/requestCatchup 共通・client と対称。 */
+  private shouldBootstrap(afterRevision: number, frontier: number): boolean {
+    return frontier > 0 && (afterRevision <= 0 || frontier - afterRevision > CATCHUP_SNAPSHOT_THRESHOLD);
+  }
+
+  private bootstrapMessage(frontier: number): ServerMessage {
+    return { type: 'bootstrap', document: serializeDocument(this.frontierDocument()), revision: frontier };
   }
 
   /** 確立済み接続からのメッセージ（join 以外）を処理する。 */
@@ -248,6 +294,10 @@ export class Room {
 
   private handleRequestCatchup(connectionId: string, afterRevision: number): Outbound[] {
     // durable frontier 以下のみ配布する（未 fsync revision を catch-up から観測させない・P1-3）。
+    // requestCatchup は **tail（operations）のみ**を返す（Codex 第3回 P1-a）: bootstrap を返すと reconcile 情報（join.pending 依存）を
+    // 伴わないため、受理済み未ACK own op を phantom conflict / 永久 acknowledged 化する。snapshot 再取得は reconcile を伴う join 経路
+    // に限定する。差分>閾値の catch-up は大きな tail になるが正しい（incremental 適用・phantom なし）。bootstrap フレーム自体は
+    // welcome と同梱で順序保証・信頼性のある transport（TCP）が確実に配送し、hub でも非 drop ゆえ「open 中に喪失」は到達不能。
     const frontier = this.frontierRevision();
     const missed = this.operationsUpToFrontier(afterRevision, frontier);
     // off-by-one: fromRevision = afterRevision+1（afterRevision 自身は再送しない・S-I5）。空でも range を返し確定応答。

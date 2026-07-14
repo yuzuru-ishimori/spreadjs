@@ -79,6 +79,15 @@ export class Sequencer {
   }
 
   /**
+   * operationId が確定ログに在る（accepted/noop で ackCache 登録済み）なら ACK revision、未処理/reject 済みなら undefined。
+   * 再接続 reconcile（DD-015・exactly-once）で「client の未ACK pending が実は受理済みか」を判定するのに使う。
+   * reject 済み op は ackCache に登録されない（＝undefined）ため、accepted と reject を区別できる。
+   */
+  ackedRevisionOf(operationId: OperationId): number | undefined {
+    return this.state.ackCache.get(operationId);
+  }
+
+  /**
    * submitOperation を §5 の処理順で処理する。
    * 1 operationId 冪等 → 2 clientSequence → 3 baseRevision → 4 検証 → 5 適用（no-op は revision 非消費）。
    */

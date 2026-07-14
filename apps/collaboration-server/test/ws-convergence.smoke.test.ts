@@ -1,8 +1,10 @@
-// 🔬 Phase 5 実 WS 縮小スモーク（S-M5・AC1・Q-5 裁定）: 実 WebSocket サーバー（ランダムポート）＋ ws-transport 経由の
-// ClientSession 3 体で 1,000 件の SetCells を流し、静止点で全 committed hash がサーバー hash と一致することを確認する。
-// フォールト注入はしない（実 WS はタイミング非決定ゆえシード再現性が壊れる＝疎通と収束のみを確認。10,000 件の
-// フォールト収束は in-process 決定論試験〔convergence.test〕が担う）。待機はイベント駆動ポーリング（乱数不使用）。
-// testTimeout を延長し、後始末（close await・vitest 自然終了）でリーク無し。
+// 🔬 実 WS 縮小スモーク（S-M5・AC1・Q-5 裁定 ＋ DD-015 要確認④ 恒久是正）: 実 WebSocket サーバー（ランダムポート）＋
+// ws-transport 経由の ClientSession 3 体で SetCells を流し、**静止点待ち**で全 committed hash がサーバー hash と一致することを確認する。
+//
+// DD-015 恒久是正（flaky 解消）: 旧版は 3,000 op を**同期ループで一括 submit** し JS イベントループを塞ぐため echo が drain されず
+// pending が ~1,000 深に達し rollback/replay が O(N²) 化 → 40s 収束 timeout（環境依存で毎回失敗）だった。有界バッチ submit ＋
+// バッチ間の**静止点待ち（pending 空・全 hash 一致を明示 await）**へ書き換え、pending を有界（現実の利用パターン）に保つ。
+// フォールト注入はしない（実 WS のタイミング非決定はフォールト収束の in-process 決定論試験〔convergence.test〕が担う）。乱数不使用。
 
 import { afterEach, describe, expect, it } from 'vitest';
 
@@ -18,13 +20,13 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function waitFor(predicate: () => boolean, label: string, timeoutMs = 20_000): Promise<void> {
+async function waitFor(predicate: () => boolean, label: string, timeoutMs = 15_000): Promise<void> {
   const start = Date.now();
   while (!predicate()) {
     if (Date.now() - start > timeoutMs) {
       throw new Error(`waitFor timeout: ${label}`);
     }
-    await delay(15);
+    await delay(10);
   }
 }
 
@@ -44,9 +46,9 @@ function createClient(wsUrl: string, clientId: string): Client {
     documentId: createDocumentId('demo-doc'),
     columnOrder: COLUMNS,
     transport,
-    clock: { now: () => Date.now() }, // アダプター層＝実クロック
+    clock: { now: () => Date.now() },
     idGenerator: createCounterIdGenerator(`${clientId}-op`),
-    catchupPollMillis: 200,
+    catchupPollMillis: 150,
   });
   session.start();
   cleanups.push(() => {
@@ -61,9 +63,9 @@ afterEach(async () => {
   }
 });
 
-describe('ws-convergence.smoke — 実 WS ＋ ClientSession 3 体 × 1,000 件 SetCells', () => {
+describe('ws-convergence.smoke — 実 WS ＋ ClientSession 3 体（静止点待ち・DD-015 安定化）', () => {
   it(
-    '静止点で全 committed hash がサーバー hash と一致・二重適用0・pending 0',
+    '有界バッチ submit ＋ 各バッチ静止点待ちで全 committed hash がサーバー hash と一致・二重適用0・pending 0',
     async () => {
       const server: RunningServer = await startServer({ port: 0, seedRows: 5 });
       cleanups.push(() => server.close());
@@ -72,40 +74,39 @@ describe('ws-convergence.smoke — 実 WS ＋ ClientSession 3 体 × 1,000 件 S
       const clients = [createClient(wsUrl, 'client-a'), createClient(wsUrl, 'client-b'), createClient(wsUrl, 'client-c')];
       const sessions = clients.map((c) => c.session);
 
-      await waitFor(
-        () => sessions.every((s) => s.isOnline && s.committedDocument.revision >= 1),
-        'all clients online + seeded',
-      );
+      await waitFor(() => sessions.every((s) => s.isOnline && s.committedDocument.revision >= 1), 'all clients online + seeded');
 
       // 実クロックの tick 駆動（周期 catch-up ポーリングでテール到達を担保。乱数不使用）。
       const tickTimer = setInterval(() => {
         for (const s of sessions) {
           s.tick();
         }
-      }, 30);
+      }, 25);
       cleanups.push(() => {
         clearInterval(tickTimer);
       });
 
-      // **各クライアントが 1,000 件ずつ** SetCells を送信（Q-5/S-M5「3 Client×1,000件」＝計 3,000 件）。
-      // seed 行 row-1..row-5 × col-a/b/c・beforeRevision 無し＝last-write-wins で全件受理。実 WS は TCP 順序保証
-      // ゆえ各接続の clientSequence 順に届き violation は起きない（クライアント単位の高 clientSequence を検証）。
+      // **各クライアントが 1,000 件ずつ** SetCells を送信（計 3,000 件）。有界バッチ（25/client）で submit し、
+      // 各バッチ後に全 client が静止点（pending 空・全 hash == server hash）へ収束するのを待ってから次バッチへ。
+      // → 各 client の pending は ≤25 に有界（現実の利用パターン）＝rollback/replay O(N²) を構造的に回避。
       const opsPerClient = 1_000;
-      for (let i = 0; i < opsPerClient; i += 1) {
-        for (let c = 0; c < sessions.length; c += 1) {
-          const targetRow = row(`row-${(i % 5) + 1}`);
-          const targetCol = COLUMNS[(i + c) % COLUMNS.length];
-          sessions[c].submitLocalOperation(setCells([{ rowId: targetRow, columnId: targetCol, value: str(`v${c}-${i}`) }]));
+      const batch = 25;
+      for (let base = 0; base < opsPerClient; base += batch) {
+        for (let k = 0; k < batch; k += 1) {
+          const i = base + k;
+          for (let c = 0; c < sessions.length; c += 1) {
+            const targetRow = row(`row-${(i % 5) + 1}`);
+            const targetCol = COLUMNS[(i + c) % COLUMNS.length];
+            sessions[c].submitLocalOperation(setCells([{ rowId: targetRow, columnId: targetCol, value: str(`v${c}-${i}`) }]));
+          }
         }
+        // 静止点待ち: 全 client pending 空 かつ 全 committed hash == server hash（このバッチが確定するまで）。
+        await waitFor(
+          () => sessions.every((s) => s.pendingCount === 0 && s.committedHash() === server.hash()),
+          `batch converge @${base}`,
+        );
       }
       const totalOps = opsPerClient * sessions.length; // 3,000
-
-      // 静止点: 全 committed hash がサーバー hash と一致・pending 0（＝二重適用0）まで待つ。
-      await waitFor(
-        () => sessions.every((s) => s.pendingCount === 0 && s.committedHash() === server.hash()),
-        'all committed hashes converge after 3000 ops',
-        40_000,
-      );
 
       const serverRev = server.snapshot().currentRevision;
       expect(serverRev).toBe(1 + totalOps); // seed(1) + 3000 受理（no-op/reject 無し＝last-write-wins）

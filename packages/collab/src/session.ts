@@ -6,6 +6,7 @@
 // crypto/DOM/Node 非参照）。判定は core の validateOperation を共有（サーバーとの乖離を構造的に防ぐ・指示 1）。
 
 import {
+  CATCHUP_SNAPSHOT_THRESHOLD,
   applyOperation,
   cloneCellScalar,
   cloneDocument,
@@ -33,6 +34,7 @@ import type {
   PresencePayload,
   PresenceRemovedMessage,
   PresenceSnapshotMessage,
+  ReconcileInfo,
   RejectCode,
   RejectDetails,
   SelectionById,
@@ -64,6 +66,31 @@ export interface ClientTransport {
   send(message: ClientMessage): void; // 送信（フォールトで drop/duplicate/delay され得る）
 }
 
+// ---- イベント通知契約（DD-015 要確認③・§6「pending・rejected 状態のイベント通知」）----
+
+/**
+ * 接続状態（consumer 表示用・DD-015）。
+ * - `online`: トランスポート接続確立中（同期中を含む）。
+ * - `offline`: 切断中（トランスポートは指数バックオフで再接続を試行中＝リトライ継続）。
+ * - `stopped`: offline 上限（maxOfflineMillis/maxOfflinePending）超過で **編集停止**（接続リトライは継続するが submit は不可）。
+ */
+export type ConnectionState = 'online' | 'offline' | 'stopped';
+
+/**
+ * ClientSession が発火するイベント（接続状態・pending 件数・reject 発生）。consumer（playground/DD-016 Facade）が購読し
+ * 接続状態・未送信件数・競合を可視化する（§6 保証項目「可視化またはイベント通知」の"イベント通知"側を正とする）。
+ * pending/connection は値が変化したときのみ発火（冗長発火なし）。rejected は Conflict Queue 追加ごとに発火。
+ */
+export type SessionEvent =
+  | { type: 'connection'; state: ConnectionState; pendingCount: number }
+  | { type: 'pending'; pendingCount: number }
+  | { type: 'rejected'; entry: ConflictQueueEntry; pendingCount: number }
+  // revision 連続性 fail-fast（DD-015・fault matrix C11）: server frontier が client committed 未満＝分岐した歴史。
+  // 黙って merge せず通知＋編集停止する（データ整合の破壊を防ぐ）。
+  | { type: 'divergence'; serverRevision: number; committedRevision: number };
+
+export type SessionObserver = (event: SessionEvent) => void;
+
 // ---- Conflict Queue（コピー可能・§10.1・I-2）----
 
 export type ConflictReason = 'rejected' | 'revalidation-failed' | 'dependency';
@@ -85,6 +112,7 @@ interface PendingEntry {
   envelope: ClientOperationEnvelope; // operationId/clientSequence/baseRevision 不変（再送キー）
   inverseSeed: InverseSeed; // 楽観適用時の逆操作データ（rebuildView で毎回再計算）
   acknowledged: boolean; // operationAck 受信済み（再送対象から外す）
+  ackRevision: number | undefined; // ACK が示す確定 revision（bootstrap filter が「効果が committed@R に入ったか」を判定・Codex P1-d）
   localNoop: boolean; // 楽観適用が空 changeSet（operations エコー無し → ACK で除去）
 }
 
@@ -109,6 +137,7 @@ export interface SessionConfig {
   catchupPollMillis?: number; // 既定 resendTimeoutMillis（周期 catch-up ポーリング間隔・tail 欠落回復）
   maxOfflineMillis?: number; // 既定 30000（§8.5・Q-4）
   maxOfflinePending?: number; // 既定 100（§8.5・Q-4）
+  observer?: SessionObserver; // DD-015: 接続状態・pending 件数・reject 発生の通知（未指定なら通知しない）
 }
 
 const DEFAULT_PROTOCOL_VERSION = 1;
@@ -129,6 +158,7 @@ export class ClientSession implements TransportListener {
   private readonly transport: ClientTransport;
   private readonly clock: Clock;
   private readonly idGenerator: IdGenerator;
+  private readonly observer: SessionObserver | undefined;
 
   private committed: SheetDocument;
   private view: SheetDocument;
@@ -142,6 +172,7 @@ export class ClientSession implements TransportListener {
   private _connectionId: string | undefined = undefined;
   private _colorKey: string | undefined = undefined;
   private online = false;
+  private hasConnected = false; // 一度でも接続確立したか（初回接続前は offline 時間上限を適用しない・offlineSince 未確定）
   private offlineSince = 0;
   private stopped = false;
   private lastClientSequence = 0;
@@ -151,9 +182,14 @@ export class ClientSession implements TransportListener {
   private lastPollAt = 0;
   private awaitingSync = false;
   private awaitingBootstrap = false; // fresh join（committed.revision=0）で snapshot bootstrap を待つ（P1-6/P1-7）
+  private reconcileInfo: ReconcileInfo | undefined = undefined; // 再接続 reconcile（committed が権威化してから適用＝Codex P1-2）
+  private welcomeSeen = false; // この接続で welcome を受信済み（reorder で bootstrap 先着時に buffer するか判定・Codex P1-c）
+  private bufferedBootstrap: BootstrapMessage | undefined = undefined; // welcome より先着した bootstrap（reconcile 情報を待って処理・P1-c）
   private knownServerRevision: number | undefined = undefined;
   private _appliedServerOpCount = 0; // committed へ適用したサーバー op 総数（AC1/AC8 の「全 replay 非依存」計測用）
   private _bootstrapRevision: number | undefined = undefined; // snapshot bootstrap で確立した committed revision
+  private lastConnectionState: ConnectionState | undefined = undefined; // 直近発火した接続状態（冗長発火抑止）
+  private lastEmittedPendingCount = 0; // 直近発火した pending 件数（冗長発火抑止）
 
   constructor(config: SessionConfig) {
     this.clientId = config.clientId;
@@ -168,6 +204,7 @@ export class ClientSession implements TransportListener {
     this.transport = config.transport;
     this.clock = config.clock;
     this.idGenerator = config.idGenerator;
+    this.observer = config.observer;
     this.committed = createDocument(config.columnOrder);
     this.view = this.committed;
     this.expectedRevision = this.committed.revision + 1;
@@ -199,12 +236,13 @@ export class ClientSession implements TransportListener {
       baseRevision: this.committed.revision,
       operation,
     };
-    this.pending.push({ envelope, inverseSeed: emptyInverseSeed(), acknowledged: false, localNoop: false });
+    this.pending.push({ envelope, inverseSeed: emptyInverseSeed(), acknowledged: false, ackRevision: undefined, localNoop: false });
     this.rebuildView(); // 楽観適用（無効なら Conflict Queue へ）
     if (this.online && !this.stopped) {
       this.sendSubmit(envelope);
     }
     this.checkOfflineLimits();
+    this.emitPendingIfChanged(); // 未送信 backlog の増加を通知
     return operationId;
   }
 
@@ -241,9 +279,9 @@ export class ClientSession implements TransportListener {
     // 受信済み revision より先を1件も受け取れず（buffer 空・後続 op も欠落）gap 検知が起きない静止系でも、
     // requestCatchup{afterRevision: expectedRevision-1} を周期送信すればサーバーが差分を返し収束する
     // （requestCatchup は既存プロトコル・afterRevision=expectedRevision-1 で全 catch-up ケースを包含）。
-    // bootstrap 待ち（fresh join）中は周期 catch-up を発行しない（P1-4/Codex）: requestCatchup{afterRevision:0} は
-    // サーバーに全 operationLog（revisions 1..frontier）を返させ、bootstrap で回避したはずの全 replay 経路を復活させる。
-    // bootstrap は join 応答に同梱されて到着するため、それまで catch-up を抑止する。
+    // bootstrap 待ち（fresh join / 差分>閾値）中は catch-up を発行しない（P1-6/P1-7）: bootstrap は welcome と同梱で順序保証・
+    // 信頼性のある transport（TCP）が確実に配送し、hub でも非 drop ゆえ「接続 open 中に bootstrap フレームだけ喪失」は到達不能。
+    // requestCatchup を出すと全 operationLog の tail replay に退行し、かつ reconcile 無しの二重取得になる（Codex 第3回 P1-a）。
     if (this.awaitingBootstrap) {
       return;
     }
@@ -257,14 +295,25 @@ export class ClientSession implements TransportListener {
 
   handleConnected(): void {
     this.online = true;
+    this.hasConnected = true; // 以降の切断は「再接続ウィンドウ」＝offline 時間上限の対象になる
     this.awaitingSync = true;
     this.knownServerRevision = undefined;
+    this.reconcileInfo = undefined; // 前接続の未適用 reconcile は破棄（この join の welcome.reconcile を正とする）
+    this.welcomeSeen = false; // この接続の welcome をまだ受けていない（bootstrap 先着なら buffer・P1-c）
+    this.bufferedBootstrap = undefined;
     this.sendJoin();
+    this.emitConnection(); // online へ遷移（stopped 中は stopped が優先＝emitConnection が判定）
   }
 
   handleDisconnected(): void {
+    // offlineSince は online→offline **遷移時のみ**設定する（Codex 第3回 P1-d）: 長時間 outage で再接続試行が失敗するたび
+    // handleDisconnected が再発火する（既に offline）。毎回 reset すると offline 時間上限が永久に到達せず、低頻度編集が
+    // 設定 window を超えて続けられる。初回切断時刻を保持し、経過を正しく測る。
+    if (this.online) {
+      this.offlineSince = this.clock.now();
+    }
     this.online = false;
-    this.offlineSince = this.clock.now();
+    this.emitConnection(); // offline へ遷移（トランスポートは指数バックオフで再接続を試行中）
   }
 
   handleServerMessage(message: ServerMessage): void {
@@ -297,6 +346,8 @@ export class ClientSession implements TransportListener {
       case 'heartbeatAck':
         break; // PoC: 記録なし
     }
+    // 1 ServerMessage 処理で pending 件数が変わり得る（ACK 除去・reconcile・rebuild）→ 変化時のみ通知（rejected は pushConflict で個別発火）。
+    this.emitPendingIfChanged();
   }
 
   // ---- 受信処理 ----
@@ -304,10 +355,44 @@ export class ClientSession implements TransportListener {
   private handleWelcome(message: WelcomeMessage): void {
     this._connectionId = message.sessionId;
     this._colorKey = message.colorKey; // 自色（welcome 拡張・指示 3）
-    this.knownServerRevision = message.currentRevision;
-    // fresh join（committed 空）で server が前進していれば、続く bootstrap メッセージが committed を確立する。
-    // ここで catch-up を発行すると server が全 operationLog を返す＝全 replay 経路に戻るため、bootstrap を待つ（P1-6/P1-7）。
-    if (this.awaitingBootstrap && message.currentRevision > this.committed.revision) {
+    // revision 連続性 fail-fast（DD-015・C11）: server が「client が権威 frontier より先」を検出＝巻き戻った（分岐した歴史）。
+    // 判定は server 側（frontier 権威・応答順序入れ替えに非依存）。client committed<currentRevision の単純比較は in-process
+    // reorder で stale welcome を誤検出するため使わない（server の diverged シグナルを正とする）。永続化下では通常起きない防御。
+    if (message.diverged === true) {
+      this.handleDivergence(message.currentRevision);
+      return;
+    }
+    // この welcome が最新か（reorder で古い welcome が後着し得る・Codex P2）: currentRevision が既知 high-water 以上なら最新。
+    // 古い welcome の reconcile を新しい join の分類として使わないため、reconcileInfo は最新 welcome の分だけ採用する。
+    const isNewest = this.knownServerRevision === undefined || message.currentRevision >= this.knownServerRevision;
+    this.welcomeSeen = true;
+    // stale welcome（reorder で currentRevision が既適用 committed 未満）は knownServerRevision を**下げない**
+    // （後続の ACK/operations が high-water を保つ・needsCatchup/maybeFinalizeSync の誤判定を避ける）。
+    if (this.knownServerRevision === undefined || message.currentRevision > this.knownServerRevision) {
+      this.knownServerRevision = message.currentRevision;
+    }
+    // 再接続 reconcile（DD-015・exactly-once・C2〜C4）を**保留**する（Codex P1-2）: ここで即適用すると受理済み依存元 op A を
+    // 除去→committed が A を含む前に rebuild するため、A に依存する未処理 pending B が unknown-row で誤 Conflict 化する。
+    // committed が権威化した後（bootstrap 受信直後 or tail drain 完了時）に applyReconcile で適用する。最新 welcome のみ採用（P2）。
+    if (message.reconcile !== undefined && isNewest) {
+      this.reconcileInfo = message.reconcile;
+    }
+    // reorder で bootstrap が welcome より先着していたら、reconcile 情報が揃った今処理する（Codex P1-c）。
+    if (this.bufferedBootstrap !== undefined) {
+      const buffered = this.bufferedBootstrap;
+      this.bufferedBootstrap = undefined;
+      this.awaitingBootstrap = false;
+      this.handleBootstrap(buffered);
+      return;
+    }
+    // bootstrap 判定（要確認②・server と対称）: fresh（committed=0）or 差分>閾値 は server が bootstrap を送るので待つ。
+    // ここで catch-up を発行すると server が全 operationLog を返す＝全 replay 経路に戻るため、bootstrap 到着まで抑止（P1-6/P1-7）。
+    const missedCount = message.currentRevision - this.committed.revision;
+    const willReceiveBootstrap =
+      message.currentRevision > 0 &&
+      (this.committed.revision <= 0 || missedCount > CATCHUP_SNAPSHOT_THRESHOLD);
+    if (willReceiveBootstrap) {
+      this.awaitingBootstrap = true;
       return;
     }
     this.awaitingBootstrap = false;
@@ -320,10 +405,70 @@ export class ClientSession implements TransportListener {
   }
 
   /**
+   * 保留中の再接続 reconcile（DD-015・exactly-once）を適用する。**呼び出し前に committed が権威化している**こと
+   * （bootstrap 受信直後 or tail drain 完了時）が前提（Codex P1-2）。server の突合せ結果で未ACK pending を 3 分類する（C2〜C4）:
+   * - **受理済（opId ∈ accepted）**: 効果は committed に含まれる（tail は echo でも除去済み）→ pending から除去。
+   * - **reject 済（opId ∉ accepted かつ clientSequence≦acked）**: server は seq 消費済みで reject 通知が切断で喪失 →
+   *   Conflict Queue（サイレント喪失0・再送しない＝client-sequence-violation ループ回避）。
+   * - **未処理（clientSequence>acked）**: server 初見（transit 消失 or offline 追加）→ 保持して再送。
+   * acknowledged 済み pending は別経路（echo）で処理するため保持。partition のみ行い **view の再構築は呼び出し側**が行う
+   * （committed が権威化した状態で rebuild すれば受理済み依存元を含むため未処理依存 op が誤 Conflict 化しない）。
+   */
+  private applyReconcile(): void {
+    const info = this.reconcileInfo;
+    if (info === undefined) {
+      return;
+    }
+    this.reconcileInfo = undefined; // 一度だけ適用
+    const acceptedSet = new Set(info.acceptedOperationIds.map((id) => String(id)));
+    const inFlightSet = new Set((info.inFlightOperationIds ?? []).map((id) => String(id)));
+    const survived: PendingEntry[] = [];
+    const rejectedEntries: PendingEntry[] = [];
+    for (const entry of this.pending) {
+      if (entry.acknowledged) {
+        survived.push(entry);
+        continue;
+      }
+      const opIdStr = String(entry.envelope.operationId);
+      if (acceptedSet.has(opIdStr)) {
+        continue; // durable-accepted（or noop）→ 除去（committed に反映済み・二重適用0）
+      }
+      if (inFlightSet.has(opIdStr)) {
+        survived.push(entry); // pre-fsync accepted（未 durable）→ **保持**（除去も reject もしない・再送で dedup・Codex 第3回 P1-b）
+        continue;
+      }
+      if (entry.envelope.clientSequence <= info.ackedClientSequence) {
+        rejectedEntries.push(entry); // reject 済（通知喪失・ackCache 不在 かつ seq 消費済み）
+        continue;
+      }
+      survived.push(entry); // 未処理 → 保持して再送
+    }
+    this.pending = survived;
+    // reject 済み（通知喪失）op を Conflict Queue へ（元 operation 保持＝サイレント喪失0）。pending は survived へ更新済み
+    // ゆえ pushConflict のイベントは正しい件数を報告する（Codex P2-1）。
+    for (const entry of rejectedEntries) {
+      this.pushConflict(this.makeConflictEntry(entry, 'rejected'));
+    }
+  }
+
+  /** revision 連続性 fail-fast（DD-015・C11）: server 巻き戻り検出時に編集停止＋divergence 通知（黙って merge しない）。 */
+  private handleDivergence(serverRevision: number): void {
+    this.stopped = true; // 以降 submit は throw（分岐した歴史へ書き込ませない）
+    this.emit({ type: 'divergence', serverRevision, committedRevision: this.committed.revision });
+    this.emitConnection(); // stopped へ遷移を通知
+  }
+
+  /**
    * snapshot bootstrap（§8 既知制約回収・P1-6/P1-7）: 全 operationLog を replay せず document@revision から committed を確立する。
    * fresh join（committed.revision=0）でのみ前進する。deserialize は core の共有関数（server serialize と wire 一致）。
    */
   private handleBootstrap(message: BootstrapMessage): void {
+    // reorder で welcome より先着した bootstrap は buffer する（Codex P1-c）: reconcile 情報（welcome.reconcile）が無いまま
+    // rebuild すると受理済み未ACK op を phantom duplicate-row conflict にして喪失する。welcome 受信時に処理する。
+    if (!this.welcomeSeen) {
+      this.bufferedBootstrap = message;
+      return;
+    }
     if (message.revision <= this.committed.revision) {
       this.awaitingBootstrap = false;
       return; // 既に同等以上（reconnect は tail 経路・二重 bootstrap を無視）
@@ -341,13 +486,18 @@ export class ClientSession implements TransportListener {
       this.knownServerRevision = message.revision;
     }
     this.awaitingBootstrap = false;
-    // reconnect-with-pending 保護（Codex P1）: サーバーが accepted した（ACK 受領済み）pending は committed@R に
-    // 既に含まれる。bootstrap は operation envelope を運ばず own-echo で除去できないため、ここで acknowledged な
-    // pending を除去してから再適用する（さもないと duplicate-row 等で「成功済み op」を誤って Conflict Queue へ送る）。
-    // 未 ACK の pending は保持し再送・再検証に委ねる（消失0・input 保全）。残る un-acked-drop の稀 race は DD-015 で回収。
-    this.pending = this.pending.filter((entry) => !entry.acknowledged);
-    this.rebuildView(); // 残 pending を新 committed へ再適用（fresh では空）
-    this.drainBuffer(); // R+1.. がバッファにあれば連続適用しつつ maybeFinalizeSync
+    // reconnect-with-pending 保護（Codex P1）: サーバーが accepted 済みの pending は committed@R に既に含まれる。bootstrap は
+    // operation envelope を運ばず own-echo で除去できないため、**効果が committed@R に入った acknowledged pending だけ**を除去する。
+    // ackRevision > R（R+1.. の in-flight・echo が buffer 待ち）は保持する（Codex P1-d）: 除去すると依存する未処理 op が
+    // committed@R で unknown-row になり誤 Conflict 化する。保持すれば rebuild で optimistic に効果が残り、echo/drain で正規化される。
+    this.pending = this.pending.filter(
+      (entry) => !(entry.acknowledged && (entry.ackRevision ?? 0) <= this.committed.revision),
+    );
+    // committed=R が権威化した本時点で reconcile を適用する（Codex P1-2）: 未ACK でも受理済み（acceptedOperationIds）op は
+    // committed@R に含まれるため除去し、reject 済は Conflict・未処理と in-flight acked（ackRevision>R）は保持する。
+    this.applyReconcile();
+    this.rebuildView(); // 残 pending を committed@R へ optimistic 再適用（in-flight acked A も pending に残るため依存 B は valid）
+    this.drainBuffer(); // buffer に R+1.. があれば連続適用（A@R+1 echo → own除去＋committed 前進）しつつ maybeFinalizeSync
   }
 
   private handleOperations(message: OperationsMessage): void {
@@ -408,6 +558,7 @@ export class ClientSession implements TransportListener {
       return; // echo 先着で除去済み or duplicate ACK → no-op（S-H4）
     }
     entry.acknowledged = true; // 再送抑止
+    entry.ackRevision = message.revision; // 確定 revision（bootstrap filter で「効果が committed@R に入ったか」判定・Codex P1-d）
     if (entry.localNoop) {
       // noop は operations エコーが来ない → ACK で pending 除去（S-E3・Q-1）
       this.removeFromPending(message.operationId);
@@ -417,7 +568,15 @@ export class ClientSession implements TransportListener {
 
   private handleRejected(message: OperationRejectedMessage): void {
     if (message.code === 'client-sequence-violation') {
-      // 欠落回復: 先頭から再送（pending 除去しない・指示 2）
+      // server が期待する seq が pending 先頭より**小さい**とき（Codex 第3回 P1-c）: server 側で seq 消費が失われている
+      // （restart で noop/reject の seq 消費が未 durable＝復旧後 seq が client より後退）。同一 seq を再送しても永久に violation
+      // ループになるため、未ACK pending を expectedSequence から**連番へ再整列**する（operationId は dedup キーゆえ seq 振り直しは
+      // 冪等・D27 完全再整列）。それ以外（通常の欠落＝server が client より進む）は従来どおり先頭から再送で回復。
+      const expected = message.details?.expectedSequence;
+      const firstUnacked = this.pending.find((e) => !e.acknowledged);
+      if (expected !== undefined && firstUnacked !== undefined && expected < firstUnacked.envelope.clientSequence) {
+        this.rebaselinePendingSequence(expected);
+      }
       this.resendAllPending();
       return;
     }
@@ -427,7 +586,7 @@ export class ClientSession implements TransportListener {
     }
     const entry = this.pending[index];
     this.pending.splice(index, 1);
-    this.conflicts.push(
+    this.pushConflict(
       this.makeConflictEntry(entry, 'rejected', message.details?.violations, message.code, message.details),
     );
     this.rebuildView(); // reject 済み op は再送しない（pending から除去済み・指示 2）
@@ -465,6 +624,7 @@ export class ClientSession implements TransportListener {
     let doc = this.committed;
     let provisional = this.committed.revision;
     const survived: PendingEntry[] = [];
+    const conflicts: ConflictQueueEntry[] = []; // 収集して this.pending 更新後に push（イベントの件数を正にする・Codex P2-1）
     const invalidatedRows = new Set<RowId>();
     for (const entry of this.pending) {
       const op = entry.envelope.operation;
@@ -488,13 +648,14 @@ export class ClientSession implements TransportListener {
           envelope: entry.envelope,
           inverseSeed: result.inverseSeed,
           acknowledged: entry.acknowledged,
+          ackRevision: entry.ackRevision,
           localNoop,
         });
       } else {
         for (const r of touched) {
           invalidatedRows.add(r);
         }
-        this.conflicts.push(
+        conflicts.push(
           this.makeConflictEntry(
             entry,
             dependsOnInvalidated ? 'dependency' : 'revalidation-failed',
@@ -505,20 +666,30 @@ export class ClientSession implements TransportListener {
     }
     this.pending = survived;
     this.view = doc;
+    // this.pending を survived へ更新した後に conflict を push する（rejected イベントが再構築後の正しい pending 件数を報告する）。
+    for (const conflict of conflicts) {
+      this.pushConflict(conflict);
+    }
   }
 
   // ---- 再送・再接続 ----
 
   private sendJoin(): void {
     // fresh join（committed 空）はサーバーから snapshot bootstrap を受ける（全 operationLog replay を避ける・P1-6/P1-7）。
-    // reconnect（committed.revision>0）は従来どおり tail（差分）経路。
+    // reconnect（committed.revision>0）は tail（差分）or 差分>閾値で snapshot 再取得（handleWelcome で対称判定）。
     this.awaitingBootstrap = this.committed.revision === 0;
+    // DD-015 reconcile: 未ACK pending の {operationId, clientSequence} を添えて server と突合せる（bounded ≤ maxOfflinePending）。
+    // server は受理済/未処理を判定し welcome.reconcile で返す（exactly-once・un-acked-drop race 封鎖・C2〜C4）。
+    const pending = this.pending
+      .filter((e) => !e.acknowledged)
+      .map((e) => ({ operationId: e.envelope.operationId, clientSequence: e.envelope.clientSequence }));
     this.transport.send({
       type: 'join',
       protocolVersion: this.protocolVersion,
       documentId: this.documentId,
       lastAppliedRevision: this.committed.revision, // 先にサーバー差分を要求（§8.5）
       clientId: this.clientId, // 再接続で不変（S-J4）
+      pending,
     });
     this.lastSendAt = this.clock.now();
   }
@@ -526,6 +697,22 @@ export class ClientSession implements TransportListener {
   private sendSubmit(envelope: ClientOperationEnvelope): void {
     this.transport.send({ type: 'submitOperation', envelope });
     this.lastSendAt = this.clock.now();
+  }
+
+  /**
+   * 未ACK pending の clientSequence を expected から連番へ振り直す（Codex 第3回 P1-c・D27 完全再整列）。
+   * server が期待する seq（restart で noop/reject の seq 消費が失われ後退した高水位）へ client を再整列する。operationId は不変
+   * （dedup キー）ゆえ既に受理済みの op は再送しても server が duplicate ACK で冪等に救済し、未受理は連番 seq で受理される。
+   */
+  private rebaselinePendingSequence(expected: number): void {
+    let seq = expected;
+    for (const entry of this.pending) {
+      if (!entry.acknowledged) {
+        entry.envelope = { ...entry.envelope, clientSequence: seq }; // operationId/operation/baseRevision は不変
+        seq += 1;
+      }
+    }
+    this.lastClientSequence = seq - 1; // 以降の新規 op が再整列後の連番を継続する
   }
 
   /** un-ACK の pending を先頭から同一 operationId・同一 clientSequence で再送（指示 2）。 */
@@ -552,6 +739,13 @@ export class ClientSession implements TransportListener {
     if (this.expectedRevision <= this.knownServerRevision) {
       return; // committed が target 未達
     }
+    // committed が target（frontier）に到達＝全受理済み効果が committed に入った本時点で reconcile を適用する（Codex P1-2）。
+    // tail 経路では own accepted は echo 済み（applyReconcile の accepted 除去は no-op）。reject 済（通知喪失）を Conflict へ、
+    // 未処理を保持する。committed が権威化した状態で rebuild するため受理済み依存元を含み未処理依存 op が誤 Conflict 化しない。
+    if (this.reconcileInfo !== undefined) {
+      this.applyReconcile();
+      this.rebuildView();
+    }
     this.awaitingSync = false;
     this.resendAllPending(); // 生存 pending を再送（stale は既に Conflict Queue へ・S-J2/J3）
     if (this.lastPresence !== undefined) {
@@ -563,11 +757,17 @@ export class ClientSession implements TransportListener {
     if (this.stopped || this.online) {
       return;
     }
-    if (this.clock.now() - this.offlineSince > this.maxOfflineMillis) {
+    // 初回接続前（connecting）は offline 時間上限を適用しない（offlineSince 未確定＝real clock で誤発火するのを防ぐ・
+    // 例: playground/テストが接続確立前に tick する場合）。切断からの経過は hasConnected 後にのみ数える。
+    if (this.hasConnected && this.clock.now() - this.offlineSince > this.maxOfflineMillis) {
       this.stopped = true; // 切断時間上限（S-J5・Q-4）
     }
     if (this.pending.length > this.maxOfflinePending) {
       this.stopped = true; // 切断中 pending 件数上限（S-J5・Q-4）
+    }
+    if (this.stopped) {
+      // 編集停止を通知する（要確認①: 接続リトライは継続するが submit は不可＝§6「一時切断」を超えた境界）。
+      this.emitConnection();
     }
   }
 
@@ -617,6 +817,35 @@ export class ClientSession implements TransportListener {
       violations: violations !== undefined && violations.length > 0 ? violations : undefined,
       details,
     };
+  }
+
+  // ---- イベント通知（DD-015 要確認③）----
+
+  /** Conflict Queue へ追加し reject イベントを発火する（全ての conflict 追加はここを通す＝通知漏れ防止）。 */
+  private pushConflict(entry: ConflictQueueEntry): void {
+    this.conflicts.push(entry);
+    this.emit({ type: 'rejected', entry, pendingCount: this.pending.length });
+  }
+
+  /** 接続状態を（変化時のみ）通知する。stopped が online/offline に優先する。 */
+  private emitConnection(): void {
+    const state: ConnectionState = this.stopped ? 'stopped' : this.online ? 'online' : 'offline';
+    if (state !== this.lastConnectionState) {
+      this.lastConnectionState = state;
+      this.emit({ type: 'connection', state, pendingCount: this.pending.length });
+    }
+  }
+
+  /** pending 件数を（変化時のみ）通知する（未送信/未ACK backlog の可視化）。 */
+  private emitPendingIfChanged(): void {
+    if (this.pending.length !== this.lastEmittedPendingCount) {
+      this.lastEmittedPendingCount = this.pending.length;
+      this.emit({ type: 'pending', pendingCount: this.pending.length });
+    }
+  }
+
+  private emit(event: SessionEvent): void {
+    this.observer?.(event);
   }
 
   // ---- 検査用（テスト・Phase 4 デモ）----

@@ -1,0 +1,113 @@
+{
+  "generatedBy": "tests/invariants/collab/reconnect-fault.invariant.test.ts",
+  "runs": [
+    {
+      "seed": 20260715,
+      "kind": "S→C欠落",
+      "clientCount": 3,
+      "opCount": 1200,
+      "injectClientToServer": false,
+      "disconnectRate": 0.08,
+      "faultRates": {
+        "duplicate": 0.15,
+        "drop": 0.15,
+        "delay": 0.2
+      },
+      "converged": true,
+      "quiescenceTicks": 1,
+      "disconnectEvents": 89,
+      "faultCounters": {
+        "duplicate": 893,
+        "drop": 1102,
+        "delay": 1335,
+        "disconnect": 89
+      },
+      "acceptedOps": 1200,
+      "rejects": 0,
+      "finalRevision": 1200,
+      "serverHash": "988268add68b6bc9",
+      "snapshotReplayHash": "988268add68b6bc9"
+    },
+    {
+      "seed": 771113,
+      "kind": "S→C欠落",
+      "clientCount": 4,
+      "opCount": 1200,
+      "injectClientToServer": false,
+      "disconnectRate": 0.1,
+      "faultRates": {
+        "duplicate": 0.12,
+        "drop": 0.15,
+        "delay": 0.2
+      },
+      "converged": true,
+      "quiescenceTicks": 1,
+      "disconnectEvents": 116,
+      "faultCounters": {
+        "duplicate": 817,
+        "drop": 1346,
+        "delay": 1571,
+        "disconnect": 116
+      },
+      "acceptedOps": 1197,
+      "rejects": 1,
+      "finalRevision": 1197,
+      "serverHash": "f3ab54cafc4a0fd2",
+      "snapshotReplayHash": "f3ab54cafc4a0fd2"
+    },
+    {
+      "seed": 909090,
+      "kind": "C→S欠落含む(D27)",
+      "clientCount": 3,
+      "opCount": 1000,
+      "injectClientToServer": true,
+      "disconnectRate": 0.08,
+      "faultRates": {
+        "duplicate": 0.1,
+        "drop": 0.12,
+        "delay": 0.15
+      },
+      "converged": true,
+      "quiescenceTicks": 1,
+      "disconnectEvents": 85,
+      "faultCounters": {
+        "duplicate": 722,
+        "drop": 1011,
+        "delay": 890,
+        "disconnect": 85
+      },
+      "acceptedOps": 992,
+      "rejects": 5,
+      "finalRevision": 992,
+      "serverHash": "078ab2340eaec4cb",
+      "snapshotReplayHash": "078ab2340eaec4cb"
+    },
+    {
+      "seed": 1234567,
+      "kind": "C→S欠落含む(D27)",
+      "clientCount": 4,
+      "opCount": 1000,
+      "injectClientToServer": true,
+      "disconnectRate": 0.1,
+      "faultRates": {
+        "duplicate": 0.1,
+        "drop": 0.12,
+        "delay": 0.15
+      },
+      "converged": true,
+      "quiescenceTicks": 1,
+      "disconnectEvents": 110,
+      "faultCounters": {
+        "duplicate": 829,
+        "drop": 1127,
+        "delay": 993,
+        "disconnect": 110
+      },
+      "acceptedOps": 990,
+      "rejects": 3,
+      "finalRevision": 990,
+      "serverHash": "19ba6d80d0323f12",
+      "snapshotReplayHash": "19ba6d80d0323f12"
+    }
+  ]
+}

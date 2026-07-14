@@ -302,3 +302,33 @@ export async function highlightSelector(page: Page, selector: string): Promise<v
 export function evidencePath(fileName: string): string {
   return fileURLToPath(new URL(`../../../doc/DD/DD-005/${fileName}`, import.meta.url));
 }
+
+/** DD-015/ 直下へ証跡（スクショ等）を保存する絶対パス。 */
+export function evidencePathDD015(fileName: string): string {
+  return fileURLToPath(new URL(`../../../doc/DD/DD-015/${fileName}`, import.meta.url));
+}
+
+/** DD-015: 接続状態（online/offline/stopped）。実ブラウザー断線 headed smoke の可視確認に使う。 */
+export async function connectionState(page: Page): Promise<'online' | 'offline' | 'stopped'> {
+  return callApi<'online' | 'offline' | 'stopped'>(page, 'connectionState', []);
+}
+
+/** DD-015: 直近のイベント通知種別（イベント契約が実ブラウザーで発火したことの確認）。 */
+export async function lastEventType(page: Page): Promise<string> {
+  return callApi<string>(page, 'lastEventType', []);
+}
+
+/** DD-015: 未送信（pending）件数。offline 中の backlog 可視化の確認に使う。 */
+export async function pendingCount(page: Page): Promise<number> {
+  return callApi<number>(page, 'pendingCount', []);
+}
+
+/** DD-015 Manual Gate: 実ブラウザーの WebSocket を切断し offline のまま留める（自動再接続抑止・pending 保持）。 */
+export async function simulateDrop(page: Page): Promise<void> {
+  await callApi<void>(page, 'simulateDrop', []);
+}
+
+/** DD-015 Manual Gate: simulateDrop 後に実再接続を駆動する（同一 clientId で再 join → reconcile → catch-up）。 */
+export async function simulateReconnect(page: Page): Promise<void> {
+  await callApi<void>(page, 'simulateReconnect', []);
+}

@@ -31,7 +31,9 @@ function isClientMessage(value: unknown): value is ClientMessage {
         typeof value.protocolVersion === 'number' &&
         typeof value.documentId === 'string' &&
         typeof value.lastAppliedRevision === 'number' &&
-        typeof value.clientId === 'string'
+        typeof value.clientId === 'string' &&
+        // DD-015 reconcile 用の pending 参照（任意・省略可）。存在時は配列（内部詳細は両端自製ゆえ信頼）。
+        (value.pending === undefined || Array.isArray(value.pending))
       );
     case 'submitOperation':
       return isClientEnvelope(value.envelope);
@@ -74,6 +76,15 @@ function isDocumentOperation(value: unknown): value is DocumentOperation {
   }
 }
 
+function isReconcileInfo(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    typeof value.ackedClientSequence === 'number' &&
+    Array.isArray(value.acceptedOperationIds) &&
+    (value.inFlightOperationIds === undefined || Array.isArray(value.inFlightOperationIds)) // DD-015 P1-b（任意）
+  );
+}
+
 function isPresencePayload(value: unknown): value is PresencePayload {
   return (
     isRecord(value) &&
@@ -99,7 +110,10 @@ function isServerMessage(value: unknown): value is ServerMessage {
       return (
         typeof value.sessionId === 'string' &&
         typeof value.colorKey === 'string' &&
-        typeof value.currentRevision === 'number'
+        typeof value.currentRevision === 'number' &&
+        // DD-015 再接続 reconcile（任意・省略可）。存在時は {ackedClientSequence:number, acceptedOperationIds:array}。
+        (value.reconcile === undefined || isReconcileInfo(value.reconcile)) &&
+        (value.diverged === undefined || typeof value.diverged === 'boolean') // DD-015 revision 連続性 fail-fast（任意）
       );
     case 'operations':
       return (

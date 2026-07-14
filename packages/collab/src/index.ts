@@ -9,6 +9,7 @@
 // サブパス（`@nanairo-sheet/collab/inprocess-transport`・`/test-support`）でのみ公開する。
 export * from './session';
 export * from './deps';
+export * from './reconnect-backoff';
 // JSON 境界 codec（decodeClientMessage/decodeServerMessage）は DD-011 で core へ移設した
 // （server-hono/collab 双方が使うため core 所有＝R3 逆流回避。境界文書 §3 codec 注記）。
 // consumer は `@nanairo-sheet/core` から import する。

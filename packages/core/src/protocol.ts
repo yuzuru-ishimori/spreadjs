@@ -64,12 +64,24 @@ export interface UserPresence extends PresencePayload {
 
 // ---- Client → Server（§1）----
 
+/** 再接続 reconcile 用の未ACK pending 参照（DD-015・exactly-once）。operationId と clientSequence だけを運ぶ（bounded ≤ maxOfflinePending）。 */
+export interface PendingOperationRef {
+  operationId: OperationId;
+  clientSequence: number;
+}
+
 export interface JoinMessage {
   type: 'join';
   protocolVersion: number;
   documentId: DocumentId;
   lastAppliedRevision: number;
   clientId: string;
+  /**
+   * DD-015: 再接続時の未ACK pending 参照（reconcile 用）。server は operationId が確定ログ（ackCache）に在るかで
+   * accepted/未処理を判定し、welcome.reconcile で返す（受理済は除去・未処理は再送＝un-acked-drop race 封鎖・exactly-once）。
+   * 省略（legacy/synthetic）時は reconcile を行わない（従来の再送経路）。
+   */
+  pending?: PendingOperationRef[];
 }
 
 export interface SubmitOperationMessage {
@@ -109,12 +121,39 @@ export interface Capabilities {
   protocolVersion: number;
 }
 
+/**
+ * 再接続 reconcile 情報（DD-015・exactly-once）。join.pending に対する server 側の突合せ結果。
+ * - `ackedClientSequence`: この clientId の処理済み clientSequence 高水位（clientSequenceTable）。
+ * - `acceptedOperationIds`: join.pending のうち確定ログ（ackCache＝accepted/noop）に在る operationId 集合。
+ * クライアントは opId が acceptedOperationIds に在れば **受理済として除去**、無くて clientSequence≦ackedClientSequence なら
+ * **reject 済（通知喪失）として Conflict Queue**、それ以外（clientSequence 超）は **未処理として再送** する（fault matrix C2〜C4）。
+ */
+export interface ReconcileInfo {
+  ackedClientSequence: number;
+  acceptedOperationIds: OperationId[]; // durable（ackCache 在・revision≦frontier）＝client は除去（committed@frontier に反映済み）
+  /**
+   * DD-015 Codex 第3回 P1-b: **pre-fsync accepted**（ackCache 在だが revision>frontier＝未 durable な in-flight）の operationId。
+   * client は除去も reject もせず **pending 保持（再送）**する。除去すると append 失敗時に喪失（P1-1）、reject 分類すると durable 化後に
+   * false conflict（P1-b）になるため「unknown＝保持」が正。durable 化後は echo で committed へ入り removeFromPending で正規化される。
+   * 省略/空は無し（永続化無効なら常に空＝全 accepted が durable）。
+   */
+  inFlightOperationIds?: OperationId[];
+}
+
 export interface WelcomeMessage {
   type: 'welcome';
   sessionId: string; // = connectionId（Presence 管理単位）
   colorKey: string; // 自接続の割当色（Phase 3 指示 3・自分の colorKey を join 時に知る＝welcome 拡張）
   currentRevision: number;
   capabilities: Capabilities;
+  /** DD-015: 再接続 reconcile（join.pending を送った client にのみ返す。fresh/legacy は省略）。 */
+  reconcile?: ReconcileInfo;
+  /**
+   * DD-015 revision 連続性 fail-fast（C11）: server が **join.lastAppliedRevision > 自身の durable frontier** を検出したとき true。
+   * ＝client が server の権威履歴より先を持つ＝server が巻き戻った（非永続 server の再起動でデータ喪失した等）。
+   * client は黙って merge せず編集停止する。判定は server 側（frontier は権威・応答の順序入れ替えに非依存）。省略/false は正常。
+   */
+  diverged?: boolean;
 }
 
 export interface OperationsMessage {

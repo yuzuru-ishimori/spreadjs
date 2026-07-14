@@ -14,7 +14,7 @@ import { createColumnId, createDocumentId, createRowId } from '@nanairo-sheet/ty
 import type { ColumnId, RowId } from '@nanairo-sheet/types';
 import { documentHash, getCell } from '@nanairo-sheet/core';
 import type { DeleteRowsOperation, InsertRowsOperation } from '@nanairo-sheet/core';
-import type { Clock, IdGenerator, PresenceUpdate } from '@nanairo-sheet/collab';
+import type { Clock, IdGenerator, PresenceUpdate, SessionEvent } from '@nanairo-sheet/collab';
 
 import type { GridLayout } from '../grid/geometry';
 import { createBaseLayer, type FrameViewport } from '../pocb/base-layer';
@@ -83,6 +83,7 @@ const wsUrl = `${serverOrigin.replace(/^http/, 'ws')}/ws`;
 // ---- 可変状態 --------------------------------------------------------------
 let sync: SessionSync | undefined;
 let editor: IntegrationEditor | undefined;
+let browserTransport: BrowserWebSocketTransport | undefined; // DD-015: headed smoke の断線注入（dropForTest）用に保持
 const frozenRowCount = 1;
 const frozenColCount = 1;
 let dpr = window.devicePixelRatio > 0 ? window.devicePixelRatio : 1;
@@ -90,6 +91,7 @@ let viewportWidth = 0;
 let viewportHeight = 0;
 let selection: CellRange | null = null;
 let firstDataDrawn = false;
+let lastSessionEvent: SessionEvent | undefined; // DD-015: 直近のイベント通知（接続断/pending/reject の即時表示駆動）
 
 // ---- 描画層（store は接続後の DocumentView に束縛するため遅延生成）----------
 let baseLayer: ReturnType<typeof createBaseLayer> | undefined;
@@ -314,12 +316,18 @@ function updateReadout(): void {
   const session = sync.session;
   const conflicting = editor?.session.isConflicting() === true;
   const diverted = editor?.session.divertedDrafts().length ?? 0;
+  // 接続バッジ（DD-015・要確認③）: stopped>offline>online の優先で表示。offline はトランスポートが指数バックオフで再接続試行中。
+  const connBadge = session.isStopped
+    ? '🛑 stopped（編集停止・再接続試行中）'
+    : session.isOnline
+      ? '🟢 online'
+      : '🟠 offline（再接続中…）';
   statusEl.textContent = [
-    `接続: ${session.isOnline ? 'online' : 'offline'}${session.isStopped ? '（stopped）' : ''}`,
+    `接続: ${connBadge}`,
     `名前: ${displayName}`,
     `revision: ${session.committedDocument.revision}`,
     `行数: ${view.rowAxis.count().toLocaleString()}`,
-    `pending: ${session.pendingCount}`,
+    `未送信(pending): ${session.pendingCount}`,
     `conflicts: ${session.conflictQueue.length}`,
     `退避draft: ${diverted}`,
     `他者: ${session.knownPresences().length}`,
@@ -367,6 +375,7 @@ async function boot(): Promise<void> {
       metrics.recordFrame(info);
     },
   });
+  browserTransport = transport; // DD-015: headed smoke の断線注入用に保持（本番挙動は変えない）
 
   sync = createSessionSync({
     innerTransport: transport,
@@ -378,6 +387,11 @@ async function boot(): Promise<void> {
       columnOrder,
       clock,
       idGenerator,
+      // DD-015（要確認③）: イベント通知契約を状態表示の駆動源にする（1秒ポーリングを待たず接続断/pending/reject を即時反映）。
+      observer: (event) => {
+        lastSessionEvent = event;
+        updateReadout();
+      },
     },
     rowHeight: ROW_HEIGHT,
     colWidth: COL_WIDTH,
@@ -494,6 +508,10 @@ interface IntegrationPresenceView {
 export interface IntegrationTestApi {
   ready(): boolean;
   online(): boolean;
+  /** DD-015: 接続状態（online/offline/stopped）。headed smoke の切断→再接続可視確認に使う。 */
+  connectionState(): 'online' | 'offline' | 'stopped';
+  /** DD-015: 直近のイベント通知種別（イベント契約が実際に発火したことの確認）。 */
+  lastEventType(): string;
   rowCount(): number;
   committedRevision(): number;
   committedHash(): string;
@@ -524,6 +542,10 @@ export interface IntegrationTestApi {
   submitInsertRowsAfter(afterRowId: string | null, newRowId: string): void;
   /** AC4: 行削除（本番 submitLocalOperation 経由）。 */
   submitDeleteRow(rowId: string): void;
+  /** DD-015 Manual Gate: 実ブラウザーの WebSocket を切断し offline のまま留める（自動再接続抑止・pending 保持）。 */
+  simulateDrop(): void;
+  /** DD-015 Manual Gate: simulateDrop 後に実再接続を駆動する（同一 clientId で再 join → reconcile → catch-up）。 */
+  simulateReconnect(): void;
 }
 
 declare global {
@@ -539,6 +561,9 @@ function toAddress(cell: { rowId: RowId; columnId: ColumnId } | undefined): Inte
 window.__integrationTestApi = {
   ready: () => sync !== undefined && firstDataDrawn && sync.view.rowAxis.count() > 1,
   online: () => sync?.session.isOnline ?? false,
+  connectionState: () =>
+    sync === undefined ? 'offline' : sync.session.isStopped ? 'stopped' : sync.session.isOnline ? 'online' : 'offline',
+  lastEventType: () => lastSessionEvent?.type ?? '',
   rowCount: () => sync?.view.rowAxis.count() ?? 0,
   committedRevision: () => sync?.session.committedDocument.revision ?? 0,
   committedHash: () => (sync === undefined ? '' : documentHash(sync.session.committedDocument)),
@@ -604,5 +629,11 @@ window.__integrationTestApi = {
     }
     const op: DeleteRowsOperation = { type: 'deleteRows', rowIds: [createRowId(rowId)] };
     sync.session.submitLocalOperation(op);
+  },
+  simulateDrop: () => {
+    browserTransport?.dropForTest();
+  },
+  simulateReconnect: () => {
+    browserTransport?.resumeReconnectForTest();
   },
 };

@@ -9,6 +9,7 @@ export * from './apply';
 export * from './hash';
 export * from './validate';
 export * from './protocol';
+export * from './protocol-limits';
 // JSON 境界 codec（decode）。server-hono（サーバー側フレーム復号）と collab（クライアント側）の
 // 双方が使うため core が所有する（DD-009 Codex P1・境界文書 §3 codec 注記。DD-011 で collab から移設）。
 export * from './message-codec';

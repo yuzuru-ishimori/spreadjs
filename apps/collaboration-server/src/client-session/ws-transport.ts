@@ -6,6 +6,12 @@
 // その依存ゼロ（Node/DOM 非参照）は同パッケージの tsconfig（types:[]）で回帰検証する（DD-005 Phase 1）。
 // heartbeat はトランスポートの責務にしない（session/デモ/smoke が sendHeartbeat を実タイマーで駆動）＝送受信・接続イベント・
 // 再接続のみを担う。時刻依存は再接続 setTimeout のみ（アダプター層ゆえ実タイマー可・後始末は close で解除）。
+//
+// DD-015（要確認①確定）: 予期しない切断後の自動再接続は **指数バックオフ（初回 baseMillis・倍々・上限 maxMillis）＋ジッタ**
+// で行い、タブ生存中は無期限にリトライする（回数上限で諦めない＝§6「タブ生存中の一時切断」を保証）。バックオフ計算は純粋関数
+// `nextReconnectDelay` に切り出して単体検証する。scheduler（setTimeout 相当）と random（ジッタ源）は注入可能（既定は実タイマー・
+// Math.random）で、決定論的な単体テストを可能にする。編集停止（offline 上限超）は ClientSession 側の責務でトランスポートは
+// 接続を試み続ける（リトライ継続＝§6・要確認①）。
 
 import { WebSocket } from 'ws';
 import type { RawData } from 'ws';
@@ -13,33 +19,51 @@ import type { RawData } from 'ws';
 import type { ClientMessage } from '@nanairo-sheet/core';
 import { decodeServerMessage } from '@nanairo-sheet/core';
 import type { ClientTransport, TransportListener } from '@nanairo-sheet/collab';
+import { nextReconnectDelay } from '@nanairo-sheet/collab';
 
 import { rawDataToString } from '../ws-frame';
+
+/** scheduler（setTimeout 相当・注入で決定論テスト可）。返り値はキャンセルに使うハンドル。 */
+export type ReconnectScheduler = (callback: () => void, delayMillis: number) => ReturnType<typeof setTimeout>;
 
 export interface WsClientTransportOptions {
   /** 予期しない切断後の自動再接続を有効にする（既定 true）。close() で無効化。 */
   autoReconnect?: boolean;
-  /** 再接続までの待機（ミリ秒・既定 1000）。 */
+  /** 指数バックオフの初回待機（ミリ秒・既定 1000）。attempt=0 の基準値。 */
   reconnectDelayMillis?: number;
+  /** 指数バックオフの上限待機（ミリ秒・既定 30000＝要確認①「上限 30s」）。 */
+  maxReconnectDelayMillis?: number;
+  /** ジッタ源（0..1・既定 Math.random）。注入で決定論テスト可。 */
+  random?: () => number;
+  /** タイマー scheduler（既定 setTimeout）。注入で決定論テスト可。 */
+  scheduler?: ReconnectScheduler;
 }
 
-const DEFAULT_RECONNECT_DELAY = 1_000;
+const DEFAULT_RECONNECT_DELAY = 1_000; // 初回 1s（要確認①）
+const DEFAULT_MAX_RECONNECT_DELAY = 30_000; // 上限 30s（要確認①）
 
 export class WsClientTransport implements ClientTransport {
   private readonly url: string;
   private readonly autoReconnect: boolean;
-  private readonly reconnectDelayMillis: number;
+  private readonly baseReconnectDelayMillis: number;
+  private readonly maxReconnectDelayMillis: number;
+  private readonly random: () => number;
+  private readonly scheduler: ReconnectScheduler;
 
   private listener: TransportListener | undefined;
   private ws: WebSocket | undefined;
   private closedByUser = false;
   private reconnectTimer: ReturnType<typeof setTimeout> | undefined;
+  private reconnectAttempt = 0; // 連続再接続失敗回数（open 成功で 0 リセット＝指数バックオフの指数）
   private readonly outbox: ClientMessage[] = []; // CONNECTING 中に送られたメッセージのバッファ（open で flush）
 
   constructor(url: string, options: WsClientTransportOptions = {}) {
     this.url = url;
     this.autoReconnect = options.autoReconnect ?? true;
-    this.reconnectDelayMillis = options.reconnectDelayMillis ?? DEFAULT_RECONNECT_DELAY;
+    this.baseReconnectDelayMillis = options.reconnectDelayMillis ?? DEFAULT_RECONNECT_DELAY;
+    this.maxReconnectDelayMillis = options.maxReconnectDelayMillis ?? DEFAULT_MAX_RECONNECT_DELAY;
+    this.random = options.random ?? Math.random;
+    this.scheduler = options.scheduler ?? ((cb, ms) => setTimeout(cb, ms));
   }
 
   setListener(listener: TransportListener): void {
@@ -49,6 +73,7 @@ export class WsClientTransport implements ClientTransport {
   /** 接続を確立する（open で handleConnected → session が join 送信）。 */
   connect(): void {
     this.closedByUser = false;
+    this.reconnectAttempt = 0;
     this.openSocket();
   }
 
@@ -73,18 +98,56 @@ export class WsClientTransport implements ClientTransport {
       this.reconnectTimer = undefined;
     }
     this.outbox.length = 0;
-    const ws = this.ws;
+    this.detachAndClose(this.ws);
     this.ws = undefined;
-    if (ws !== undefined) {
-      ws.removeAllListeners();
-      ws.close();
+  }
+
+  /** 現在の連続再接続試行回数（0=接続確立済み or 初回。運用監視・テスト用）。 */
+  get reconnectAttemptCount(): number {
+    return this.reconnectAttempt;
+  }
+
+  /**
+   * 【テスト専用フォールト注入】現在のソケットを異常切断し（タブ生存・session の pending 保持）、自動再接続を**抑止**する。
+   * resumeAfterDrop() で再接続を明示駆動するまで offline のまま＝offline 編集ウィンドウを決定論的に作れる（実ネットワーク断のシミュレート）。
+   * 本番挙動は変えない（本番は openSocket→handleSocketDown の指数バックオフ経路のみを使う）。
+   */
+  dropForTest(): void {
+    if (this.reconnectTimer !== undefined) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = undefined;
     }
+    this.detachAndClose(this.ws); // close イベントで handleSocketDown が発火しない＝自動再接続を抑止
+    this.ws = undefined;
+    this.requireListener().handleDisconnected(); // session を offline へ（pending は保持）
+  }
+
+  /**
+   * ソケットのリスナーを外して閉じる（後始末専用）。CONNECTING 中に close するとws が非同期に 'error'
+   * （"WebSocket was closed before the connection was established"）を出し、listener 無しでは Node の EventEmitter が
+   * uncaught 例外に昇格させる。removeAllListeners 後に no-op error handler を再付与して吸収する（P08 の意図的無視）。
+   */
+  private detachAndClose(ws: WebSocket | undefined): void {
+    if (ws === undefined) {
+      return;
+    }
+    ws.removeAllListeners();
+    ws.on('error', () => {}); // 後始末中の CONNECTING abort エラーを吸収（uncaught 化を防ぐ）
+    ws.close();
+  }
+
+  /** 【テスト専用】dropForTest 後に再接続を明示駆動する（同一 clientId で再 join＝reconnect 経路）。 */
+  resumeAfterDrop(): void {
+    this.closedByUser = false;
+    this.reconnectAttempt = 0;
+    this.openSocket();
   }
 
   private openSocket(): void {
     const ws = new WebSocket(this.url);
     this.ws = ws;
     ws.on('open', () => {
+      this.reconnectAttempt = 0; // 接続確立 → バックオフをリセット（次の切断は初回待機から）
       this.flushOutbox();
       this.requireListener().handleConnected();
     });
@@ -123,12 +186,19 @@ export class WsClientTransport implements ClientTransport {
     this.ws = undefined;
     this.requireListener().handleDisconnected();
     if (!this.closedByUser && this.autoReconnect) {
-      this.reconnectTimer = setTimeout(() => {
+      // 指数バックオフ＋ジッタで再接続を予約する（タブ生存中は無期限リトライ＝回数上限なし・要確認①）。
+      const delay = nextReconnectDelay(
+        this.reconnectAttempt,
+        { baseMillis: this.baseReconnectDelayMillis, maxMillis: this.maxReconnectDelayMillis },
+        this.random,
+      );
+      this.reconnectAttempt += 1;
+      this.reconnectTimer = this.scheduler(() => {
         this.reconnectTimer = undefined;
         if (!this.closedByUser) {
           this.openSocket(); // 再 open → handleConnected → 同一 clientId で再 join（§8.5・phase3-design §7）
         }
-      }, this.reconnectDelayMillis);
+      }, delay);
     }
   }
 

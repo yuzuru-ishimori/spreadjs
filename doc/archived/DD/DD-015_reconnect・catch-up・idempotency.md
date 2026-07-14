@@ -2,7 +2,7 @@
 
 | 作成日 | 更新日 | ステータス | 補足 |
 |--------|--------|-----------|------|
-| 2026-07-13 | 2026-07-13 | 検討中 | roadmap §4/§5 Alpha必須ライン・**CG-5担当**（D27/D34回収）。DD-014の次・DD-016の前 |
+| 2026-07-13 | 2026-07-14 | 完了 | **CG-5 解除**（D27/D34回収）。exactly-once reconcile・catch-up閾値・指数バックオフ・イベント契約・fault injection常設化。732 pass/Codex xhigh 3回反映/実ブラウザーheaded smoke green。ユーザー承認済 |
 
 ```text
 Risk Class: A
@@ -117,6 +117,22 @@ WS 切断→再接続→catch-up→pending 再送→収束を**製品保証**に
 - 既知flaky `ws-convergence.smoke`（実WS・タイミング依存）の恒久是正を要確認④として本DDスコープ候補に含めた。
 - **要確認①〜④を提示**（①自動リトライポリシー〔既定案: 指数バックオフ＋タブ生存中無期限・編集停止閾値は既存維持〕②catch-up 閾値〔既定案: T=1,000・超過は snapshot 再取得＋pending 再検証〕③pending/rejected 可視化〔既定案: イベント通知を正・playground 最小表示・公開API整形は DD-016〕④ws-convergence.smoke 安定化〔既定案: 本DDに含め静止点待ち方式へ〕）。Human Spec Gate: required＝確定後に Phase 1 開始。
 
+### 2026-07-14（実装 Phase 0-4）
+- **要確認①〜④ 既定案で承認**（ユーザー・2026-07-13）を反映し実装。
+- **Phase 0 fault matrix**: `doc/DD/DD-015/fault-matrix.md`（切断タイミング×op状態×server再起動×duplicate の全セルに保証/非保証を §6 整合で割当・保証セル C1〜C11＝全テスト固定・非保証 N1〜N5＝§6 明示のみ）。テスト名を Phase 3 で全セルへ確定記入。
+- **Phase 1**: ①指数バックオフ（`ws-transport.ts`＋`browser-transport.ts` 共有 `nextReconnectDelay`〔collab〕・初回1s倍々上限30s＋equal jitter・タブ生存中無期限・open 成功でリセット）＋単体検証。③イベント通知契約（`session.ts` `SessionEvent`＝connection/pending/rejected/divergence・変化時のみ発火）＋offline 上限超で編集停止＋通知＋リトライ継続。playground はイベント駆動で接続状態・未送信件数を表示。
+- **Phase 2**: ②catch-up 閾値 T=1,000（`CATCHUP_SNAPSHOT_THRESHOLD` を core 共有・server/client 対称判定・超過で bootstrap 再取得）。**exactly-once reconnect 照合**（`join.pending`＋`welcome.reconcile{ackedClientSequence, acceptedOperationIds}`・受理済除去/reject済Conflict/未処理再送の3分類＝DD-014-1 un-acked-drop race 封鎖）。revision 連続性 fail-fast（server 側 `welcome.diverged`＝`lastAppliedRevision>frontier`・応答順序入替に非依存）。実 WS テスト `reconnect-fault.test.ts`（WS-R1 offline編集／WS-R4 差分>1000 snapshot再取得〔appliedDelta<100〕／WS-R5 永続化再起動跨ぎ）。
+- **Phase 3**: `tests/invariants/collab/reconnect-fault.invariant.test.ts`（切断＋duplicate/drop/delay＋**client→server 欠落〔D27〕**を seed 付き注入・4 config＋決定論・全 submit の説明責任 assert〔サイレント喪失0〕）＝§2.3「idempotency／reconnect・catch-up」行を実充足。`ws-convergence.smoke` を有界バッチ＋静止点待ちへ書換え（O(N²) 40s timeout→1.1s・**10 連続 green**）。証跡 `reconnect-fault-evidence.json`。
+- **Codex xhigh レビュー 3 回（全 findings 反映・記録 `codex-review-{request,result}{,-2,-3}.md`）**:
+  - **第1回**（3×P1＋2×P2）: P1-1 durable frontier／P1-2 reconcile を committed 権威化後に適用〔依存 op 誤 Conflict 防止〕／P1-3 bootstrap 再要求／P2-1 rebuild 後 pending 件数／P2-2 invariant 全 op 説明責任＋併修（offlineSince 初回接続前 stopped）。
+  - **第2回**（6 findings）: P1-e reject/no-op seq を live 表判定へ〔reject ループ解消〕／P1-a/b bootstrap 再要求／P1-c bootstrap-before-welcome buffer／P1-d ackRevision で in-flight acked 保持／P2 reconcile を最新 welcome に束縛。
+  - **第3回**（5 findings・reachable 含む）: P1-a〔第2回で入れた requestCatchup→bootstrap を**撤回**＝reconcile 無し phantom を作らない・tail のみ〕／**P1-b `inFlightOperationIds`**〔pre-fsync accept を保持＝除去も reject もしない・false conflict 解消〕／**P1-c seq 再整列**〔restart で noop/reject seq 消失時に expectedSequence へ pending を連番振り直し＝seq 違反ループ解消・D27 完全再整列〕／P1-d offlineSince を online→offline 遷移時のみ／P2 invariant を S-cont に限定（S-restart は WS-R5/restart-restore で固定）。
+  - **残 boundary 1件**（echo-ahead-without-ack×永続化×順序入替＝false conflict・**サイレント喪失ではない・収束維持**・TCP 到達不能）を fault-matrix §3.1／§6 Alpha 0.x で文書明示。
+  - **第4回（停止・findings 見送り）**: レビューは途中で停止（ユーザー判断）したが停止直前に 2 findings を出力（`codex-review-result-4.md`）。両方とも **見送り**（P1 rendering staleness＝bootstrap-before-welcome reorder のみ＝TCP 到達不能・browser で発生せず／P2 pre-welcome catch-up の冗長転送＝efficiency-only・喪失/phantom なし）。
+  - **打ち切り判断（ユーザー・2026-07-14）**: 第2〜4回の findings は概ね狭い永続化/順序入替エッジ（false conflict＝喪失なし・緩い安全弁・冗長転送・自作回帰の後始末・到達不能）で、CG-5 核心（exactly-once・D27 完全再整列・サイレント喪失0）は第1回反映時点で確立済み。**到達性×実害で線を引き、低価値は境界化で先送り**する方針（実害の高い P1-c〔stall〕は反映済み）。反映済みの修正は全て green ゆえ残置。
+- **Phase 4 Manual Gate**: 実 Chromium headed smoke `apps/playground/e2e/reconnect-headed.spec.ts`（実ブラウザーの WebSocket close→自動再接続→reconcile→catch-up→双方 hash 一致・切断中編集の反映・喪失0）green。証跡 `headed-01〜04.png`（接続状態表示含む）。context.setOffline/CDP は localhost WS を切らないため transport の実 socket.close で断線注入。
+- **設計中核（CG-5）**: reconcile は server が記憶する ackCache（accepted/noop）＋clientSequenceTable（処理済み高水位）のみで「受理済／reject済／未処理」を必要十分に分類し、bootstrap 経路（own-echo 不能）でも二重適用0・喪失0・seq違反ループ回避を成立させる。durable frontier で判定するため未 fsync の in-flight 受理を accepted と誤判定しない。
+
 ---
 
 ## DA批判レビュー記録
@@ -125,6 +141,15 @@ WS 切断→再接続→catch-up→pending 再送→収束を**製品保証**に
 
 **DA観点:** （このPhaseで最も壊れやすいポイントは何か？）
 
-| # | 発見した問題/改善点 | 重要度 | 再現手順（高/中は必須） | DA観点 | 対応 |
-|---|-------------------|--------|----------------------|--------|------|
-| 1 | (具体的に記述) | 高/中/低 | (高/中: 操作→結果) | (どのDA観点で発見したか) | ✅修正済/⏭️別DD/❌不要 |
+**DA観点:** reconnect 状態機械（切断×op状態×server再起動×順序入替×drop の直積）で「収束するが利用者入力を静かに落とす」経路・phantom conflict・停止（stall）・ループ。Codex xhigh 3回を主たる敵対的レビューに充てた（別モデル視点）。
+
+| # | 発見した問題/改善点 | 重要度 | 再現手順 | DA観点 | 対応 |
+|---|-------------------|--------|---------|--------|------|
+| 1 | **un-acked-drop race（DD-014-1 引継ぎ）**: 受理済み未ACK op が bootstrap 経路で own-echo 除去できず phantom duplicate-row conflict＝成功済み op を誤って Conflict へ | 高 | fresh join→submit→server受理+ACK喪失→切断→再接続 bootstrap | 静かに落とす経路 | ✅ reconcile（join.pending＋welcome.reconcile の3分類・durable frontier gating）で封鎖。回帰 `reconnect-reconcile.test.ts` S-R2 |
+| 2 | **reject-and-dropped の seq違反ループ**: reject 通知喪失後に再送すると client-sequence-violation ループ（message storm・非収束） | 高 | submit→server reject→reject喪失→切断→再接続→再送 | ループ/非収束 | ✅ reconcile が「seq≦acked かつ非accepted＝reject」を検出し Conflict へ（再送しない）。S-R3 |
+| 3 | **Codex P1-2 依存 op 誤 Conflict**: reconcile を committed 権威化前に適用→受理済み依存元 A を除去→A に依存する未処理 B が unknown-row で誤 Conflict | 高 | A=insert受理+ACK喪失／B=A行編集未処理→再接続 bootstrap | 静かに落とす経路 | ✅ reconcile を bootstrap 受信直後/tail drain 完了時（committed 権威化後）へ遅延。回帰テスト追加 |
+| 4 | **Codex P1-e reject/no-op seq の非durable**: durable frontier 表で ackedClientSequence 判定すると reject 済み op を未処理と誤判定→ループ（永続化時） | 高 | 永続化 server で reject→切断→再接続 | ループ/非収束 | ✅ ackedClientSequence を live 表判定に（acceptedOperationIds の frontier gating は維持＝除去安全側は保つ） |
+| 5 | **収束の divergence 誤検出**: in-process reorder で stale welcome（currentRevision<committed）を巻き戻りと誤検出し編集停止（10,000op 収束試験が回帰） | 高 | フォールト注入収束試験（delay reorder） | 停止/回帰 | ✅ divergence 判定を server 側（lastAppliedRevision>frontier・応答順序非依存）へ移動 |
+| 6 | **offlineSince 初回接続前の誤 stopped**: real clock で接続確立前に tick すると offline 時間上限を誤発火し編集停止（playground も該当） | 中 | 接続確立前に session.tick | 停止 | ✅ hasConnected ゲートで初回接続後にのみ時間上限を適用 |
+| 7 | **WS teardown の uncaught error**: CONNECTING 中の close で ws が listener 無し 'error' を出し uncaught 昇格（フルスイート失敗） | 中 | 再接続 churn 中に transport.close | クラッシュ | ✅ detachAndClose で no-op error handler を再付与して吸収 |
+| 8 | **echo-ahead-without-ack × 永続化 × 順序入替**: in-flight op の echo のみ bootstrap より先着＋ACK未着で false conflict | 低 | 永続化＋順序入替＋特定drop（TCP 到達不能） | 静かに落とす→実際は保持 | ⏭️ 残 boundary 文書明示（fault-matrix §3.1・**喪失ではなく false conflict**・§6 Alpha 0.x 内） |
