@@ -6,6 +6,7 @@
 
 | DD | 件名 | ステータス | 補足 |
 |----|------|-----------|------|
+| DD-018-1 | documentId-persistenceDir-failfast | 検討中 | DD-018 判定で切り出した子DD（Codex P1#2・K7=DD-014 P2-3）。**起票のみ**＝着手はユーザー判断。**非ブロッカー扱いをユーザー承認（2026-07-15）**＝Alpha 宣言は成立・本DDは追跡課題。起票時の DD-018-M から採番是正 |
 
 ## 保留・見送り
 
@@ -16,6 +17,7 @@
 
 | DD | 件名 | 主な成果 |
 |----|------|---------|
+| DD-018 | Stage1移行判定 | **総合判定=Stage 1 移行 可（Alpha 宣言可・ユーザー承認済 2026-07-15）**。S1-1〜6 全合格・CG-1〜6 全終端・cg-ledger 全CG終端化・stage2-backlog.md 新設。K7 は子DD DD-018-1（非ブロッカー=ユーザー承認・着手は別途判断）。Codex 証拠監査 high 4件全反映 |
 | DD-017 | Alpha配布・診断 | S1-6 充足（pack tarball 配布正式化・release automation・CHANGELOG・Quick Start・診断API・CG-4 実測記入・ADR-0015 Accepted）。Codex(high) 8件全対応・test 730 green。コミット 889b903。派生 flake は DD-017-1 で恒久是正済み |
 | DD-017-1 | ルートbuild間欠flake是正 | 親=DD-017。真因=html-inline-proxy の cwd casing 不一致（決定的バグ）。vite.config.ts input を realpath 正準化で恒久是正・ルート build 8/8 green。コミット 8fe7148。知見は engineering-patterns #5 へ昇格 |
 | DD-016 | Facade・実consumer統合 | 案Y 2分割＝アンブレラ化。**DD-016-1＋DD-016-2 完了**（Facade実装・物理抽出・S1-3実証・CG-1統合後スモークPASS・CG-6精密メモリPASS〔redraw境界化〕）。AC1〜8 全充足。DD-012 アンブレラ（AC2/AC4）クローズ可。派生=DD-016-3（ナビ修正）。要確認①〜⑤ 確定済 |

@@ -1,0 +1,305 @@
+# DD-018 S1-6 再現build 再取得（Codex P1#1 対応）2026-07-15
+# 目的: DD-017 manifest(gitDirty:true・commit 5eb89b6) の再現性ギャップを埋める
+# 現 HEAD: 2022d826bea4e5acb154d6cd3eca95e7ea5b21a9
+# 注: 未コミットは DD-018 の doc のみ（packages/scripts 変更なし=build closure 不変）
+# git status (source/package 変更がないことの確認):
+  (packages/scripts への変更なし)
+
+===== build-release.sh (typecheck/lint/test 前置 + pack closure) =====
+[release] === DD-017 Alpha 配布成果物 build（channel=alpha）2026-07-14T21:30:31Z ===
+[release] WARN: working tree が dirty です。成果物は未コミットの変更を含みます（manifest に gitDirty=true を記録）。
+[release] 生成コミット: 2022d826bea4e5acb154d6cd3eca95e7ea5b21a9 (dirty=true)
+[release] 1. 再現 build ゲート: closure 宣言健全性 → typecheck / lint / test
+[closure] OK: 全内部 package の実行時 inter-dep が dependencies に宣言済み（hoisting 非依存で closure が honest）
+
+> spreadjs@0.0.0 typecheck
+> npm run typecheck --workspaces --if-present
+
+
+> @nanairo-sheet/collab@0.1.0-alpha.0 typecheck
+> tsc --noEmit
+
+
+> @nanairo-sheet/core@0.1.0-alpha.0 typecheck
+> tsc --noEmit
+
+
+> @nanairo-sheet/formula@0.0.0 typecheck
+> tsc --noEmit
+
+
+> @nanairo-sheet/grid@0.1.0-alpha.0 typecheck
+> tsc --noEmit
+
+
+> @nanairo-sheet/ime@0.1.0-alpha.0 typecheck
+> tsc --noEmit
+
+
+> @nanairo-sheet/render@0.1.0-alpha.0 typecheck
+> tsc --noEmit
+
+
+> @nanairo-sheet/selection@0.1.0-alpha.0 typecheck
+> tsc --noEmit
+
+
+> @nanairo-sheet/server@0.1.0-alpha.0 typecheck
+> tsc --noEmit
+
+
+> @nanairo-sheet/server-hono@0.1.0-alpha.0 typecheck
+> tsc --noEmit
+
+
+> @nanairo-sheet/types@0.1.0-alpha.0 typecheck
+> tsc --noEmit
+
+
+> @nanairo-sheet/playground@0.0.0 typecheck
+> tsc --noEmit
+
+
+> @nanairo-sheet/pocd-bench@0.0.0 typecheck
+> tsc --noEmit
+
+
+> @nanairo-sheet/pocd-browser-bench@0.0.0 typecheck
+> tsc --noEmit
+
+
+> spreadjs@0.0.0 lint
+> eslint . && npm run lint:boundary
+
+
+> spreadjs@0.0.0 lint:boundary
+> node scripts/boundary/check.mjs
+
+[boundary] scanned SDK/app src. baselined=10 new=0 stale-baseline=0
+[boundary] OK — 新規境界違反なし。
+
+> spreadjs@0.0.0 test
+> vitest run
+
+
+[1m[46m RUN [49m[22m [36mv3.2.7 [39m[90mC:/repo/spreadjs[39m
+
+ [32m✓[39m packages/server/src/oplog-store.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 185[2mms[22m[39m
+ [32m✓[39m packages/server/src/snapshot-store.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 234[2mms[22m[39m
+
+[collab-invariant seed-20260713] {"seed":20260713,"clients":3,"ops":600,"accepted":578,"set":515,"insert":32,"delete":31,"faults":{"duplicate":480,"drop":539,"delay":646,"disconnect":0},"rejects":5,"nonEmptyCells":45,"finalRevision":578,"serverHash":"c08520fbf2188c1c","quiescenceTicks":1}
+
+[collab-invariant seed-1337] {"seed":1337,"clients":4,"ops":600,"accepted":569,"set":508,"insert":31,"delete":30,"faults":{"duplicate":561,"drop":680,"delay":892,"disconnect":0},"rejects":7,"nonEmptyCells":36,"finalRevision":569,"serverHash":"832eb32d55729227","quiescenceTicks":1}
+
+[reconnect-inv seed-20260715] {"kind":"S→C欠落","clients":3,"ops":1200,"accepted":1200,"disconnects":89,"faults":{"duplicate":893,"drop":1102,"delay":1335,"disconnect":89},"rejects":0,"maxPendingDepth":7,"finalRevision":1200,"serverHash":"988268add68b6bc9","quiescenceTicks":1}
+
+[collab-invariant seed-987654] {"seed":987654,"clients":5,"ops":500,"accepted":463,"set":402,"insert":31,"delete":30,"faults":{"duplicate":506,"drop":625,"delay":793,"disconnect":0},"rejects":7,"nonEmptyCells":35,"finalRevision":463,"serverHash":"e75d47c4895a8735","quiescenceTicks":1}
+ [32m✓[39m packages/server/src/persistence-fault.test.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 545[2mms[22m[39m
+
+[collab-invariant seed-424242] {"seed":424242,"clients":4,"ops":800,"accepted":762,"set":701,"insert":31,"delete":30,"faults":{"duplicate":763,"drop":848,"delay":1111,"disconnect":0},"rejects":10,"nonEmptyCells":54,"finalRevision":762,"serverHash":"2417078f5da71f6a","quiescenceTicks":1}
+
+[reconnect-inv seed-771113] {"kind":"S→C欠落","clients":4,"ops":1200,"accepted":1197,"disconnects":116,"faults":{"duplicate":817,"drop":1346,"delay":1571,"disconnect":116},"rejects":1,"maxPendingDepth":4,"finalRevision":1197,"serverHash":"f3ab54cafc4a0fd2","quiescenceTicks":1}
+ [32m✓[39m apps/pocd-bench/src/stores/stores.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 943[2mms[22m[39m
+
+[reconnect-inv seed-909090] {"kind":"C→S欠落含む(D27)","clients":3,"ops":1000,"accepted":992,"disconnects":85,"faults":{"duplicate":722,"drop":1011,"delay":890,"disconnect":85},"rejects":5,"maxPendingDepth":6,"finalRevision":992,"serverHash":"078ab2340eaec4cb","quiescenceTicks":1}
+ [32m✓[39m apps/pocd-bench/src/data-gen.test.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 1374[2mms[22m[39m
+   [33m[2m✓[22m[39m data-gen: 決定論・件数・範囲[2m > [22m同一 config で完全再現・件数一致・全て範囲内・重複なし: uniform-sparse [33m 345[2mms[22m[39m
+   [33m[2m✓[22m[39m data-gen: 決定論・件数・範囲[2m > [22m同一 config で完全再現・件数一致・全て範囲内・重複なし: dense-block [33m 328[2mms[22m[39m
+ [32m✓[39m tests/invariants/collab/collab.invariant.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 964[2mms[22m[39m
+
+[reconnect-inv seed-1234567] {"kind":"C→S欠落含む(D27)","clients":4,"ops":1000,"accepted":990,"disconnects":110,"faults":{"duplicate":829,"drop":1127,"delay":993,"disconnect":110},"rejects":3,"maxPendingDepth":4,"finalRevision":990,"serverHash":"19ba6d80d0323f12","quiescenceTicks":1}
+ [32m✓[39m packages/server-hono/src/server.persistence.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 401[2mms[22m[39m
+ [32m✓[39m packages/server/src/room-reconnect.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 204[2mms[22m[39m
+ [32m✓[39m packages/server-hono/src/protocol-contract.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 28[2mms[22m[39m
+ [32m✓[39m packages/server-hono/src/restart-restore.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 771[2mms[22m[39m
+   [33m[2m✓[22m[39m restart-restore — snapshot 復元起動 → 再接続 catch-up 収束（AC5・S-K4・D18）[2m > [22m停止 → snapshot import で同一ポート復元 → 同一 clientId 再接続 catch-up → 全 hash 一致・revision 継続 [33m 769[2mms[22m[39m
+ [32m✓[39m apps/pocd-bench/src/op-gen.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 1866[2mms[22m[39m
+   [33m[2m✓[22m[39m op-gen: replay 整合（AC5素材）[2m > [22m全 Operation が valid（ApplyError なし）・同一 seed の replay で hash 一致 [33m 1814[2mms[22m[39m
+ [32m✓[39m tests/invariants/collab/reconnect-fault.invariant.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 1752[2mms[22m[39m
+   [33m[2m✓[22m[39m invariant/collab reconnect-fault（DD-015・§2.3 idempotency/reconnect・catch-up 実充足）[2m > [22mseed=20260715・3client×1200op・S→C欠落・切断注入 → 全収束・二重適用0・喪失0 [33m 442[2mms[22m[39m
+   [33m[2m✓[22m[39m invariant/collab reconnect-fault（DD-015・§2.3 idempotency/reconnect・catch-up 実充足）[2m > [22mseed=771113・4client×1200op・S→C欠落・切断注入 → 全収束・二重適用0・喪失0 [33m 306[2mms[22m[39m
+   [33m[2m✓[22m[39m invariant/collab reconnect-fault（DD-015・§2.3 idempotency/reconnect・catch-up 実充足）[2m > [22m同一 seed 再実行で完全に同一の最終 hash・受理数（決定論・再現性） [33m 513[2mms[22m[39m
+ [32m✓[39m packages/server-hono/src/reconnect-fault.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 1455[2mms[22m[39m
+   [33m[2m✓[22m[39m DD-015 reconnect-fault（実 WS・fault matrix C1/C8/C9）[2m > [22mWS-R4 (C8): 切断中に他者が >1000 op → 再接続で snapshot 再取得（bootstrap）＝全 tail replay しない・収束 [33m 1082[2mms[22m[39m
+ [32m✓[39m tests/invariants/collab/persistence.invariant.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 289[2mms[22m[39m
+
+[convergence 3clients] {"seed":20260712,"clients":3,"ops":10000,"durationMs":2627,"opsPerSec":3806,"accepted":9409,"set":9340,"insert":35,"delete":34,"faults":{"duplicate":7373,"drop":8713,"delay":10888,"disconnect":204},"catchupRequests":11248,"maxPendingDepth":8,"serverOpApplications":28227,"conflicts":623,"rejects":144,"liveRows":6,"tombstoned":34,"nonEmptyCells":57,"finalRevision":9409,"quiescenceTicks":1}
+ [32m✓[39m packages/render/src/prng.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 192[2mms[22m[39m
+ [32m✓[39m packages/collab/src/bootstrap.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 222[2mms[22m[39m
+ [32m✓[39m packages/render/src/scroll-anchor.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 102[2mms[22m[39m
+ [32m✓[39m packages/render/src/viewport.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 137[2mms[22m[39m
+ [32m✓[39m packages/core/src/apply.test.ts [2m([22m[2m26 tests[22m[2m)[22m[32m 145[2mms[22m[39m
+ [32m✓[39m packages/server-hono/src/server.smoke.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 400[2mms[22m[39m
+   [33m[2m✓[22m[39m server.smoke — 実 WS サーバー（ランダムポート）＋ ws-transport ＋ ClientSession 3 体[2m > [22mSetCells 相互反映で全 hash 一致・presenceDelta 到達・heartbeat 途絶で TTL presenceRemoved [33m 398[2mms[22m[39m
+ [32m✓[39m packages/grid/src/ime-editing-session.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 31[2mms[22m[39m
+ [32m✓[39m packages/server-hono/src/seed-dataset.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 94[2mms[22m[39m
+ [32m✓[39m packages/server-hono/src/ws-convergence.smoke.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 2901[2mms[22m[39m
+   [33m[2m✓[22m[39m ws-convergence.smoke — 実 WS ＋ ClientSession 3 体（静止点待ち・DD-015 安定化）[2m > [22m有界バッチ submit ＋ 各バッチ静止点待ちで全 committed hash がサーバー hash と一致・二重適用0・pending 0 [33m 2899[2mms[22m[39m
+ [32m✓[39m packages/server/src/durable-frontier.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 55[2mms[22m[39m
+ [32m✓[39m packages/formula/src/evaluator.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 83[2mms[22m[39m
+ [32m✓[39m packages/server/src/persistent-room.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 38[2mms[22m[39m
+ [32m✓[39m packages/collab/src/reconnect-reconcile.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 30[2mms[22m[39m
+ [32m✓[39m packages/render/src/axis.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 32[2mms[22m[39m
+ [32m✓[39m tests/invariants/ime/ime.invariant.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 21[2mms[22m[39m
+ [32m✓[39m packages/server/src/sequencer.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 28[2mms[22m[39m
+ [32m✓[39m packages/core/src/cell-store.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m packages/render/src/presence-sim.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+ [32m✓[39m packages/render/src/chunk-store.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 21[2mms[22m[39m
+ [32m✓[39m tests/invariants/perf/perf-judge.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 37[2mms[22m[39m
+ [32m✓[39m packages/core/src/cell-input.test.ts [2m([22m[2m40 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m packages/collab/src/session.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 31[2mms[22m[39m
+ [32m✓[39m packages/grid/src/document-view.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+ [32m✓[39m packages/render/src/data-gen.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 41[2mms[22m[39m
+ [32m✓[39m packages/ime/src/editor-state-machine.test.ts [2m([22m[2m52 tests[22m[2m)[22m[32m 36[2mms[22m[39m
+ [32m✓[39m packages/server/src/snapshot.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 35[2mms[22m[39m
+ [32m✓[39m packages/grid/src/commit-bridge.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m packages/collab/src/inprocess-transport.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 36[2mms[22m[39m
+ [32m✓[39m packages/render/src/metrics.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 29[2mms[22m[39m
+ [32m✓[39m packages/server/src/room.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 28[2mms[22m[39m
+ [32m✓[39m packages/core/src/local-operation.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m packages/formula/src/tokenizer.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m apps/pocd-bench/src/integration-sheetcore.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m packages/formula/src/dep-graph.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+ [32m✓[39m packages/grid/src/session-sync.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 21[2mms[22m[39m
+ [32m✓[39m packages/render/src/text-cache.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m packages/core/src/hash.test.ts [2m([22m[2m22 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m packages/collab/src/reconnect.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m tests/invariants/api/api.invariant.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m packages/ime/src/event-recorder.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m packages/core/src/validate.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m tests/invariants/perf/perf.invariant.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m packages/collab/src/session-events.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m tests/contract/facade-surface.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 5283[2mms[22m[39m
+   [33m[2m✓[22m[39m contract: R7 内部型漏洩0（公開 .d.ts に内部パッケージ型が現れない）[2m > [22m@nanairo-sheet/grid の公開宣言は内部パッケージ型を漏らさない [33m 3286[2mms[22m[39m
+   [33m[2m✓[22m[39m contract: R7 内部型漏洩0（公開 .d.ts に内部パッケージ型が現れない）[2m > [22m@nanairo-sheet/server-hono の公開宣言は内部パッケージ型を漏らさない [33m 1990[2mms[22m[39m
+
+[convergence 10clients] {"seed":424242,"clients":10,"ops":10000,"durationMs":5110,"opsPerSec":1957,"accepted":9075,"set":8994,"insert":41,"delete":40,"faults":{"duplicate":15326,"drop":17305,"delay":28537,"disconnect":190},"catchupRequests":36028,"maxPendingDepth":4,"serverOpApplications":90750,"conflicts":932,"rejects":194,"liveRows":8,"tombstoned":40,"nonEmptyCells":60,"finalRevision":9075,"quiescenceTicks":1}
+ [32m✓[39m packages/formula/src/parser.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m packages/grid/src/browser-transport.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m packages/collab/src/catchup.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m packages/server/src/presence.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m packages/ime/src/geometry.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m packages/core/src/document.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m packages/grid/src/editor-placement.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m packages/formula/src/limits.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m packages/grid/src/error-codes.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m packages/grid/src/presence-adapter.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m packages/grid/src/diagnostics.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m packages/types/src/ids.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m packages/server-hono/src/ws-transport.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m packages/ime/src/navigation.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+
+[convergence repro-1] {"seed":1337,"clients":4,"ops":2500,"durationMs":485,"opsPerSec":5150,"accepted":2294,"set":2233,"insert":31,"delete":30,"faults":{"duplicate":2186,"drop":2628,"delay":3351,"disconnect":84},"catchupRequests":3750,"maxPendingDepth":4,"serverOpApplications":9176,"conflicts":210,"rejects":53,"liveRows":6,"tombstoned":30,"nonEmptyCells":39,"finalRevision":2294,"quiescenceTicks":1}
+ [32m✓[39m packages/render/src/dpi.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m packages/formula/src/bind.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m packages/server-hono/src/convergence.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 9577[2mms[22m[39m
+   [33m[2m✓[22m[39m 収束試験（in-process・フォールト注入・10,000 件）— AC1/S-M1〜M4[2m > [22m3 クライアント × 10,000 件（重複/欠落/遅延/切断再接続）→ 全 committed 収束・二重適用0 [33m 2968[2mms[22m[39m
+   [33m[2m✓[22m[39m 収束試験（in-process・フォールト注入・10,000 件）— AC1/S-M1〜M4[2m > [22m10 クライアント × 10,000 件（重複/欠落/遅延/切断再接続）→ 全 committed 収束・二重適用0 [33m 5523[2mms[22m[39m
+   [33m[2m✓[22m[39m 収束試験（in-process・フォールト注入・10,000 件）— AC1/S-M1〜M4[2m > [22m同一シード再実行で完全に同一の実行列・最終 hash（決定論・S-M2） [33m 1082[2mms[22m[39m
+ [32m✓[39m packages/render/src/render-scheduler.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m packages/grid/src/initial-load-metrics.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m packages/selection/src/selection.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m packages/core/src/cell-store-differential.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 17222[2mms[22m[39m
+   [33m[2m✓[22m[39m AC2: 差分試験 — 新 CellStore と二段 Map リファレンスの完全一致[2m > [22mseed=1: 1,200 op を同順適用し全 op 後で完全一致（hash・全セル・構造） [33m 3501[2mms[22m[39m
+   [33m[2m✓[22m[39m AC2: 差分試験 — 新 CellStore と二段 Map リファレンスの完全一致[2m > [22mseed=7: 1,200 op を同順適用し全 op 後で完全一致（hash・全セル・構造） [33m 3860[2mms[22m[39m
+   [33m[2m✓[22m[39m AC2: 差分試験 — 新 CellStore と二段 Map リファレンスの完全一致[2m > [22mseed=42: 1,200 op を同順適用し全 op 後で完全一致（hash・全セル・構造） [33m 3662[2mms[22m[39m
+   [33m[2m✓[22m[39m AC2: 差分試験 — 新 CellStore と二段 Map リファレンスの完全一致[2m > [22mseed=1337: 1,200 op を同順適用し全 op 後で完全一致（hash・全セル・構造） [33m 2011[2mms[22m[39m
+   [33m[2m✓[22m[39m AC2: 差分試験 — 新 CellStore と二段 Map リファレンスの完全一致[2m > [22mseed=20260713: 1,200 op を同順適用し全 op 後で完全一致（hash・全セル・構造） [33m 2304[2mms[22m[39m
+   [33m[2m✓[22m[39m AC2: 差分試験 — 新 CellStore と二段 Map リファレンスの完全一致[2m > [22mseed=8888888: 1,200 op を同順適用し全 op 後で完全一致（hash・全セル・構造） [33m 1881[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m79 passed[39m[22m[90m (79)[39m
+[2m      Tests [22m [1m[32m730 passed[39m[22m[90m (730)[39m
+[2m   Start at [22m 06:31:10
+[2m   Duration [22m 18.97s[2m (transform 5.60s, setup 0ms, collect 33.42s, tests 48.41s, environment 41ms, prepare 49.91s)[22m
+
+[release]   ok: closure 健全性・typecheck / lint / test 全て green
+[release] 2. 版数の一貫性検査（配布 closure が単一 alpha 版か）
+[release]   ok: 配布 closure 9 package 全て 0.1.0-alpha.0（channel=alpha）
+[release] 3. npm pack（配布 closure 9 tarball → release）
+[release]   ok: 9 tarball 生成
+[release] 4. manifest 生成（版数・sha256・生成コミット・channel）
+[release]   manifest: 9 package / version 0.1.0-alpha.0 / channel alpha
+[release] 5. 証跡: /c/repo/spreadjs/doc/DD/DD-017/release-manifest.json
+[release] OK: 配布成果物 /c/repo/spreadjs/release（9 tarball＋manifest.json）生成完了。
+[release]   consumer 統合: tarball を consumer へコピー（例 mkdir vendor && cp /c/repo/spreadjs/release/*.tgz vendor/）後、vendor/ で manifest.json の install を実行。
+[release]   再現検証: RELEASE_VENDOR_DIR=/c/repo/spreadjs/release bash scripts/consumer-app.sh
+build-release EXIT=0
+
+===== 生成 manifest =====
+{
+  "distribution": "pack-tarball-closure",
+  "note": "DD-017 決定事項A: private registry ではなく pack closure 方式を正式化。consumer は本 closure 全 tarball を同時 install する（欠けると module 解決不能）。registry 昇格は Stage 2。",
+  "channel": "alpha",
+  "version": "0.1.0-alpha.0",
+  "apiVersion": "0.1.0-experimental",
+  "generatedAt": "2026-07-14T21:31:54.639Z",
+  "gitCommit": "2022d826bea4e5acb154d6cd3eca95e7ea5b21a9",
+  "gitDirty": true,
+  "installNote": "tarball は本 manifest と同じ release/ にある。consumer プロジェクトへ tarball をコピー（例 vendor/）してから install を実行するか、release/ を cwd にして実行する。scripts/consumer-app.sh は tarball を .vendor へコピーして検証する。",
+  "install": "npm install --no-save --install-links ./nanairo-sheet-grid-0.1.0-alpha.0.tgz ./nanairo-sheet-server-hono-0.1.0-alpha.0.tgz ./nanairo-sheet-core-0.1.0-alpha.0.tgz ./nanairo-sheet-types-0.1.0-alpha.0.tgz ./nanairo-sheet-collab-0.1.0-alpha.0.tgz ./nanairo-sheet-render-0.1.0-alpha.0.tgz ./nanairo-sheet-selection-0.1.0-alpha.0.tgz ./nanairo-sheet-ime-0.1.0-alpha.0.tgz ./nanairo-sheet-server-0.1.0-alpha.0.tgz",
+  "packages": [
+    {
+      "name": "@nanairo-sheet/grid",
+      "version": "0.1.0-alpha.0",
+      "tarball": "nanairo-sheet-grid-0.1.0-alpha.0.tgz",
+      "bytes": 52131,
+      "sha256": "8b4b0e8112fefa4778b0f018c76b3e401bdff29a0f3f65625f64dfc319e0b5d8"
+    },
+    {
+      "name": "@nanairo-sheet/server-hono",
+      "version": "0.1.0-alpha.0",
+      "tarball": "nanairo-sheet-server-hono-0.1.0-alpha.0.tgz",
+      "bytes": 45492,
+      "sha256": "948537b619882a08263fc5b7e599c08b8ec66d32e43c5d79158ee5383159e29a"
+    },
+    {
+      "name": "@nanairo-sheet/core",
+      "version": "0.1.0-alpha.0",
+      "tarball": "nanairo-sheet-core-0.1.0-alpha.0.tgz",
+      "bytes": 39830,
+      "sha256": "a652cc48bc20bd94bb2d5fe1f745c0b8b623c1fc9d518a23c5556abe843127a8"
+    },
+    {
+      "name": "@nanairo-sheet/types",
+      "version": "0.1.0-alpha.0",
+      "tarball": "nanairo-sheet-types-0.1.0-alpha.0.tgz",
+      "bytes": 2527,
+      "sha256": "65be262c007a934874a57c2a451e0c578c034983f7a1c1aae16d262199957527"
+    },
+    {
+      "name": "@nanairo-sheet/collab",
+      "version": "0.1.0-alpha.0",
+      "tarball": "nanairo-sheet-collab-0.1.0-alpha.0.tgz",
+      "bytes": 38279,
+      "sha256": "1ec92b2423b2890ca5e5020682fc0faf307c8d7791c221256ee568e16fa700b6"
+    },
+    {
+      "name": "@nanairo-sheet/render",
+      "version": "0.1.0-alpha.0",
+      "tarball": "nanairo-sheet-render-0.1.0-alpha.0.tgz",
+      "bytes": 33074,
+      "sha256": "5fc17dae7584405e1284e448207a29711ed530bf942fd93ac2263f3711e0bb95"
+    },
+    {
+      "name": "@nanairo-sheet/selection",
+      "version": "0.1.0-alpha.0",
+      "tarball": "nanairo-sheet-selection-0.1.0-alpha.0.tgz",
+      "bytes": 1654,
+      "sha256": "b026779b4a926a2f4759b38af29f5f0a1a308aa2b9e85b4a21da77210070d0e8"
+    },
+    {
+      "name": "@nanairo-sheet/ime",
+      "version": "0.1.0-alpha.0",
+      "tarball": "nanairo-sheet-ime-0.1.0-alpha.0.tgz",
+      "bytes": 21409,
+      "sha256": "cc0ab7e3c868ccf4f2a5df427743ab991c06c558ae02b05a460ffa7a41d3103a"
+    },
+    {
+      "name": "@nanairo-sheet/server",
+      "version": "0.1.0-alpha.0",
+      "tarball": "nanairo-sheet-server-0.1.0-alpha.0.tgz",
+      "bytes": 47180,
+      "sha256": "7986560127e5a5d01dd148834eaa8954af8f4784e877eef019c1a2eebaf52a28"
+    }
+  ]
+}

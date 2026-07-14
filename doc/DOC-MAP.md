@@ -27,6 +27,7 @@
 | `doc/plan/phase0-dd-roadmap.md` | Phase 0のDDロードマップ（DD作業管理上の最上位。計画書§18/§26→DDの写像。dd-auto実行順と進捗対応表） |
 | `doc/plan/phase1-dd-roadmap.md` | Stage 1 SDK Alpha DDロードマップ（**正式版**。Stage 1社内SDK Alphaまでの縦切りDD計画 DD-009〜022。密度レジーム・境界整合・SDK Alpha完了条件・CG-1〜6 ハードゲート） |
 | `doc/plan/cg-ledger.md` | CG解除台帳（条件付きGo 解除ゲート CG-1〜6 の横断追跡。DD-018 移行判定まで複数DDが参照する常設台帳。起票: DD-009。定義本体は phase1-dd-roadmap.md §0） |
+| `doc/plan/stage2-backlog.md` | Stage 2 バックログ（Stage 1 SDK Alpha 完了後の送り項目一覧。DD-019〜022＋dist切替・registry昇格・PostgreSQL本採用・React Facade・既知制約回収を出典DD付きで記録。確定: DD-018・2026-07-15。Stage 2 開始時にロードマップ化） |
 | `doc/plan/dd-risk-class-header.md` | DD Risk Class ヘッダ雛形＋製品化6観点チェック（Delivery Phase A の各DDが参照する運用コピー元。dd-update 非管理の場所へ新設。定義本体は phase1-dd-roadmap.md §2／phase0-dd-roadmap.md。起票: DD-011） |
 
 ## レビュー・分析資料（非正典）
