@@ -113,7 +113,7 @@ export function createIntegrationEditor(config: IntegrationEditorConfig): Integr
       textarea.setSelectionRange(start, end);
     },
     focus: () => {
-      textarea.focus();
+      textarea.focus({ preventScroll: true });
     },
     place: (rect: CellRect | null) => {
       currentRect = rect;
@@ -242,7 +242,9 @@ export function createIntegrationEditor(config: IntegrationEditorConfig): Integr
     pointerdownCell: (cell) => {
       dispatch(cell === null ? { type: 'pointerdown', target: 'outside' } : { type: 'pointerdown', target: 'cell', cell });
       if (cell !== null && !session.isComposing()) {
-        textarea.focus();
+        // preventScroll: 位置合わせは scroll-follow（mount-controller）が担うので、focus 既定の
+        // scrollIntoView がそれと競合して画面が跳ねるのを防ぐ。
+        textarea.focus({ preventScroll: true });
       }
     },
     doubleClickCell: (cell) => {
@@ -257,7 +259,7 @@ export function createIntegrationEditor(config: IntegrationEditorConfig): Integr
       updateBadge(session.isConflicting());
     },
     focus: () => {
-      textarea.focus();
+      textarea.focus({ preventScroll: true });
     },
     destroy: () => {
       abort.abort();

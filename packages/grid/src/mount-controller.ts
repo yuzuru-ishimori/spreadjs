@@ -198,6 +198,40 @@ export function createGridController(target: GridMountTarget, options: GridMount
     editor?.refreshPlacement(transform, placementConfig());
   }
 
+  /**
+   * アクティブセルが body viewport の外にあれば最小スクロールで可視域へ入れる（Excel 準拠の scroll-follow）。
+   * キーボード/クリックでアクティブセルが変わったとき onChange から呼ぶ。可視セルなら何もしない（クリックで勝手に
+   * スクロールしない）。scroller.scrollTop/Left への代入は同期反映され、scroll イベント→再描画で追従する。
+   */
+  function ensureActiveCellVisible(): void {
+    if (editor === undefined) {
+      return;
+    }
+    const transform = currentTransform();
+    if (transform === undefined) {
+      return;
+    }
+    const active = editor.session.getActiveCell();
+    const rect = transform.cellRect(active.row, active.col);
+    const bodyOriginX = HEADER_WIDTH + transform.frozenWidth();
+    const bodyOriginY = HEADER_HEIGHT + transform.frozenHeight();
+    // 固定行/列のセルはスクロール非依存ゆえ追従不要（body セルのみ）。
+    if (active.row >= frozenRowCount) {
+      if (rect.y < bodyOriginY) {
+        scroller.scrollTop += rect.y - bodyOriginY; // 上へはみ出し → スクロールアップ（負）
+      } else if (rect.y + rect.height > viewportHeight) {
+        scroller.scrollTop += rect.y + rect.height - viewportHeight; // 下へはみ出し → スクロールダウン
+      }
+    }
+    if (active.col >= frozenColCount) {
+      if (rect.x < bodyOriginX) {
+        scroller.scrollLeft += rect.x - bodyOriginX;
+      } else if (rect.x + rect.width > viewportWidth) {
+        scroller.scrollLeft += rect.x + rect.width - viewportWidth;
+      }
+    }
+  }
+
   function provisionCanvas(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D): void {
     const backing = backingSize({ width: viewportWidth, height: viewportHeight }, dpr);
     canvas.style.width = `${viewportWidth}px`;
@@ -310,6 +344,10 @@ export function createGridController(target: GridMountTarget, options: GridMount
         editor.pointerdownCell(null);
         return;
       }
+      // 常駐 textarea をキーボード入力の受け口として保持する。scroller は非フォーカサブルなため、
+      // mousedown 既定挙動が focus を body へ奪い、直後の pointerdownCell の textarea.focus() を打ち消す。
+      // これを止めないとクリック後の矢印キーが scroller のネイティブスクロールへ流れ、カレントセルが動かない。
+      event.preventDefault();
       editor.pointerdownCell({ row: hit.rowIndex, col: hit.colIndex });
       sync.view.markViewportDirty();
     },
@@ -485,8 +523,9 @@ export function createGridController(target: GridMountTarget, options: GridMount
         if (editor === undefined) {
           return;
         }
+        ensureActiveCellVisible(); // アクティブセルを可視域へ（scrollTop/Left を同期更新しうる）
         selection = singleCell(editor.session.getActiveCell());
-        const transform = currentTransform();
+        const transform = currentTransform(); // 上の scroll 反映後の transform で配置する
         if (transform !== undefined) {
           editor.refreshPlacement(transform, placementConfig());
         }
