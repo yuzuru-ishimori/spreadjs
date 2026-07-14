@@ -6,10 +6,6 @@
 
 | DD | 件名 | ステータス | 補足 |
 |----|------|-----------|------|
-| DD-016 | Facade・実consumer統合 | 完了 | 案Y 2分割＝アンブレラ化。**DD-016-1＋DD-016-2 完了**（Facade実装・物理抽出・S1-3実証・CG-1統合後スモークPASS・CG-6精密メモリPASS〔redraw境界化〕）。AC1〜8 全充足。DD-012 アンブレラ（AC2/AC4）クローズ可。派生=DD-016-3（ナビ修正）。要確認①〜⑤ 確定済 |
-| DD-016-2 | 独立consumer実証・統合後実機スモーク | 完了 | 親=DD-016（案Y 2分割）。**AC1〜5 全充足＝完了**: Phase 0/3（S1-3 実証・pack closure・再mount leak なし）＋Phase 4 実機ゲート — **CG-1 統合後スモーク PASS**（Chrome6＋Edge3＝9 sessions・先頭欠落0・順序B）＋**CG-6 精密メモリ PASS**（peak 65.3MB≪300MB・純減リークなし・`--enable-precise-memory-info` flag run／redraw は境界化=上限明示）。cg-ledger CG-1/CG-6 解除済。DD-012 アンブレラ（AC2/AC4）クローズ可。派生=DD-016-3（ナビ修正）。P2-1委譲反映済 |
-| DD-016-3 | アクティブセルキーボードナビ・focus保持scroll-follow | 完了 | 発見元=DD-016-2 CG-1 実機テスト中（ユーザー報告）。**「今すぐ軽く修正＝DDは後追い記録」方針（2026-07-14 ユーザー）**。既存バグ（DD-016-1 リグレッションではない）＋未実装機能を修正。実機ドライブ（Playwright）＋ユーザー実機確認で green |
-| DD-012 | 単一利用者IME縦切り | 完了 | 案Y 2分割・両子DD完了アーカイブ済（DD-012-1＝CG-1解除／DD-012-2＝CG-6指標pass）。milestone残（ime/selection/render物理抽出・baseline縮退・CG-1統合後スモーク・CG-6精密メモリ）は**DD-016で確定＝完了**（DD-016-1 抽出・baseline縮退／DD-016-2 CG-1統合後スモークPASS・CG-6精密メモリPASS＋redraw境界化）。**AC2/AC4 充足＝本アンブレラ クローズ（2026-07-14）** |
 
 ## 保留・見送り
 
@@ -20,11 +16,15 @@
 
 | DD | 件名 | 主な成果 |
 |----|------|---------|
+| DD-016 | Facade・実consumer統合 | 案Y 2分割＝アンブレラ化。**DD-016-1＋DD-016-2 完了**（Facade実装・物理抽出・S1-3実証・CG-1統合後スモークPASS・CG-6精密メモリPASS〔redraw境界化〕）。AC1〜8 全充足。DD-012 アンブレラ（AC2/AC4）クローズ可。派生=DD-016-3（ナビ修正）。要確認①〜⑤ 確定済 |
 | DD-016-1 | Facade実装・物理抽出 | 親=DD-016（案Y 2分割）。公開API固定・ime/selection/render抽出・grid/server-hono Facade・collaboration-server昇華・baseline 41→10。**720 test＋8 E2E＋R7漏洩0**。Codex xhigh 6 findings 反映（P2-1 consumer-harness は DD-016-2 委譲・見送り0） |
+| DD-016-2 | 独立consumer実証・統合後実機スモーク | 親=DD-016（案Y 2分割）。**AC1〜5 全充足＝完了**: Phase 0/3（S1-3 実証・pack closure・再mount leak なし）＋Phase 4 実機ゲート — **CG-1 統合後スモーク PASS**（Chrome6＋Edge3＝9 sessions・先頭欠落0・順序B）＋**CG-6 精密メモリ PASS**（peak 65.3MB≪300MB・純減リークなし・`--enable-precise-memory-info` flag run／redraw は境界化=上限明示）。cg-ledger CG-1/CG-6 解除済。DD-012 アンブレラ（AC2/AC4）クローズ可。派生=DD-016-3（ナビ修正）。P2-1委譲反映済 |
+| DD-016-3 | アクティブセルキーボードナビ・focus保持scroll-follow | 発見元=DD-016-2 CG-1 実機テスト中（ユーザー報告）。**「今すぐ軽く修正＝DDは後追い記録」方針（2026-07-14 ユーザー）**。既存バグ（DD-016-1 リグレッションではない）＋未実装機能を修正。実機ドライブ（Playwright）＋ユーザー実機確認で green |
 | DD-015 | reconnect・catch-up・idempotency | **CG-5 解除**（D27/D34回収）。exactly-once reconcile・catch-up閾値・指数バックオフ・イベント契約・fault injection常設化。732 pass/Codex xhigh 3回反映/実ブラウザーheaded smoke green。ユーザー承認済 |
 | DD-014 | 永続化・snapshot復元 | サーバー側（durable ACK・snapshot format v1・100k復旧≦1s・O(N²)回避・fail-fast）＋**子DD DD-014-1 でクライアント snapshot bootstrap・durable frontier/poisoning を実装し CG-3 解除**（AC1〜9 充足・ADR-0023 Accepted）。P2-1（行操作Θ(N²)=DD-021）・P2-3/P2-4（異常構成エッジ）は既知制約。roadmap §4/§5 |
 | DD-014-1 | クライアントbootstrap・durable整合 | 親=DD-014。Codex xhigh P1 findings（P1-3〜P1-7）を解消し **CG-3 解除**（DD-014＋DD-014-1）。join bootstrap(document@frontier)・durable frontier/barrier/poisoning・ADR-0023 Accepted。**AC1〜AC8 充足・reload E2E green・bootstrap 4.8ms vs 全replay26s**・Codex 2巡目 P1×4 も全対応。P2-1/P2-3/P2-4 は親DD-014 既知制約。コミット済 |
 | DD-013 | 共同編集同期・OCC | 同期/OCC harden（テスト実充足）・randomized収束スイート・Phase4 実WS 2タブ smoke PASS・Codex high 反映済 |
+| DD-012 | 単一利用者IME縦切り | 案Y 2分割・両子DD完了アーカイブ済（DD-012-1＝CG-1解除／DD-012-2＝CG-6指標pass）。milestone残（ime/selection/render物理抽出・baseline縮退・CG-1統合後スモーク・CG-6精密メモリ）は**DD-016で確定＝完了**（DD-016-1 抽出・baseline縮退／DD-016-2 CG-1統合後スモークPASS・CG-6精密メモリPASS＋redraw境界化）。**AC2/AC4 充足＝本アンブレラ クローズ（2026-07-14）** |
 | DD-012-1 | 入力縦切り | Phase 1〜4完了。型変換/date/ローカルOp/IME不変6項目/ADR-012/Codex＋CG-1解除済（実機PASS・先頭欠落0・順序B×Chrome/Edge）。実機で順序A不発（Chromium150）の知見を記録。抽出はDD-016委譲 |
 | DD-012-2 | 性能縦切り | 親=DD-012（案Y分割）。CG-6 担当。**Phase2/3 指標計測完了**（Playwright: scroll p95 16.8ms・メモリ 24MB≪300MB pass／redraw over-budget=render無変更ゆえ回帰不能のアーティファクト）。予算常設化・計測ハーネス・Codex 完了。**定義的確定（CG-6精密・render抽出・clean redraw）は DD-016 委譲** |
 | DD-011 | 基盤実装 | 要確認①〜④回答済。DD-011-1 完了前提で全Phase実装＋Codex(high)4件全対応。Facade skeleton・boundary lint(baseline 41)・不変条件runner・consumer harness雛形・Risk Classヘッダ新設。typecheck/lint(+boundary)/build/test:invariants/contract/consumer-harness green。差分テストflaky恒久是正。ws-convergence.smokeは環境依存flaky据え置き。コミット済 |

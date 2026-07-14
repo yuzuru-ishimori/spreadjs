@@ -23,8 +23,8 @@
 
 - **症状**: vitest（node）が全 green なのに、実ブラウザーで①ロード時に `ReferenceError`（アプリが起動しない）②セルをクリックしても入力できない（`activeElement=BODY`）等が起きる。
 - **原因**: node のユニットテストは (a) モジュール初期化順序（構築中コールバックが未代入 `const` を参照する TDZ）、(b) 実 DOM のイベント既定動作（非フォーカス要素への `mousedown` が focus を body へ移す）、(c) 実ブラウザーの focus/描画経路を再現しない。純粋ロジックが緑でも配線層（`main.ts` 等）の実行時経路は未検証のまま。
-- **正しいやり方**: Canvas/DOM を伴う実装は「ユニット緑」で止めず、**dev目視スモーク（Playwright MCP）か E2E（@playwright/test）で「ロード時 console error/未捕捉例外 0」「主要操作（クリック→打鍵で編集開始）が実際に動く」を必ず確認**し、見つけた実行時バグは E2E 回帰として固定する。
-- **元DD**: DD-002（TDZ初期化・canvas mousedown の既定フォーカス移動の2件を dev目視で発見 → `e2e/regression.spec.ts` へ回帰化）
+- **正しいやり方**: Canvas/DOM を伴う実装は「ユニット緑」で止めず、**dev目視スモーク（Playwright MCP）か E2E（@playwright/test）で「ロード時 console error/未捕捉例外 0」「主要操作（クリック→打鍵で編集開始）が実際に動く」を必ず確認**し、見つけた実行時バグは E2E 回帰として固定する。**⚠️ E2E で `textarea.focus()` を明示的に呼んでから操作すると、クリック→focus 保持の経路をバイパスして本バグを隠す**。focus 依存の挙動（矢印キーのセル移動・scroll-follow 等）は**実クリック（`locator.click()`）から driving して検証**すること。
+- **元DD**: DD-002（TDZ初期化・canvas mousedown の既定フォーカス移動の2件を dev目視で発見 → `e2e/regression.spec.ts` へ回帰化）／**DD-016-3 で再発**（DD-016-1 の Facade 化で統合ページの scroller `pointerdown` が `preventDefault` を失い focus 奪取が復活。E2E が `ta.focus()` を明示呼びするため見逃していた＝実クリック driving で発見・修正。あわせて scroll-follow 未実装も判明）
 
 ## 2. `git mv` は直前の未stage編集を巻き込まない（DDアーカイブで「クローズ内容の取りこぼし」が再発）
 
