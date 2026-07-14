@@ -82,20 +82,42 @@ export interface RecoveryResult {
  * - snapshot 有: document@R を起点に oplog tail（revision>R）のみ replay（O(tail)・14分経路を排除）。
  * - snapshot 無: oplog を空文書から全 replay（縮退・snapshot 生成前のみ）。
  * - fail-fast（AC6）: oplog の revision 連番違反・snapshot が oplog より先（R>N）・snapshot 参照 op 欠落を throw。
+ * - fail-fast（DD-018-1 AC1/AC3）: 要求 documentId と persisted 側 documentId の不一致（別 ID で使用済み persistenceDir を
+ *   再利用＝誤公開）・封筒 revision と内側 snapshot revision の相互不一致（改竄/bit-rot）を throw。
  */
 export async function recoverSequencerState(opts: {
   oplog: OpLogStore;
   snapshotStore: SnapshotStore;
   columnOrder: ColumnId[];
+  /** 要求 documentId。persisted 側（snapshot 優先・無ければ oplog 先頭 entry）と不一致なら fail-fast（DD-018-1 AC1）。 */
+  documentId: string;
 }): Promise<RecoveryResult> {
   const persisted = await opts.snapshotStore.loadLatest(); // 破損なら throw（fail-fast）
   const { entries, discardedTornRecords } = await opts.oplog.readAll();
 
-  // oplog は accepted のみ・revision 消費ゆえ 1..N 連番でなければ破損（fail-fast・AC6）。
+  // documentId 相互検証（DD-018-1 AC1・§6 version-mismatch 哲学）: 使用済み persistenceDir を別 documentId で
+  // 起動すると旧文書を新 ID として誤公開し得る。**snapshot・全 oplog entry の documentId を要求 documentId と照合**する
+  // （Codex P1: snapshot と oplog tail に別 ID が混在した残骸〔旧版の別 ID 起動由来〕でも先頭以降の別 ID を見逃さない）。
+  // 空 dir（persisted 無し・oplog 空）は fresh 起動ゆえ照合対象なし（過剰拒否しない）。
+  if (persisted !== undefined && persisted.documentId !== opts.documentId) {
+    throw new Error(
+      `recoverSequencerState: snapshot documentId 不一致（persisted='${persisted.documentId}' requested='${opts.documentId}'）` +
+        `。使用済み persistenceDir を別 documentId で再利用した可能性＝旧文書の誤公開を防ぐため起動を拒否`,
+    );
+  }
+
+  // oplog は accepted のみ・revision 消費ゆえ 1..N 連番でなければ破損（fail-fast・AC6）。同ループで全 entry の
+  // documentId も照合する（O(N) は既存の連番検査と同一走査＝追加コスト無し）。
   entries.forEach((entry, index) => {
     if (entry.revision !== index + 1) {
       throw new Error(
         `recoverSequencerState: oplog revision 不連続（index ${index} で revision ${entry.revision}・破損）`,
+      );
+    }
+    if (String(entry.documentId) !== opts.documentId) {
+      throw new Error(
+        `recoverSequencerState: oplog entry documentId 不一致（index ${index} entry='${String(entry.documentId)}' ` +
+          `requested='${opts.documentId}'）＝別文書の operation を混入したまま復元しない（誤公開防止）`,
       );
     }
   });
@@ -114,6 +136,17 @@ export async function recoverSequencerState(opts: {
     };
   }
 
+  // 封筒 revision 相互一致検査（DD-018-1 AC3）: 封筒 revision＝内側 snapshot.currentRevision＝snapshot.document.revision の
+  // 三者一致を検査する。書込時は三者とも state.currentRevision で一致するため、乖離は改竄/bit-rot＝黙って誤 revision で
+  // 復元し tail slice を誤らせない（checksum を通り抜ける論理不整合を追加で塞ぐ）。
+  const innerRevision = persisted.snapshot.currentRevision;
+  const documentRevision = persisted.snapshot.document.revision;
+  if (persisted.revision !== innerRevision || innerRevision !== documentRevision) {
+    throw new Error(
+      `recoverSequencerState: 封筒 revision ${persisted.revision} と内側 snapshot.currentRevision ${innerRevision}` +
+        `/document.revision ${documentRevision} が不一致（破損・論理不整合）`,
+    );
+  }
   const base = deserializeSnapshot(persisted.snapshot); // document@R・aux@R（operationLog は空・owned＝破壊可）
   const snapshotRevision = persisted.revision;
   if (snapshotRevision > totalOps) {

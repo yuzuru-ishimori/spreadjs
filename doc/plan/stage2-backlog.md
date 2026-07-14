@@ -31,8 +31,8 @@
 | K3 | 行挿入後のローカル選択・Enter移動先の再ベース | roadmap §8 | DD-021 | 行操作 Alpha 範囲外（roadmap §6） |
 | K4 | 実IME変換中に対象行が削除された場合の挙動 | roadmap §8 | DD-021 | IME×行削除の競合・Alpha 非推奨 |
 | P2-1 | 単一行 InsertRows 連発ログの Θ(N²)（`apply.ts` nextSlot 全走査＋splice） | DD-014 既知制約 | DD-021 | 行操作 Stage 2＝最適化しない。bulk insert は O(N²)回避実証済 |
-| P2-3 | recovery の documentId/revision 相互検証欠如（異常構成エッジ） | DD-014 既知制約 | 起動 recovery 堅牢化の後続DD（Stage 2 運用DD） | 別 documentId 起動で誤公開の危険。信頼境界（trusted internal）内 |
-| P2-4 | restoreFrom＋persistenceDir 併用の revision 不連続（異常構成エッジ） | DD-014 既知制約 | 同上（Stage 2 運用DD） | 明示拒否 or restoreFrom 全ログ durable bootstrap |
+| ~~P2-3~~ | ~~recovery の documentId/revision 相互検証欠如~~ | DD-014 既知制約 | **DD-018-1 で回収済** | documentId 照合＋封筒 revision 相互検査 fail-fast を実装（誤公開防止） |
+| ~~P2-4~~ | ~~restoreFrom＋persistenceDir 併用の revision 不連続~~ | DD-014 既知制約 | **DD-018-1 で回収済** | restoreFrom×persistenceDir を明示拒否（throw）。全ログ durable bootstrap は現 caller 不在ゆえ不採用 |
 
 ## 4. 製品境界化（Stage 2 送りではない・Alpha で明示済み）
 

@@ -12,7 +12,8 @@ import type { OpLogStore, OpLogReadResult } from './oplog-store';
 import { PersistentRoom, recoverSequencerState } from './persistent-room';
 import { Room } from './room';
 import { Sequencer, freshSequencerState } from './sequencer';
-import { MemorySnapshotStore } from './snapshot-store';
+import { serializeSnapshot } from './snapshot';
+import { MemorySnapshotStore, createPersistedSnapshot } from './snapshot-store';
 import type { SnapshotStore } from './snapshot-store';
 import { COLUMNS, col, createManualClock, envelope, insertRows, row, setCells, str } from './test-support';
 
@@ -110,7 +111,7 @@ describe('PersistentRoom 再起動復旧（Phase 2）', () => {
     await persistent.forceSnapshot(); // revision 3 の snapshot（tail 0）
 
     // 復旧（snapshot revision 3 + tail 0）。
-    const recovered = await recoverSequencerState({ oplog, snapshotStore, columnOrder: [...COLUMNS] });
+    const recovered = await recoverSequencerState({ oplog, snapshotStore, columnOrder: [...COLUMNS], documentId: 'doc-1' });
     expect(documentHash(recovered.state.document)).toBe(liveHash);
     expect(recovered.report.fromSnapshotRevision).toBe(3);
     expect(recovered.report.tailReplayed).toBe(0);
@@ -131,7 +132,7 @@ describe('PersistentRoom 再起動復旧（Phase 2）', () => {
     await persistent.handleMessage('conn-1', submitInsert('op-4', 4));
     const liveHash = documentHash(sequencer.document);
 
-    const recovered = await recoverSequencerState({ oplog, snapshotStore, columnOrder: [...COLUMNS] });
+    const recovered = await recoverSequencerState({ oplog, snapshotStore, columnOrder: [...COLUMNS], documentId: 'doc-1' });
     expect(documentHash(recovered.state.document)).toBe(liveHash);
     expect(recovered.report.fromSnapshotRevision).toBe(2);
     expect(recovered.report.tailReplayed).toBe(2); // op-3, op-4 のみ replay（O(tail)）
@@ -145,7 +146,7 @@ describe('PersistentRoom 再起動復旧（Phase 2）', () => {
     await applyOps(persistent); // snapshot は生成しない（interval 未達）
     const liveHash = documentHash(sequencer.document);
 
-    const recovered = await recoverSequencerState({ oplog, snapshotStore, columnOrder: [...COLUMNS] });
+    const recovered = await recoverSequencerState({ oplog, snapshotStore, columnOrder: [...COLUMNS], documentId: 'doc-1' });
     expect(documentHash(recovered.state.document)).toBe(liveHash);
     expect(recovered.report.fromSnapshotRevision).toBeUndefined();
     expect(recovered.report.tailReplayed).toBe(3);
@@ -164,5 +165,83 @@ describe('PersistentRoom 再起動復旧（Phase 2）', () => {
     expect(snapshotStore.saveCount).toBeGreaterThanOrEqual(1);
     const loaded = await snapshotStore.loadLatest();
     expect(loaded?.revision).toBe(3);
+  });
+});
+
+describe('recoverSequencerState documentId × persistenceDir 相互検証 fail-fast（DD-018-1）', () => {
+  /** documentId 'doc-1' で 3 op 適用した oplog（＋任意で snapshot）を作る。 */
+  async function seedPersistence(withSnapshot: boolean): Promise<{ oplog: MemoryOpLogStore; snapshotStore: MemorySnapshotStore }> {
+    const oplog = new MemoryOpLogStore();
+    const snapshotStore = new MemorySnapshotStore();
+    const { persistent } = buildPersistentRoom(oplog, snapshotStore);
+    persistent.handleJoin({ type: 'join', protocolVersion: 1, documentId: 'doc-1' as never, lastAppliedRevision: 0, clientId: 'client-A' });
+    for (let i = 1; i <= 3; i += 1) {
+      await persistent.handleMessage('conn-1', submitInsert(`op-${i}`, i));
+    }
+    if (withSnapshot) {
+      await persistent.forceSnapshot(); // documentId 'doc-1' の snapshot@revision 3
+    }
+    return { oplog, snapshotStore };
+  }
+
+  it('AC1: snapshot 経路で persisted documentId≠要求 documentId は fail-fast（別 ID で誤公開させない）', async () => {
+    const { oplog, snapshotStore } = await seedPersistence(true);
+    await expect(
+      recoverSequencerState({ oplog, snapshotStore, columnOrder: [...COLUMNS], documentId: 'other-doc' }),
+    ).rejects.toThrow(/documentId 不一致/);
+  });
+
+  it('AC1: snapshot 無し（oplog のみ）経路でも persisted documentId≠要求で fail-fast', async () => {
+    const { oplog, snapshotStore } = await seedPersistence(false); // snapshot 未生成＝oplog 先頭 entry の documentId で照合
+    await expect(
+      recoverSequencerState({ oplog, snapshotStore, columnOrder: [...COLUMNS], documentId: 'other-doc' }),
+    ).rejects.toThrow(/documentId 不一致/);
+  });
+
+  it('AC1: oplog に別 documentId の entry が混在したら fail-fast（Codex P1・全 entry 照合）', async () => {
+    const { oplog, snapshotStore } = await seedPersistence(false); // doc-1 の 3 op
+    // 旧版で別 ID 起動→tail 追記した残骸を模擬: revision 4 に documentId 'doc-2' の entry を混入。
+    const { entries } = await oplog.readAll();
+    const foreign = { ...entries[2], documentId: 'doc-2' as never, revision: 4, operationId: 'op-foreign' as never };
+    await oplog.append([foreign]);
+    // 要求 'doc-1' は snapshot（無し）・先頭 entry（doc-1）は通るが、4 件目の doc-2 で throw する。
+    await expect(
+      recoverSequencerState({ oplog, snapshotStore, columnOrder: [...COLUMNS], documentId: 'doc-1' }),
+    ).rejects.toThrow(/oplog entry documentId 不一致/);
+  });
+
+  it('AC2: 同一 documentId での再開は throw せず復元する（正常系 positive）', async () => {
+    const { oplog, snapshotStore } = await seedPersistence(true);
+    const recovered = await recoverSequencerState({ oplog, snapshotStore, columnOrder: [...COLUMNS], documentId: 'doc-1' });
+    expect(recovered.state.currentRevision).toBe(3);
+  });
+
+  it('AC1: 空 persistenceDir（persisted 無し・oplog 空）は照合対象なしで throw しない（過剰拒否しない）', async () => {
+    const oplog = new MemoryOpLogStore();
+    const snapshotStore = new MemorySnapshotStore();
+    const recovered = await recoverSequencerState({ oplog, snapshotStore, columnOrder: [...COLUMNS], documentId: 'any-doc' });
+    expect(recovered.report.totalOps).toBe(0);
+  });
+
+  it('AC3: 封筒 revision と内側 snapshot.currentRevision の不一致で fail-fast（改竄/論理不整合）', async () => {
+    const oplog = new MemoryOpLogStore();
+    const snapshotStore = new MemorySnapshotStore();
+    const { persistent, sequencer } = buildPersistentRoom(oplog, snapshotStore);
+    persistent.handleJoin({ type: 'join', protocolVersion: 1, documentId: 'doc-1' as never, lastAppliedRevision: 0, clientId: 'client-A' });
+    for (let i = 1; i <= 3; i += 1) {
+      await persistent.handleMessage('conn-1', submitInsert(`op-${i}`, i));
+    }
+    // 内側 snapshot は revision 3 だが封筒 revision を 99 に改竄（checksum は自己整合ゆえ parse は通過する）。
+    const data = serializeSnapshot(sequencer.exportState());
+    const tampered = createPersistedSnapshot({
+      documentId: 'doc-1',
+      revision: 99,
+      createdAt: new Date(0).toISOString(),
+      snapshot: { ...data, operationLog: [] },
+    });
+    await snapshotStore.save(tampered);
+    await expect(
+      recoverSequencerState({ oplog, snapshotStore, columnOrder: [...COLUMNS], documentId: 'doc-1' }),
+    ).rejects.toThrow(/封筒 revision/);
   });
 });

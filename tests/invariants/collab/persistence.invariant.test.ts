@@ -121,7 +121,7 @@ async function runRecovery(opts: { seed: number; ops: number; snapshotIntervalOp
   const liveHash = documentHash(sequencer.document);
   const finalRevision = sequencer.currentRevision;
 
-  const recovered = await recoverSequencerState({ oplog, snapshotStore, columnOrder: [...COLUMNS] });
+  const recovered = await recoverSequencerState({ oplog, snapshotStore, columnOrder: [...COLUMNS], documentId: DOCUMENT_ID });
   const recoveredHash = documentHash(recovered.state.document);
 
   // 独立の全 replay（空文書から oplog を畳み込む）。

@@ -257,6 +257,16 @@ export async function startServer(options: StartServerOptions = {}): Promise<Run
   const columnOrder = columnOrderStrings.map((c) => createColumnId(c));
   const clock: Clock = { now: () => Date.now() }; // アダプター層のみ実クロック（指示 1）
 
+  // restoreFrom×persistenceDir 排他（DD-018-1 AC3・P2-4）: restoreFrom は in-memory 専用 bootstrap（検査/テスト）、
+  // persistenceDir は durable file 復旧。併用は revision 不連続（空 dir＋revision R の restoreFrom→次 accepted op が R+1 を
+  // 空 oplog 先頭へ書込→次回起動が連番違反で失敗）を生むため、起動時に明示拒否する（黙って壊さない・fail-fast）。
+  if (options.persistenceDir !== undefined && options.restoreFrom !== undefined) {
+    throw new Error(
+      'startServer: restoreFrom と persistenceDir は併用できません（restoreFrom=in-memory 専用復元・' +
+        'persistenceDir=durable 復旧。併用は revision 不連続を招くため明示拒否・DD-018-1 P2-4）',
+    );
+  }
+
   // DD-014 永続化（persistenceDir 指定時）: 再起動復旧＝最新 snapshot（document@R）＋oplog tail（revision>R）で復元。
   let oplog: OpLogStore | undefined;
   let snapshotStore: SnapshotStore | undefined;
@@ -265,7 +275,8 @@ export async function startServer(options: StartServerOptions = {}): Promise<Run
   if (options.persistenceDir !== undefined) {
     oplog = new FileOpLogStore(join(options.persistenceDir, 'oplog.jsonl'));
     snapshotStore = new FileSnapshotStore(join(options.persistenceDir, 'snapshots'));
-    const recovered = await recoverSequencerState({ oplog, snapshotStore, columnOrder });
+    // documentId 相互検証（DD-018-1 AC1）: 使用済み persistenceDir を別 documentId で起動＝誤公開を fail-fast。
+    const recovered = await recoverSequencerState({ oplog, snapshotStore, columnOrder, documentId });
     recovery = recovered.report;
     if (recovered.report.totalOps > 0) {
       recoveredState = recovered.state; // 既存文書を復元（seed しない）

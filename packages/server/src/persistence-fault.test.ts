@@ -51,7 +51,7 @@ async function recover() {
   const oplog = new FileOpLogStore(oplogPath);
   const snapshotStore = new FileSnapshotStore(snapshotDir);
   try {
-    return await recoverSequencerState({ oplog, snapshotStore, columnOrder: [...COLUMNS] });
+    return await recoverSequencerState({ oplog, snapshotStore, columnOrder: [...COLUMNS], documentId: 'doc-1' });
   } finally {
     await oplog.close();
     await snapshotStore.close();

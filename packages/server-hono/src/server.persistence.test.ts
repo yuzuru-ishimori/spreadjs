@@ -128,3 +128,40 @@ describe('server persistence — 再起動復旧・durable ACK（DD-014）', () 
     expect(server2.recovery?.tailReplayed).toBeLessThan(server2.recovery?.totalOps ?? 0);
   });
 });
+
+describe('serve documentId × persistenceDir fail-fast（DD-018-1）', () => {
+  it('AC1: 使用済み persistenceDir を別 documentId で起動すると fail-fast（A の内容を B として公開しない）', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'ff-docid-'));
+    cleanups.push(() => rm(dir, { recursive: true, force: true }));
+
+    // documentId 'doc-A' で seed を durable 化して close（クライアント不要＝seed が oplog に入る）。
+    const serverA = await startServer({ port: 0, seedRows: 3, documentId: 'doc-A', persistenceDir: dir });
+    expect(serverA.documentId).toBe('doc-A');
+    await serverA.close();
+
+    // 同じ dir を documentId 'doc-B' で再利用 → recovery が persisted documentId 'doc-A' と照合し起動拒否。
+    await expect(
+      startServer({ port: 0, seedRows: 3, documentId: 'doc-B', persistenceDir: dir }),
+    ).rejects.toThrow(/documentId 不一致/);
+
+    // AC2: 同一 documentId 'doc-A' なら従来どおり復旧できる（過剰拒否しない）。
+    const serverA2 = await startServer({ port: 0, seedRows: 3, documentId: 'doc-A', persistenceDir: dir });
+    cleanups.push(() => serverA2.close());
+    expect(serverA2.documentId).toBe('doc-A');
+    expect(serverA2.recovery?.totalOps).toBeGreaterThanOrEqual(1);
+  });
+
+  it('AC3: restoreFrom と persistenceDir の併用は fail-fast（revision 不連続を防ぐ・P2-4）', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'ff-restore-'));
+    cleanups.push(() => rm(dir, { recursive: true, force: true }));
+
+    // restoreFrom 用の in-memory snapshot を用意（永続化なしのサーバーから取得）。
+    const src = await startServer({ port: 0, seedRows: 2 });
+    const snap = src.snapshot();
+    await src.close();
+
+    await expect(
+      startServer({ port: 0, restoreFrom: snap, persistenceDir: dir }),
+    ).rejects.toThrow(/restoreFrom と persistenceDir は併用できません/);
+  });
+});

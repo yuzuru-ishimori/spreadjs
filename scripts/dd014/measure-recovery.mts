@@ -130,7 +130,7 @@ async function measureRecovery(dir: string): Promise<{ ms: number; report: Await
   const oplog = new FileOpLogStore(join(dir, 'oplog.jsonl'));
   const snapshotStore = new FileSnapshotStore(join(dir, 'snapshots'));
   const start = performance.now();
-  const recovered = await recoverSequencerState({ oplog, snapshotStore, columnOrder });
+  const recovered = await recoverSequencerState({ oplog, snapshotStore, columnOrder, documentId: 'perf-doc' });
   const ms = performance.now() - start;
   const hash = documentHash(recovered.state.document);
   await oplog.close();
