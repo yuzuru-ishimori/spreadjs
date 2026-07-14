@@ -9,8 +9,9 @@ import { describe, expect, it } from 'vitest';
 import * as grid from '@nanairo-sheet/grid';
 import * as serverHono from '@nanairo-sheet/server-hono';
 
-// Facade が公開してよい value export の allowlist（Experimental 0.x・DD-016 確定面）。
-const GRID_ALLOWED = ['mount', 'GRID_API_VERSION'];
+// Facade が公開してよい value export の allowlist（Experimental 0.x・DD-016 確定面＋DD-017 診断面）。
+// DD-017: 安定エラーコード語彙 GRID_ERROR_CODES / GRID_CONFLICT_CODES を追加（error-codes.md 参照）。
+const GRID_ALLOWED = ['mount', 'GRID_API_VERSION', 'GRID_ERROR_CODES', 'GRID_CONFLICT_CODES'];
 const SERVER_HONO_ALLOWED = ['serve', 'SERVER_HONO_API_VERSION'];
 
 // consumer へ漏れてはいけない内部シンボルの代表（core Internal）。

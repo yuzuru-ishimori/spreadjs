@@ -1,6 +1,6 @@
 {
   "name": "@nanairo-sheet/ime",
-  "version": "0.0.0",
+  "version": "0.1.0-alpha.0",
   "private": true,
   "type": "module",
   "description": "日本語IME編集状態機械・グリッドジオメトリ/ナビゲーション・IMEトレース採取（DOM非依存・ランタイム依存ゼロ）",

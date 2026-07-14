@@ -58,16 +58,28 @@ describe('contract: Facade export surface snapshot', () => {
   });
 });
 
-describe('contract: R7 内部型漏洩0（公開 .d.ts に内部パッケージ型が現れない）', () => {
-  it('@nanairo-sheet/grid の公開宣言は内部パッケージ型を漏らさない', () => {
-    const dts = publicDeclaration('packages/grid/src/index.ts');
-    expect(dts.length).toBeGreaterThan(0);
-    expect(dts).not.toMatch(INTERNAL_PACKAGE_RE);
-  });
+// 各ケースは公開 .d.ts を in-memory で emit する（ts.createProgram＝lib 読込込みのコールドコスト大）。
+// 既定 5s では全体スイート同時実行の負荷下で稀に timeout するため、明示 timeout を与える（DD-017）。
+const DTS_EMIT_TIMEOUT_MS = 30_000;
 
-  it('@nanairo-sheet/server-hono の公開宣言は内部パッケージ型を漏らさない', () => {
-    const dts = publicDeclaration('packages/server-hono/src/index.ts');
-    expect(dts.length).toBeGreaterThan(0);
-    expect(dts).not.toMatch(INTERNAL_PACKAGE_RE);
-  });
+describe('contract: R7 内部型漏洩0（公開 .d.ts に内部パッケージ型が現れない）', () => {
+  it(
+    '@nanairo-sheet/grid の公開宣言は内部パッケージ型を漏らさない',
+    () => {
+      const dts = publicDeclaration('packages/grid/src/index.ts');
+      expect(dts.length).toBeGreaterThan(0);
+      expect(dts).not.toMatch(INTERNAL_PACKAGE_RE);
+    },
+    DTS_EMIT_TIMEOUT_MS,
+  );
+
+  it(
+    '@nanairo-sheet/server-hono の公開宣言は内部パッケージ型を漏らさない',
+    () => {
+      const dts = publicDeclaration('packages/server-hono/src/index.ts');
+      expect(dts.length).toBeGreaterThan(0);
+      expect(dts).not.toMatch(INTERNAL_PACKAGE_RE);
+    },
+    DTS_EMIT_TIMEOUT_MS,
+  );
 });

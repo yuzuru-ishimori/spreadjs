@@ -1,6 +1,6 @@
 {
   "name": "@nanairo-sheet/selection",
-  "version": "0.0.0",
+  "version": "0.1.0-alpha.0",
   "private": true,
   "type": "module",
   "description": "選択範囲（矩形）ユーティリティ（DOM非依存・ランタイム依存ゼロ）",

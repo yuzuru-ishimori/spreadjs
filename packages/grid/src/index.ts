@@ -10,6 +10,14 @@
 
 import { createGridController } from './mount-controller';
 
+// 公開エラー語彙・診断 hook は Facade 自前モジュールが定義する（内部 package 型ではない＝R7 に反さない）。
+export { GRID_ERROR_CODES, GRID_CONFLICT_CODES } from './error-codes';
+export type { GridErrorCode, GridConflictCode } from './error-codes';
+export type { GridDiagnostic, GridDiagnosticLevel, GridDiagnosticHook } from './diagnostics';
+
+import type { GridConflictCode, GridErrorCode } from './error-codes';
+import type { GridDiagnosticHook } from './diagnostics';
+
 /** 接続状態（consumer 表示用）。内部 collab の ConnectionState を写像した公開型（型は再exportしない）。 */
 export type GridConnectionState = 'online' | 'offline' | 'stopped';
 
@@ -25,8 +33,11 @@ export interface GridConflict {
   readonly operationId: string;
   /** 競合理由。 */
   readonly reason: GridConflictReason;
-  /** server reject code（'cell-conflict' 等）を文字列化（reason==='rejected' のとき）。 */
-  readonly code?: string;
+  /**
+   * 安定した公開競合コード（内部 RejectCode を素通しせず公開語彙へ写像＝R7）。未知/未写像は 'unknown'。
+   * 一覧は doc/DD/DD-017/error-codes.md を参照（GRID_CONFLICT_CODES）。
+   */
+  readonly code: GridConflictCode;
 }
 
 /**
@@ -38,7 +49,13 @@ export type GridEvent =
   | { readonly type: 'pending'; readonly pendingCount: number }
   | { readonly type: 'rejected'; readonly pendingCount: number; readonly conflict: GridConflict }
   | { readonly type: 'divergence'; readonly serverRevision: number; readonly committedRevision: number }
-  | { readonly type: 'error'; readonly phase: 'config' | 'connect' | 'runtime'; readonly message: string };
+  | {
+      readonly type: 'error';
+      readonly phase: 'config' | 'connect' | 'runtime';
+      /** 安定した公開エラーコード（一覧は doc/DD/DD-017/error-codes.md＝GRID_ERROR_CODES）。 */
+      readonly code: GridErrorCode;
+      readonly message: string;
+    };
 
 export type GridEventListener = (event: GridEvent) => void;
 
@@ -61,6 +78,11 @@ export interface GridMountOptions {
   readonly clientId?: string;
   /** 初期イベント購読（mount 直後の connection/error を取りこぼさない）。 */
   readonly onEvent?: GridEventListener;
+  /**
+   * 診断ログ hook（opt-in・既定無出力）。指定すると boot/接続/競合/破棄などの診断エントリが配信される。
+   * 未指定なら診断は生成されない（性能影響なし）。障害切り分け用で GridEvent（consumer 契約）とは別系統。
+   */
+  readonly onDiagnostic?: GridDiagnosticHook;
 }
 
 /** mount が返すハンドル（consumer lifecycle 契約）。 */

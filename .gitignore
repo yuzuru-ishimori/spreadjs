@@ -3,6 +3,10 @@ node_modules/
 dist/
 build/
 
+# DD-017 配布成果物（pack tarball closure＋manifest。scripts/release/build-release.sh が生成・再現可能）
+# ルート直下の release/ のみ（非アンカーだと scripts/release/ 等も無視され release スクリプト本体が漏れる）
+/release/
+
 # TypeScript インクリメンタルビルド情報
 *.tsbuildinfo
 

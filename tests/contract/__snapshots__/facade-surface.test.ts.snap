@@ -3,6 +3,8 @@
 exports[`contract: Facade export surface snapshot > @nanairo-sheet/grid の公開 value surface 1`] = `
 [
   "GRID_API_VERSION",
+  "GRID_CONFLICT_CODES",
+  "GRID_ERROR_CODES",
   "mount",
 ]
 `;

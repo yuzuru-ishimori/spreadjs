@@ -1,6 +1,6 @@
 {
   "name": "@nanairo-sheet/types",
-  "version": "0.0.0",
+  "version": "0.1.0-alpha.0",
   "private": true,
   "type": "module",
   "description": "ブランド型・共通イベント・公開型（ランタイム依存ゼロ）",

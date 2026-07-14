@@ -35,6 +35,8 @@ import { toPresenceUsers } from './presence-adapter';
 import { createSessionSync } from './session-sync';
 import type { SessionSync } from './session-sync';
 import { buildScaffold } from './dom-scaffold';
+import { GridBootError, toGridConflictCode } from './error-codes';
+import { createDiagnosticSink } from './diagnostics';
 import { debugRegistry } from './internal';
 import type { GridDebugApi, GridDebugCellAddress } from './internal';
 import type {
@@ -96,6 +98,9 @@ export function createGridController(target: GridMountTarget, options: GridMount
   let intervalId = 0;
   let destroyed = false;
 
+  // 診断ログ hook（opt-in・既定無出力）。GridEvent（consumer 契約）とは別系統の障害切り分け用。
+  const diag = createDiagnosticSink(options.onDiagnostic);
+
   function emit(event: GridEvent): void {
     for (const listener of [...listeners]) {
       listener(event);
@@ -115,7 +120,8 @@ export function createGridController(target: GridMountTarget, options: GridMount
           conflict: {
             operationId: String(event.entry.operationId),
             reason: event.entry.reason,
-            code: event.entry.code,
+            // 内部 RejectCode を素通しせず公開語彙へ写像する（R7・未知は 'unknown'）。
+            code: toGridConflictCode(event.entry.reason, event.entry.code),
           },
         };
       case 'divergence':
@@ -391,9 +397,15 @@ export function createGridController(target: GridMountTarget, options: GridMount
     // destroy() で abort される（boot 進行中の /config を残さない・P2-2）。
     const response = await fetch(`${serverOrigin}/config`, { signal });
     if (!response.ok) {
-      throw new Error(`/config 取得失敗: ${response.status}`);
+      throw new GridBootError('config-unavailable', `/config 取得失敗: ${response.status}`);
     }
-    const json: unknown = await response.json();
+    // HTTP 200 でも本文が不正 JSON なら「到達性」でなく「応答形式」の問題＝config-invalid（P2-3）。
+    let json: unknown;
+    try {
+      json = await response.json();
+    } catch (error) {
+      throw new GridBootError('config-invalid', `/config の JSON 解析失敗: ${errorMessage(error)}`);
+    }
     if (
       typeof json !== 'object' ||
       json === null ||
@@ -401,7 +413,7 @@ export function createGridController(target: GridMountTarget, options: GridMount
       !('columnOrder' in json) ||
       !Array.isArray((json as { columnOrder: unknown }).columnOrder)
     ) {
-      throw new Error('/config の形式が不正');
+      throw new GridBootError('config-invalid', '/config の形式が不正');
     }
     const record = json as { documentId: string; columnOrder: string[] };
     return { documentId: record.documentId, columnOrder: record.columnOrder };
@@ -420,16 +432,21 @@ export function createGridController(target: GridMountTarget, options: GridMount
   }
 
   async function boot(): Promise<void> {
+    diag.emit('info', 'boot-start', `boot 開始（server=${serverOrigin}）`);
     let config: ResolvedConfig;
     try {
       config = await resolveConfig();
     } catch (error) {
       // destroy() 由来の AbortError は正常な後始末ゆえエラー通知しない（P2-2）。
       if (!destroyed) {
-        emit({ type: 'error', phase: 'config', message: errorMessage(error) });
+        // GridBootError は phase/code を保持する。それ以外（想定外）は config-unavailable 相当で通知。
+        const code = error instanceof GridBootError ? error.code : 'config-unavailable';
+        diag.emit('error', 'config-error', `${code}: ${errorMessage(error)}`);
+        emit({ type: 'error', phase: 'config', code, message: errorMessage(error) });
       }
       return;
     }
+    diag.emit('info', 'config-resolved', `documentId=${config.documentId} columns=${config.columnOrder.length}`);
     if (destroyed) {
       return; // boot 中に destroy された（wiring しない）
     }
@@ -445,8 +462,9 @@ export function createGridController(target: GridMountTarget, options: GridMount
       // 初回接続確立前の WS エラーは connect error として通知する（approved lifecycle mapping・P1-2）。
       // 接続確立後の一時エラーは reconnect の一部＝connection offline イベントで表現するため connect error にしない。
       logger: (message) => {
+        diag.emit('warn', 'transport', message);
         if (!hasEverConnected && !destroyed) {
-          emit({ type: 'error', phase: 'connect', message });
+          emit({ type: 'error', phase: 'connect', code: 'connect-failed', message });
         }
       },
     });
@@ -468,7 +486,15 @@ export function createGridController(target: GridMountTarget, options: GridMount
           if (event.type === 'connection' && event.state === 'online') {
             hasEverConnected = true; // 以降の transport エラーは connect error にしない（reconnect＝offline で表現）
           }
-          emit(toGridEvent(event));
+          const gridEvent = toGridEvent(event);
+          if (gridEvent.type === 'connection') {
+            diag.emit('info', 'connection', `state=${gridEvent.state} pending=${gridEvent.pendingCount}`);
+          } else if (gridEvent.type === 'rejected') {
+            diag.emit('warn', 'rejected', `code=${gridEvent.conflict.code} op=${gridEvent.conflict.operationId}`);
+          } else if (gridEvent.type === 'divergence') {
+            diag.emit('warn', 'divergence', `server=${gridEvent.serverRevision} committed=${gridEvent.committedRevision}`);
+          }
+          emit(gridEvent);
         },
       },
       rowHeight: ROW_HEIGHT,
@@ -567,6 +593,7 @@ export function createGridController(target: GridMountTarget, options: GridMount
         return;
       }
       destroyed = true;
+      diag.emit('info', 'destroy', 'grid を破棄しリソースを解放');
       cancelAnimationFrame(rafId);
       window.clearInterval(intervalId);
       abort.abort(); // scroller listeners を解放
@@ -676,7 +703,8 @@ export function createGridController(target: GridMountTarget, options: GridMount
   // boot は自前で config 失敗を error イベント化するが、config 以降の配線例外は runtime error として通知する
   // （旧 main.ts の `void boot().catch(...)` と等価・unhandled rejection を出さない）。
   void boot().catch((error) => {
-    emit({ type: 'error', phase: 'runtime', message: errorMessage(error) });
+    diag.emit('error', 'runtime-error', errorMessage(error));
+    emit({ type: 'error', phase: 'runtime', code: 'runtime-fault', message: errorMessage(error) });
   });
 
   return instance;

@@ -62,11 +62,26 @@ fi
 log "  ok: 内部 import 0 / test-support import 0 / source path 参照 0"
 
 # ---- 3. closure 一式を pack ＆ consumer-app へ install（workspace link を使わない） ----
-log "[consumer-app] 3. pack closure（9 tarball）→ consumer-app へ install"
+# RELEASE_VENDOR_DIR が指すディレクトリ（scripts/release/build-release.sh の成果物）があれば、その配布 tarball を
+# そのまま install して「配布成果物経由で consumer-app が成立するか」を検証する（DD-017 Phase 1・AC2・要確認D）。
+# 未指定なら従来どおり fresh に pack する（DD-016-2 経路と共存）。
 rm -rf "$VENDOR"; mkdir -p "$VENDOR"
-for p in "${CLOSURE_PKGS[@]}"; do
-  npm pack --workspace "@nanairo-sheet/$p" --pack-destination "$VENDOR" >/dev/null 2>&1
-done
+if [ -n "${RELEASE_VENDOR_DIR:-}" ]; then
+  log "[consumer-app] 3. 配布成果物経由（RELEASE_VENDOR_DIR=$RELEASE_VENDOR_DIR）→ consumer-app へ install"
+  [ -f "$RELEASE_VENDOR_DIR/manifest.json" ] || fail "RELEASE_VENDOR_DIR に manifest.json がない（build-release.sh 未実行）"
+  rel_count=$(find "$RELEASE_VENDOR_DIR" -maxdepth 1 -name '*.tgz' | wc -l | tr -d ' ')
+  [ "$rel_count" -eq "${#CLOSURE_PKGS[@]}" ] || fail "配布 tarball 数 $rel_count が closure(${#CLOSURE_PKGS[@]}) と不一致"
+  # manifest と実 tarball の同一性検査（package 名・版・ファイル名・sha256）。stale/改変 tarball の誤用を弾く（DA #3・P2-2）。
+  node "$REPO_ROOT/scripts/release/verify-manifest.mjs" "$RELEASE_VENDOR_DIR" | tee -a "$LOG" \
+    || fail "manifest と配布 tarball の同一性検査に失敗（sha256/版/ファイル名不一致＝stale/改変の疑い）"
+  cp "$RELEASE_VENDOR_DIR"/*.tgz "$VENDOR/"
+  log "  ok: 配布成果物 $rel_count tarball を fresh pack せず流用（manifest 同一性検証済・配布物そのもので統合）"
+else
+  log "[consumer-app] 3. pack closure（9 tarball）→ consumer-app へ install"
+  for p in "${CLOSURE_PKGS[@]}"; do
+    npm pack --workspace "@nanairo-sheet/$p" --pack-destination "$VENDOR" >/dev/null 2>&1
+  done
+fi
 rm -rf "$APP/node_modules" "$APP/package-lock.json"
 (
   cd "$APP"
