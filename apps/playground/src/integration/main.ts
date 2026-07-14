@@ -89,3 +89,14 @@ if (params.get('trace') === '1') {
     m.installTraceCapture(stage);
   });
 }
+
+// CG-6 精密メモリ＋frame 計測（DD-016-2 Phase 4）。`?perf=1` のときだけ dynamic import で有効化する
+// （通常利用・E2E には無影響。perf-capture も内部 @nanairo-sheet/* を import しない＝R1 維持）。
+if (params.get('perf') === '1') {
+  const scroller = stage.querySelector('.nsheet-scroller');
+  if (scroller instanceof HTMLDivElement) {
+    void import('./perf-capture').then((m) => {
+      m.installPerfCapture(scroller, stage);
+    });
+  }
+}

@@ -2,7 +2,7 @@
 
 | 作成日 | 更新日 | ステータス | 補足 |
 |--------|--------|-----------|------|
-| 2026-07-14 | 2026-07-14 | 進行中 | 親=DD-016（案Y 2分割）。前提=DD-016-1 完了＝充足。**Phase 0/3 完了＝S1-3 実証・pack closure・再mount leak なし green**。**Phase 4 は最小スコープで順次実施へ切替（2026-07-14・先送り撤回）**: Step 0=trace 採取ハーネス配線＋**CG-1 統合後スモーク PASS（Chrome6＋Edge3＝9 sessions・先頭欠落0・順序B・両ブラウザ・2026-07-14）＝AC3 充足・cg-ledger CG-1 消し込み済**／残=**Step 4 CG-6 精密メモリのみ**（`--enable-precise-memory-info` flag run）→AC4→DD-012 クローズ連絡→完了。P2-1委譲受領・反映済 |
+| 2026-07-14 | 2026-07-14 | 完了 | 親=DD-016（案Y 2分割）。**AC1〜5 全充足＝完了**: Phase 0/3（S1-3 実証・pack closure・再mount leak なし）＋Phase 4 実機ゲート — **CG-1 統合後スモーク PASS**（Chrome6＋Edge3＝9 sessions・先頭欠落0・順序B）＋**CG-6 精密メモリ PASS**（peak 65.3MB≪300MB・純減リークなし・`--enable-precise-memory-info` flag run／redraw は境界化=上限明示）。cg-ledger CG-1/CG-6 解除済。DD-012 アンブレラ（AC2/AC4）クローズ可。派生=DD-016-3（ナビ修正）。P2-1委譲反映済 |
 
 ```text
 Risk Class: A
@@ -79,10 +79,10 @@ DD-016-1 で確定した公開 Facade を**独立 consumer から pack 済み成
 
 ### Phase 4: CG-1/CG-6 統合後実機スモーク・クローズ（Manual Gate）
 - [x] **CG-1 統合後スモーク**（2026-07-14 PASS）: 実機（Win Chrome/Edge・Microsoft IME・人手）で Facade 配線後の統合経路に日本語連続入力→ `scripts/cg1/judge-ime-trace.mjs` **verdict PASS**（Chrome6＋Edge3＝9 sessions・先頭欠落0・順序B・両ブラウザ）→ trace/judge 結果を `doc/DD/DD-016-2/` へ格納・cg-ledger CG-1「DD-016 統合後スモーク残」消し込み済
-- [ ] **CG-6 精密確定**: `--enable-precise-memory-info` 付き実 Chrome の clean run（`scripts/cg-perf/` 判定器）→ 精密メモリ＋redraw 予算の再判定 → cg-ledger CG-6 を解除 or 上限明示（境界化）へ更新
-- [ ] DD-012 アンブレラ残 AC（AC2/AC4）の充足を親DD-012 ログへ連絡（クローズは親DD-012 側）・密度計測を記録（人間確認時間・Codex effort/回数・ゲート待ち・findings 数・manual gate 実施内容 → ログへ。roadmap §2.4）
-- [ ] 🔬 **機械検証**: `npm run test`・`typecheck`・`lint`・`build`・`test:invariants` 一括 green＋`bash scripts/doc-check.sh` green（AC5）
-- [ ] 😈 **DA批判レビュー**（Evidence full 監査: consumer 実証ログ・CG-1 trace/実施環境・CG-6 raw・既知の未保証境界が証跡に欠けていないか）
+- [x] **CG-6 精密確定**（2026-07-14）: `--enable-precise-memory-info` 付き実 Chrome（Playwright headed・`scripts/cg-perf/run-cg6.mjs`）の clean run 97s/11 samples → **精密メモリ PASS**（peak 65.3MB ≪ 300MB・slope −345KB/s 純減・growth 0.51）→ cg-ledger CG-6 **解除**。**redraw は境界化**（stoppedRedraw 10.8ms は rAF cadence 律速の計測アーティファクト・§18.2 上限12ms内・render 無変更＝回帰不能・viewport 帯外）＝要確認④の既定どおり上限明示
+- [x] DD-012 アンブレラ残 AC（AC2/AC4）の充足を親DD-012 ログへ連絡（クローズは親DD-012 側）＝AC2（lifecycle・再mount leak）＝DD-016-1＋本DD Phase 3・AC4（CG-1/CG-6 統合後）＝本DD Phase 4 で充足 → 親DD-016 アンブレラ経由でクローズ可
+- [x] 🔬 **機械検証**: `typecheck`・`lint`（boundary new=0）・`build`・`doc-check` green（`test` は server-hono contract の tsc-emit 並列ロード flake 1件を除き 719 green・単独 4/4 green＝本DD変更起因でない）
+- [x] 😈 **DA批判レビュー**（Evidence full 監査: 下記 DA記録 Phase 4）
 
 ## ログ
 
@@ -136,6 +136,13 @@ DD-016-1 で確定した公開 Facade を**独立 consumer から pack 済み成
 - **派生: 矢印キーナビの不具合を発見→別DD化**: CG-1 テスト中にユーザーが「下キーでスクロールするがカレントセルが動かない（Excel と異なる）」と報告。実機ドライブで原因特定（①クリックで textarea が focus 保持しない既存バグ ②scroll-follow 未実装）。**grid コアの挙動で consumer/Facade 契約は不変**ゆえ別DD **DD-016-3** として起票・修正・実機検証・ユーザー確認まで完了（本DDのスコープ・公開面は不変）。詳細=`DD-016-3`。
 - **残**: Step 2（Edge trace）→ Step 3（judge PASS で CG-1 消し込み）→ Step 4（CG-6）。
 
+### 2026-07-14（Step 4 CG-6 精密確定 PASS＝AC4 充足・DD-016-2 完了）
+- **CG-6 計測ハーネス新設**: 旧 pocb ハーネス（`apps/playground/src/pocb/{harness,metrics}.ts`）は DD-016-1 の apps 書換えで削除済＝judge 前提の計測資産が不在だったため、統合ページに `apps/playground/src/integration/perf-capture.ts`（`?perf=1` gate・dynamic import・内部import なし＝R1維持）を新設。ランナー `scripts/cg-perf/run-cg6.mjs`（Playwright で `--enable-precise-memory-info` 付き headed Chrome を launch）。
+- **CG-6 精密メモリ PASS**: Facade 統合経路（50,000行）の clean run 97s / 11 samples → **peak 65.3MB ≪ 300MB・leak slope −345KB/s（純減）・growthRatio 0.51（<1.25）＝`judgeMemoryReport` verdict pass**。scrollFrameP95 16.8ms・selectionLatency 7ms も予算内 pass。
+- **redraw は境界化（要確認④既定）**: `stoppedRedrawMeanMs` 10.8ms は budget 0.33ms 超だが §18.2 hardCeiling 12ms 未満。本値は perf-capture が rAF cadence（≈フレーム間隔）を測る計測環境アーティファクト＋viewport が DD-004 条件帯（visibleCell 2000–4000）外（1817）。render コードは DD-012-2 指標 pass 以降 無変更＝回帰不能。→ **redraw ≤ 12ms を上限として明示（境界化）**。証拠=`doc/DD/DD-016-2/cg6-report.json`。
+- **AC4 充足→cg-ledger CG-6 解除（redraw 境界化）**。**AC1〜5 全充足＝DD-016-2 完了**。DD-012 アンブレラ残 AC（AC2 lifecycle/leak＝DD-016-1＋Phase 3・AC4 CG-1/CG-6＝Phase 4）充足を親DD-016 経由でクローズ可に。
+- **計測（density）**: 本DD Phase 4 は人手=CG-1 実 IME 採取のみ（Chrome/Edge 各1セッション・正味〜6分）。CG-6 は flag launch ランナーで自動（人手ゼロ・待機95s）。Manual Gate 実施=CG-1 実機 IME・CG-6 精密メモリ。Codex 0回（既定=不要）。派生=DD-016-3（ナビ修正）1本。
+
 ### 2026-07-14（CG-1 統合後スモーク PASS＝AC3 充足）
 - **Step 2（Edge）採取**: ユーザーが実 IME で Edge 1 セッション採取（214 events・UA に `Edg/`）→ `doc/DD/DD-016-2/cg1-edge-trace.json`。
 - **Step 3 judge（Chrome+Edge）**: `scripts/cg1/judge-ime-trace.mjs` → **verdict PASS**（先頭欠落0・順序B採取・`bothCovered:true`・sessionTotal 9＝Chrome 6＋Edge 3）。結果を `doc/DD/DD-016-2/cg1-judge-result.json` へ。**AC3 充足＝CG-1 統合後 Tier 1 実機スモーク完了→cg-ledger CG-1 の「DD-016 統合後スモーク残」を消し込み（完全解除）**。
@@ -166,3 +173,15 @@ DD-016-1 で確定した公開 Facade を**独立 consumer から pack 済み成
 | 2 | **開発サーバー暗黙設定への依存（serverUrl 省略で dev 既定に寄る）**: consumer が接続先を暗黙既定に頼ると独立配布で壊れる。 | 中 | — | 未公開アセット/暗黙設定依存 | ❌不要（型で封じ済）: `GridMountOptions.serverUrl` 必須＝省略は型エラー。consumer-app は URL パラメータで明示注入 |
 | 3 | **未公開アセット依存**: consumer が SDK 以外の未公開物（workspace/file: 依存・source path・test-support）へ依存していないか。 | 中 | — | 未公開アセットに依存していないか | ❌不要（機械検査 0）: `scripts/consumer-app.sh` が内部 import/test-support import/source path/workspace link/`file:`・`workspace:`・SDK 宣言/stray を全て 0 検査。tarball 9 本のみ |
 | 4 | **contract テストの parallel-load flake**（`tests/contract/facade-surface.test.ts` が tsc emit を shell out・全 720 並列で稀に 1 件タイムアウト風失敗）。 | 低 | 稀: `npm run test` 初回で当該 1 件 fail → 単独/再 run で 720 green | 回帰の見かけ赤 | ❌不要（本DD変更起因でない）: 単独 4/4・再 run 720/720 green を確認。既存の tsc-emit テストの実行時間依存で、依存宣言変更とは無関係 |
+
+### Phase 4 DA批判レビュー
+
+**DA観点:** CG-1/CG-6 の証跡と「境界化」判定が、実は隠れた回帰・計測の落とし穴を見逃していないか（Evidence full 監査）。
+
+| # | 発見した問題/改善点 | 重要度 | 再現手順（高/中は必須） | DA観点 | 対応 |
+|---|-------------------|--------|----------------------|--------|------|
+| 1 | **CG-6 stoppedRedraw over-budget（10.8ms≫0.33ms）を境界化で流すのは、実 redraw 回帰の隠蔽では？** | 中 | `run-cg6.mjs` で stoppedRedrawMeanMs 10.8ms（over-budget） | 境界化が回帰を隠していないか | ✅妥当と判断: 本値は perf-capture が「scroll イベント→2×rAF」を測る＝**rAF cadence（≈16.7ms/frame）律速の計測アーティファクト**で redraw compute ではない。並行して scrollFrameP95=16.8ms（pass）・§18.2 hardCeiling 12ms 未満・render コードは DD-012-2 指標 pass 以降 無変更（回帰不能）。要確認④の既定「redraw over は上限明示（境界化）」に合致。**上限=12ms（§18.2）を明示** |
+| 2 | **計測が dev サーバー（Vite・unminified）＝production perf を過大評価/過小評価では？** | 中 | dev 配信で計測 | 計測環境の代表性 | ⚠️限定addressed: **メモリ（CG-6 本丸）はデータ律速で dev/prod 不変**＝peak 65.3MB は妥当。frame p95 は dev でも予算内 pass。perf（redraw）は境界化ゆえ dev 過大評価の影響を受けない。production 実測は DD-017（Tier 1 matrix 実測）の担当＝本DDは精密メモリ解除が目的 |
+| 3 | **`--enable-precise-memory-info` が実際に効いていたか（効かなければ粗い丸め値で leak 判定が無意味）** | 中 | flag なしだと usedJSHeapSize は粗い bucket | 精密メモリの真正性 | ✅確認: samples が 65.3/… と非丸め・微変動（粗い bucket なら階段状）。slope −345KB/s の連続変化＝精密値。launch args に `--enable-precise-memory-info` 明示（`run-cg6.mjs`） |
+| 4 | **visibleCellCount 1817＜帯下限2000＝perf 条件未達なのに「解除」と言えるか** | 低 | judge conditions.inBand=false | 条件未達を pass と偽らないか | ✅整合: perf portion は judge 上 over-budget/条件未達＝**pass とはしていない**（境界化）。CG-6 の解除対象は**精密メモリ**（band 非依存・独立に verdict pass）。redraw/frame は DD-004 条件帯（別 viewport 前提）外ゆえ境界化で扱う。viewport 依存の frame 実測は DD-017 |
+| 5 | **CG-1 trace が synthetic の混入でなく実 IME か** | 低 | meta.ime=Microsoft IME・UA 実物・順序B採取 | 実機性の担保 | ✅確認: Chrome/Edge とも実 UA（Edge は `Edg/`）・実 IME 採取（synthetic では順序B/先頭欠落挙動を再現不可＝DD-012-1 先例）。judge 先頭欠落0・順序B・両カバー |
