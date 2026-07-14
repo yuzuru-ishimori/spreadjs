@@ -2,7 +2,7 @@
 
 | 作成日 | 更新日 | ステータス | 補足 |
 |--------|--------|-----------|------|
-| 2026-07-14 | 2026-07-14 | 確認待ち | S1-6 担当。要確認A〜D 確定（ゲート代行）。Phase 0〜4 実装＋Codex(high) findings 8件全対応・全検証 green。**未コミット**（ユーザー確認後に主ループでコミット）。残: `npm run build` の既存 Vite flake（DD-017 非起因） |
+| 2026-07-14 | 2026-07-15 | 完了 | S1-6 充足（pack tarball 配布正式化・release automation・CHANGELOG・Quick Start・診断API・CG-4 実測記入・ADR-0015 Accepted）。Codex(high) 8件全対応・test 730 green。コミット 889b903。派生 flake は DD-017-1 で恒久是正済み |
 
 ```text
 Risk Class: B（roadmap §4 DD-017 行）
@@ -145,6 +145,13 @@ Stage 1 移行条件 **S1-6（配布・運用成果物）** を充足する: 配
 - **P2-4（対応）** 9 package.json を採番したが `package-lock.json` が `0.0.0` のまま＝clean checkout で dirty → `npm install --package-lock-only` で同版へ再生成（diff は版のみ 9/9）。
 
 Codex 修正後: build-release（closure gate 含む）green・consumer-app スモーク（manifest sha256 検証込み）green・test 730 green・typecheck/lint green。
+
+### 2026-07-15 完了・アーカイブ
+
+- コミット 889b903（DD-017 本体・35ファイル）。残課題だったルート `npm run build` の Vite flake は子DD **DD-017-1** で真因特定（cwd ドライブレター casing）・恒久是正済み（コミット 8fe7148）＝残課題ゼロ。
+- 知見昇格: 配布戦略の確定内容を `doc/engineering-patterns.md` #4 へ反映（pack tarball＋sha256 manifest 正式化）。長寿命の決定は ADR-0015（Accepted）が正本のため `doc/decisions.md` への重複記載はしない。
+- 仕様書同期: `doc/spec/` 不在のためスキップ（公開面の変更は ADR-0015・CHANGELOG・quick-start.md へ反映済み）。
+- ステータス=完了 → アーカイブ（`doc/archived/DD/`）。
 
 ---
 

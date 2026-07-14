@@ -44,7 +44,14 @@
 
 - **症状**: Facade の全テストが green なのに、`npm pack` した tarball を独立 consumer へ install すると module 解決に失敗（`Cannot find module '@nanairo-sheet/render'` 等）。
 - **原因**: 実行時 import する `@nanairo-sheet/*` を `devDependencies` に置くと `npm pack`→install で omit される。workspace ルートの symlink がテストでは解決を肩代わりするため問題が隠れる（Codex 指摘）。
-- **正しいやり方**: Facade が**実行時 import** する内部 package は `dependencies` に置く（`test-support.ts` だけが使う collab 等は devDep のまま）。private 内部 package を registry 非経由で consumer へ届けるには bundle（`bundledDependencies`）or 全 package を pack して同梱する（配布戦略＝DD-017・pack 実証＝DD-016-2）。
-- **元DD**: DD-016-1（Codex xhigh P1-1）
+- **正しいやり方**: Facade が**実行時 import** する内部 package は `dependencies` に置く（`test-support.ts` だけが使う collab 等は devDep のまま）。private 内部 package を registry 非経由で consumer へ届けるには bundle（`bundledDependencies`）or 全 package を pack して同梱する（**配布戦略は DD-017 で「全 9 package pack tarball＋sha256 manifest」に正式確定**〔`scripts/release/build-release.sh`・ADR-0015 Accepted〕・pack 実証＝DD-016-2）。
+- **元DD**: DD-016-1（Codex xhigh P1-1）→ DD-017 で配布経路確定
+
+## 5. Windows のドライブレター casing 差で vite `html-inline-proxy` がルート workspace 経由 build だけ決定的に失敗する（「間欠 flake」に見える）
+
+- **症状**: ルートの `npm run build`（npm workspaces 経由）が `[vite:html-inline-proxy] Could not load ...?html-proxy&inline-css...`（`No matching HTML proxy module found`）で失敗するのに、`cd apps/<app> && npx vite build` は常に green。再現が実行経路に依存するため「間欠 flake」と誤認しやすい。
+- **原因**: git-bash 既定の**小文字ドライブ `c:`** がシェル cwd 経由で vite の `config.root` に流れる一方、**rollup はエントリ id を大文字 `C:` に正規化**する。`html-inline-proxy` は inline `<style>` の仮想 CSS モジュールキーを `entryId.replace(config.root, '')` で計算するため、add 時（小文字）と load 時（大文字）でキーが食い違い解決不能になる。乱数性はなく **cwd の casing で決まる決定的バグ**（直接実行が green なのは `cd` が casing を再正準化するため）。
+- **正しいやり方**: vite.config の build input を **`realpathSync.native` でディスク上の正準 casing に揃えた絶対パス**に固定する（全区間 casing＋symlink を正規化・POSIX では no-op）。「実行経路によって挙動が変わる build 失敗」を見たら乱数 flake と決めつけず、**cwd/env（特に Windows のドライブレター casing）の差分**を先に疑う。
+- **元DD**: DD-017-1（probe プラグインで `config.root` とエラーパスの casing 食い違いを実測して確定・ルート build 連続 8/8 green で是正確認）
 
 <!-- 以降、パターンを追記していく。番号は通し番号 -->
