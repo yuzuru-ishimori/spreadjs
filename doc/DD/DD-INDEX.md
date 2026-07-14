@@ -7,6 +7,7 @@
 | DD | 件名 | ステータス | 補足 |
 |----|------|-----------|------|
 | DD-017 | Alpha配布・診断 | 確認待ち | S1-6 担当。要確認A〜D 確定（ゲート代行）。Phase 0〜4 実装＋Codex(high) findings 8件全対応・全検証 green。**未コミット**（ユーザー確認後に主ループでコミット）。残: `npm run build` の既存 Vite flake（DD-017 非起因） |
+| DD-017-1 | ルートbuild間欠flake是正 | 完了 | 親=DD-017。真因=html-inline-proxy の cwd casing 不一致（決定的バグ）。vite.config.ts input を realpath 正準化で恒久是正・ルート build 8/8 green・未コミット |
 
 ## 保留・見送り
 

@@ -129,6 +129,7 @@ Stage 1 移行条件 **S1-6（配布・運用成果物）** を充足する: 配
 - **Phase 3/4**: `CHANGELOG.md`・`doc/quick-start.md` 新設・`DOC-MAP` 更新。ADR-0015 matrix 実測記入＋**Accepted 化**＋S1-6「private registry」→「再現可能な private 配布経路」再解釈明記。cg-ledger CG-4「実測記入済（合否=DD-018）」へ更新。doc-check green。
 - **検証総括**: `typecheck`／`lint`（boundary new=0）／`test`（730 green）／build-release／consumer-app スモーク green。DD-INDEX は `bash scripts/dd-index-gen.sh` で再生成。
 - **要判断/残課題（build flake）**: `npm run build`（ルート集約）が playground の Vite `[vite:html-inline-proxy] Could not load ...inline-css` で**間欠的に**失敗する。**DD-017 非起因**を確認済（tracked 変更を stash した clean tree でも `npm run build` は 4/4 FAIL、直接 `cd apps/playground && vite build` は 4/4 green）。既存の playground マルチ HTML/inline-CSS ビルドの tooling flake で、本DDは apps/playground を変更していない。スコープ拡大は避け、既知の pre-existing issue として記録（AC8 の build green は直接呼出しで達成可能・別途 tooling 対処を推奨）。
+  - **[2026-07-15 クローズ] → DD-017-1 で恒久是正済み**。真因は「間欠 flake」ではなく `vite:html-inline-proxy` の仮想 CSS モジュールキーが、シェル cwd のドライブレター casing（git-bash 既定 `c:` 小文字）と rollup の正準化（大文字）で食い違う**決定的な環境依存バグ**だった。`apps/playground/vite.config.ts` の build input を `realpathSync.native` で正準 casing の絶対パスに固定して解消（ルート `npm run build` 8/8 green・dist バイト同一）。以降ルート集約 build を検証ゲートに使用可能。
 
 ### 2026-07-14 Codex レビュー（effort high・uncommitted・Phase 1推奨＋Phase 2必須を一括）
 
