@@ -2,7 +2,7 @@
 
 | 作成日 | 更新日 | ステータス | 補足 |
 |--------|--------|-----------|------|
-| 2026-07-14 | 2026-07-14 | 進行中 | 親=DD-016（案Y 2分割）。**実装完了・全検証green**（720 test＋8 E2E＋typecheck/lint/build＋R7 .d.ts＋boundary 41→10）。Codex xhigh triage 後に完了 |
+| 2026-07-14 | 2026-07-14 | 完了 | 親=DD-016（案Y 2分割）。公開API固定・ime/selection/render抽出・grid/server-hono Facade・collaboration-server昇華・baseline 41→10。**720 test＋8 E2E＋R7漏洩0**。Codex xhigh 6 findings 反映（P2-1 consumer-harness は DD-016-2 委譲・見送り0） |
 
 ```text
 Risk Class: A
@@ -81,8 +81,8 @@ Stage 1 SDK Alpha の公開面を**コードとして確定**する。①主要 
 - [x] `packages/server-hono`: `apps/collaboration-server` を昇華（Room/Sequencer/ws 実トランスポート配線・startServer→serve）
 - [x] `apps/playground` を Facade 経由へ書き換え・`apps/collaboration-server` は server-hono へ昇華し削除 → `scripts/boundary/baseline.json` の担当31 entries を除去（new=0 維持）
 - [x] 🔬 **機械検証**: `npm run test`（720 pass）・`typecheck`（13 ws）・`lint`（boundary 41→10・new=0）・`build`・`test:e2e`（8 pass）green
-- [~] Codexレビュー自動実行（依頼書 `doc/DD/DD-016-1/codex-review-request.md`・`--effort xhigh` **バックグラウンド実行中**・結果 → `codex-review-result.md`）
-- [ ] Codexレビュー指摘への対応、または見送り理由をログに記録（到達性×実害で仕分け・memory: review-findings-triage）← **結果到着後に triage**
+- [x] Codexレビュー自動実行（`--effort xhigh`・結果 → `codex-review-result.md`＝6 findings P1×2/P2×4）
+- [x] Codexレビュー指摘への対応（P1-1/P1-2/P2-2/P2-3/P2-4 反映・P2-1 は DD-016-2 委譲・見送り0。到達性×実害で仕分け＝ログ参照）
 - [x] 😈 **DA批判レビュー**（移設で DOM 親・focus 順・イベント発火順が変わり IME/E2E が「たまたま green」になっていないか／Facade 配線後の初期化順序で race がないか）→ DA記録参照（4件・#1/#2 実証・#2 再mount leak は DD-016-2）
 
 ## ログ
@@ -101,7 +101,14 @@ Stage 1 SDK Alpha の公開面を**コードとして確定**する。①主要 
   - `tests/invariants/ime` の import 先を `@nanairo-sheet/ime`＋grid 内部（document-view/ime-editing-session）へ差し替え（DD-012-1 申し送り完了）。
   - **baseline 41→10**（担当31 除去・残 10=PoC-D throwaway・new=0）。
 - **🔬 機械検証 全 green**: `npm run test` **720 pass**（selection3/ime89/render89/grid71/server-hono28＋既存＋invariants）／`npm run test:e2e` **8 pass**（Facade 経由の実ブラウザー統合＝AC1〜4/Presence/reconnect-headed/reload-bootstrap）／`typecheck`（13 workspace）・`lint`（eslint＋boundary new=0）・`build`・contract R7 .d.ts 走査 green。**挙動保存を全テストで実証**（既存 unit/invariant/E2E が import 差し替えのみで green）。
-- **Codex xhigh レビュー実行中**（依頼書 `codex-review-request.md`・R7 スコープ変更／挙動保存／resource leak／API 健全性を重点）。
+- **Codex xhigh レビュー完了・triage**（結果 `codex-review-result.md`・6 findings＝P1×2/P2×4・到達性×実害で仕分け）:
+  - **[P1-1] Facade runtime 依存の宣言**（`grid`/`server-hono` package.json）: 実行時 import する `@nanairo-sheet/*` を `devDependencies`→`dependencies` へ（pack install 時に omit されない）。✅修正。**pack 済み内部 private package の closure/bundling は DD-016-2**（S1-3 pack実証の責務）。
+  - **[P1-2] WS 接続失敗の connect error 化**（mount-controller）: 初回接続確立前の transport エラーを `GridEvent error{phase:'connect'}` で通知（`hasEverConnected` フラグ＋logger 注入。接続後の一時エラーは reconnect＝offline で表現）。✅修正。
+  - **[P2-2] destroy 時の /config abort**: `fetch(/config, {signal})` で boot 進行中の destroy が fetch を残さない＋AbortError はエラー通知しない。✅修正（AC2 leak）。
+  - **[P2-3] boot 中 focus の保持**: `mount().focus()` を editor 生成/初回配置前に呼んでも `focusRequested` で保持し初回描画後に適用。✅修正（public API 正当性）。
+  - **[P2-4] pending イベントで status 更新**（playground main.ts）: offline 中は connection が抑止されるため `pending` イベントで backlog 件数を再描画（旧 updateReadout 相当を復元）。✅修正。
+  - **[P2-1] consumer-harness fixture の API 追随**: 旧 `GRID_FACADE_STAGE`/`serve` sync 型等を新 API へ。⏭️**DD-016-2 へ委譲**（独立 consumer 実証＝S1-3・pack closure と一体で対応する harness/fixture の責務）。
+  - 修正後 再検証 全 green: `npm run test` **720 pass**／`npm run test:e2e` **8 pass**／typecheck/lint（boundary new=0）green。findings 全件を反映 or 明示委譲（見送り0）。
 
 ---
 

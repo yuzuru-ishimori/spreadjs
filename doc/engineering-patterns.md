@@ -33,4 +33,18 @@
 - **正しいやり方**: `git mv` の**後に** `git add <移動先ファイル>` を明示実行してからコミットする（編集→mv→**add**→commit）。コミット直前の `git status --short` で `RM` が残っていないことを確認する。
 - **元DD**: DD-002（5569375 で修正）→ DD-008 で再発（b2e8c69 で修正・本パターンに昇格）
 
+## 3. Facade package に内部 glue を内包すると R7（内部型漏洩）検査は「公開エントリ限定」でないと誤検出する
+
+- **症状**: Facade package（`grid` 等）に mount 配線 glue（`document-view`・`session-sync` 等）を内包した途端、boundary lint の R7 が glue の `export function f(v: CellScalar)`（内部 core 型）を大量に「公開シグネチャ漏洩」と誤検出（新規違反 43 件）。
+- **原因**: R7 の意図は「**公開面**（package.json の `exports` が指す `src/index.ts`）が内部型を露出しない」。だが検査を **全 facade ファイル**へ適用すると、公開されない内部実装（glue）の export まで対象化する。glue は core/collab/render を束ねる責務ゆえ内部型を使うのが正当。
+- **正しいやり方**: R7 は **公開エントリ（`packages/<facade>/src/index.ts`）のみ**に適用する（check.mjs で `rel === owner.root + '/src/index.ts'` に限定）。公開型は Facade 自身で定義し内部型を写像する（例 `SessionEvent`→`GridEvent`）。二重化として公開 `.d.ts` を emit し内部 package specifier 0 を contract test で検証。`test-support.ts` は TEST_INFRA_FILES で除外。
+- **元DD**: DD-016-1（grid/server-hono Facade 実装）
+
+## 4. Facade の実行時依存は `dependencies` に置く（workspace symlink がテストで隠し、pack install で露見）
+
+- **症状**: Facade の全テストが green なのに、`npm pack` した tarball を独立 consumer へ install すると module 解決に失敗（`Cannot find module '@nanairo-sheet/render'` 等）。
+- **原因**: 実行時 import する `@nanairo-sheet/*` を `devDependencies` に置くと `npm pack`→install で omit される。workspace ルートの symlink がテストでは解決を肩代わりするため問題が隠れる（Codex 指摘）。
+- **正しいやり方**: Facade が**実行時 import** する内部 package は `dependencies` に置く（`test-support.ts` だけが使う collab 等は devDep のまま）。private 内部 package を registry 非経由で consumer へ届けるには bundle（`bundledDependencies`）or 全 package を pack して同梱する（配布戦略＝DD-017・pack 実証＝DD-016-2）。
+- **元DD**: DD-016-1（Codex xhigh P1-1）
+
 <!-- 以降、パターンを追記していく。番号は通し番号 -->

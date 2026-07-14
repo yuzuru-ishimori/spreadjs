@@ -6,8 +6,7 @@
 
 | DD | 件名 | ステータス | 補足 |
 |----|------|-----------|------|
-| DD-016 | Facade・実consumer統合 | 進行中 | 案Y 2分割＝アンブレラ化。DD-016-1（Facade実装・物理抽出・Codex xhigh）／DD-016-2（独立consumer実証・CG-1/CG-6 Manual Gate）。要確認①〜⑤ 確定済 |
-| DD-016-1 | Facade実装・物理抽出 | 進行中 | 親=DD-016（案Y 2分割）。**実装完了・全検証green**（720 test＋8 E2E＋typecheck/lint/build＋R7 .d.ts＋boundary 41→10）。Codex xhigh triage 後に完了 |
+| DD-016 | Facade・実consumer統合 | 進行中 | 案Y 2分割＝アンブレラ化。**DD-016-1 完了・アーカイブ済**（Facade実装・物理抽出・720 test/8 E2E・Codex xhigh 反映）／DD-016-2 残（独立consumer実証・CG-1/CG-6 Manual Gate）。要確認①〜⑤ 確定済 |
 | DD-016-2 | 独立consumer実証・統合後実機スモーク | 検討中 | 親=DD-016（案Y 2分割）。前提=DD-016-1 完了。独立consumer実証(S1-3)・CG-1統合後スモーク・CG-6精密確定・DD-012クローズ連絡。Manual Gate |
 | DD-012 | 単一利用者IME縦切り | 進行中 | 案Y 2分割・両子DD完了アーカイブ済（DD-012-1 入力縦切り＝**CG-1解除**／DD-012-2 性能縦切り＝**CG-6指標pass**）。milestone残（ime/selection/render物理抽出・baseline縮退・CG-1統合後スモーク・CG-6精密メモリ＋clean redraw）は**DD-016で確定**。DD-016完了でクローズ |
 
@@ -20,6 +19,7 @@
 
 | DD | 件名 | 主な成果 |
 |----|------|---------|
+| DD-016-1 | Facade実装・物理抽出 | 親=DD-016（案Y 2分割）。公開API固定・ime/selection/render抽出・grid/server-hono Facade・collaboration-server昇華・baseline 41→10。**720 test＋8 E2E＋R7漏洩0**。Codex xhigh 6 findings 反映（P2-1 consumer-harness は DD-016-2 委譲・見送り0） |
 | DD-015 | reconnect・catch-up・idempotency | **CG-5 解除**（D27/D34回収）。exactly-once reconcile・catch-up閾値・指数バックオフ・イベント契約・fault injection常設化。732 pass/Codex xhigh 3回反映/実ブラウザーheaded smoke green。ユーザー承認済 |
 | DD-014 | 永続化・snapshot復元 | サーバー側（durable ACK・snapshot format v1・100k復旧≦1s・O(N²)回避・fail-fast）＋**子DD DD-014-1 でクライアント snapshot bootstrap・durable frontier/poisoning を実装し CG-3 解除**（AC1〜9 充足・ADR-0023 Accepted）。P2-1（行操作Θ(N²)=DD-021）・P2-3/P2-4（異常構成エッジ）は既知制約。roadmap §4/§5 |
 | DD-014-1 | クライアントbootstrap・durable整合 | 親=DD-014。Codex xhigh P1 findings（P1-3〜P1-7）を解消し **CG-3 解除**（DD-014＋DD-014-1）。join bootstrap(document@frontier)・durable frontier/barrier/poisoning・ADR-0023 Accepted。**AC1〜AC8 充足・reload E2E green・bootstrap 4.8ms vs 全replay26s**・Codex 2巡目 P1×4 も全対応。P2-1/P2-3/P2-4 は親DD-014 既知制約。コミット済 |

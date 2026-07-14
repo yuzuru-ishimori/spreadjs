@@ -30,23 +30,32 @@ const params = new URLSearchParams(location.search);
 const serverUrl = params.get('server') ?? 'http://127.0.0.1:8787';
 const nameParam = params.get('name');
 
+let connLabel = '未接続';
+let pendingNow = 0;
+function renderBar(): void {
+  if (statusEl !== null) {
+    statusEl.textContent = `接続: ${connLabel}  ｜  未送信(pending): ${pendingNow}  ｜  名前: ${nameParam ?? '(anon)'}`;
+  }
+}
 function renderStatus(event: GridEvent): void {
   if (statusEl === null) {
     return;
   }
   switch (event.type) {
-    case 'connection': {
-      const label =
+    case 'connection':
+      connLabel =
         event.state === 'stopped'
           ? '🛑 stopped（編集停止・再接続試行中）'
           : event.state === 'online'
             ? '🟢 online'
             : '🟠 offline（再接続中…）';
-      statusEl.textContent = `接続: ${label}  ｜  未送信(pending): ${event.pendingCount}  ｜  名前: ${nameParam ?? '(anon)'}`;
+      pendingNow = event.pendingCount;
+      renderBar();
       break;
-    }
     case 'pending':
-      // pending 件数は connection イベントの表示に含めるため、ここでは追加表示しない。
+      // offline 中は connection が変化せず抑止されるため、pending イベントで backlog 件数を更新する（P2-4）。
+      pendingNow = event.pendingCount;
+      renderBar();
       break;
     case 'rejected':
       statusEl.textContent = `⚠ 競合 (${event.conflict.reason}${event.conflict.code !== undefined ? `/${event.conflict.code}` : ''})  ｜  未送信: ${event.pendingCount}`;

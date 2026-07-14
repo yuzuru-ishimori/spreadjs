@@ -82,6 +82,8 @@ export function createGridController(target: GridMountTarget, options: GridMount
   let firstDataDrawn = false;
   let lastSessionEvent: SessionEvent | undefined;
   let resolvedDocumentId = options.documentId;
+  let hasEverConnected = false; // 一度でも接続確立したか（初回接続失敗のみ connect error として通知・P1-2）
+  let focusRequested = false; // boot 完了前の focus() 要求（初回配置後に適用・P2-3）
 
   // ---- 購読・後始末 ----
   const listeners = new Set<(event: GridEvent) => void>();
@@ -230,6 +232,10 @@ export function createGridController(target: GridMountTarget, options: GridMount
       firstDataDrawn = true;
       metrics.mark('firstDraw');
       metrics.mark('firstOperable');
+      if (focusRequested) {
+        focusRequested = false;
+        editor?.focus(); // boot 前に要求された focus を初回配置後に適用する（P2-3）
+      }
     }
   }
 
@@ -344,7 +350,8 @@ export function createGridController(target: GridMountTarget, options: GridMount
 
   // ---- 起動 ----
   async function fetchConfig(): Promise<ResolvedConfig> {
-    const response = await fetch(`${serverOrigin}/config`);
+    // destroy() で abort される（boot 進行中の /config を残さない・P2-2）。
+    const response = await fetch(`${serverOrigin}/config`, { signal });
     if (!response.ok) {
       throw new Error(`/config 取得失敗: ${response.status}`);
     }
@@ -379,7 +386,10 @@ export function createGridController(target: GridMountTarget, options: GridMount
     try {
       config = await resolveConfig();
     } catch (error) {
-      emit({ type: 'error', phase: 'config', message: errorMessage(error) });
+      // destroy() 由来の AbortError は正常な後始末ゆえエラー通知しない（P2-2）。
+      if (!destroyed) {
+        emit({ type: 'error', phase: 'config', message: errorMessage(error) });
+      }
       return;
     }
     if (destroyed) {
@@ -393,6 +403,13 @@ export function createGridController(target: GridMountTarget, options: GridMount
     const transport = new BrowserWebSocketTransport(wsUrl, {
       onServerFrame: (info) => {
         metrics.recordFrame(info);
+      },
+      // 初回接続確立前の WS エラーは connect error として通知する（approved lifecycle mapping・P1-2）。
+      // 接続確立後の一時エラーは reconnect の一部＝connection offline イベントで表現するため connect error にしない。
+      logger: (message) => {
+        if (!hasEverConnected && !destroyed) {
+          emit({ type: 'error', phase: 'connect', message });
+        }
       },
     });
     browserTransport = transport;
@@ -410,6 +427,9 @@ export function createGridController(target: GridMountTarget, options: GridMount
         // イベント通知契約を GridEvent へ写像して購読者へ配信する（接続断/pending/reject/divergence を即時通知）。
         observer: (event) => {
           lastSessionEvent = event;
+          if (event.type === 'connection' && event.state === 'online') {
+            hasEverConnected = true; // 以降の transport エラーは connect error にしない（reconnect＝offline で表現）
+          }
           emit(toGridEvent(event));
         },
       },
@@ -496,7 +516,12 @@ export function createGridController(target: GridMountTarget, options: GridMount
       };
     },
     focus() {
-      editor?.focus();
+      // boot 完了前（editor 未生成 or 初回配置前）の focus 要求は保持し、初回描画後に適用する（P2-3）。
+      if (firstDataDrawn && editor !== undefined) {
+        editor.focus();
+      } else {
+        focusRequested = true;
+      }
     },
     destroy() {
       if (destroyed) {
