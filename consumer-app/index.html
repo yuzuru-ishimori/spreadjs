@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>consumer-app — @nanairo-sheet/grid 独立 consumer 実証</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        font-family: system-ui, sans-serif;
+      }
+      #status {
+        padding: 6px 10px;
+        background: #f1f3f4;
+        border-bottom: 1px solid #dadce0;
+        font-size: 13px;
+      }
+      /* Facade が #app（container）内へ Canvas/scroller/常駐 textarea を構築する。size 済み container を渡す。 */
+      #app {
+        position: absolute;
+        top: 33px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="status">未接続</div>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

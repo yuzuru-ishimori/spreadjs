@@ -12,9 +12,11 @@
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
+  "dependencies": {
+    "@nanairo-sheet/selection": "*",
+    "@nanairo-sheet/types": "*"
+  },
   "devDependencies": {
-    "@nanairo-sheet/core": "*",
-    "@nanairo-sheet/types": "*",
-    "@nanairo-sheet/selection": "*"
+    "@nanairo-sheet/core": "*"
   }
 }

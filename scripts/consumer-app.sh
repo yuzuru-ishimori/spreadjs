@@ -1,0 +1,118 @@
+#!/usr/bin/env bash
+# 独立 consumer-app 実証（DD-016-2 Phase 3・AC1/AC2）。
+#
+# consumer-app/（npm workspaces 非登録＝boundary 検査対象外）を pack 済み tarball closure だけで統合し、
+#   1) closure 宣言健全性（DA #4）  2) S1-3 不合格条件の機械検査（内部 import / test-support import / source path / workspace link / 未公開依存）
+#   3) 公開面の型解決（tsc）  4) server-hono ServerInstance lifecycle（Node）  5) 実挙動 E2E（serve→mount→日本語入力→共同編集反映→destroy／再mount leak なし）
+# を機械検証する。証跡は doc/DD/DD-016-2/ へ格納する。
+#
+# dev ツール（vite/tsx/playwright/tsc）はリポジトリルートの node_modules から実行し、consumer-app/node_modules には SDK tarball のみを置く。
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+APP="$REPO_ROOT/consumer-app"
+VENDOR="$APP/.vendor"
+EVID="$REPO_ROOT/doc/DD/DD-016-2"
+CHECK_SRC=("$APP/src" "$APP/server" "$APP/e2e")
+
+CLOSURE_PKGS=(grid server-hono core types collab render selection ime server)
+
+mkdir -p "$EVID"
+LOG="$EVID/consumer-app-run.log"
+: > "$LOG"
+log() { echo "$@" | tee -a "$LOG"; }
+fail() { echo "[consumer-app] NG: $*" | tee -a "$LOG" >&2; exit 1; }
+
+log "[consumer-app] === DD-016-2 Phase 3 独立 consumer 実証 $(date -u +%Y-%m-%dT%H:%M:%SZ) ==="
+
+# ---- 0. closure 宣言健全性（hoisting 非依存・DA #4） ----
+log "[consumer-app] 0. pack closure 宣言健全性（check-closure.mjs）"
+node "$REPO_ROOT/scripts/consumer/check-closure.mjs" | tee -a "$LOG"
+
+# ---- 1. consumer-app が workspaces 非登録であること ----
+log "[consumer-app] 1. workspaces 非登録の確認"
+if ( cd "$REPO_ROOT" && node -e "const w=require('./package.json').workspaces||[]; process.exit(w.some(p=>String(p).includes('consumer-app'))?1:0)" ); then
+  log "  ok: ルート package.json workspaces に consumer-app なし（boundary 検査対象外）"
+else
+  fail "consumer-app が npm workspaces に登録されている（独立性・boundary 対象外の前提が崩れる）"
+fi
+# consumer-app 自身が @nanairo-sheet / file: / workspace: 依存を宣言していない（未公開依存 0）。
+if ( cd "$APP" && node -e "const p=require('./package.json'); const d={...(p.dependencies||{}),...(p.devDependencies||{})}; const bad=Object.entries(d).filter(([k,v])=>k.startsWith('@nanairo-sheet/')||String(v).startsWith('file:')||String(v).startsWith('workspace:')); if(bad.length){console.error(bad);process.exit(1)}" ); then
+  log "  ok: consumer-app/package.json に SDK/file:/workspace: 依存の宣言なし（tarball のみ・未公開依存 0）"
+else
+  fail "consumer-app/package.json が SDK/file:/workspace: 依存を宣言している（未公開依存）"
+fi
+
+# ---- 2. S1-3 不合格条件の静的検査（install 前） ----
+# import 文脈（from '...' / import '...' / import('...')）に限定して静的検査する（コメント中の言及を誤検出しない）。
+log "[consumer-app] 2. S1-3 不合格条件の静的検査（内部 import / test-support / source path）"
+IMPORT_CTX="(from|import)[[:space:]]*\(?[[:space:]]*['\"]"
+if grep -rnE "${IMPORT_CTX}@nanairo-sheet/(core|types|collab|server|formula|selection|render|ime)['\"/]" "${CHECK_SRC[@]}"; then
+  fail "内部パッケージを直接 import している（R1・S1-3 不合格）"
+fi
+if grep -rnE "${IMPORT_CTX}@nanairo-sheet/[a-z-]+/test-support" "${CHECK_SRC[@]}"; then
+  fail "@nanairo-sheet/*/test-support（非公開契約）を import している（S1-3 不合格）"
+fi
+if grep -rnE "(from|import)[[:space:]]*\(?[[:space:]]*['\"]\.\.?/\.\.?/" "${CHECK_SRC[@]}"; then
+  fail "リポジトリ内 source を相対パスで直接 import している（S1-3 不合格）"
+fi
+if grep -rnE "['\"][^'\"]*(packages|apps)/(core|types|collab|render|selection|ime|server|grid|formula)" "${CHECK_SRC[@]}"; then
+  fail "source path（リポジトリ内 packages/apps）を参照している（S1-3 不合格）"
+fi
+log "  ok: 内部 import 0 / test-support import 0 / source path 参照 0"
+
+# ---- 3. closure 一式を pack ＆ consumer-app へ install（workspace link を使わない） ----
+log "[consumer-app] 3. pack closure（9 tarball）→ consumer-app へ install"
+rm -rf "$VENDOR"; mkdir -p "$VENDOR"
+for p in "${CLOSURE_PKGS[@]}"; do
+  npm pack --workspace "@nanairo-sheet/$p" --pack-destination "$VENDOR" >/dev/null 2>&1
+done
+rm -rf "$APP/node_modules" "$APP/package-lock.json"
+(
+  cd "$APP"
+  # shellcheck disable=SC2046
+  npm install --no-save --install-links $(printf "%s\n" "$VENDOR"/*.tgz) >/dev/null 2>&1
+)
+
+# ---- 4. workspace link でなく tarball 展開実体・closure 完備・stray なし ----
+log "[consumer-app] 4. install 実体検査（symlink でない・closure 完備・未公開の余分な @nanairo-sheet なし）"
+for p in "${CLOSURE_PKGS[@]}"; do
+  dir="$APP/node_modules/@nanairo-sheet/$p"
+  [ -e "$dir" ] || fail "$p が install されていない（closure 欠落）"
+  [ -L "$dir" ] && fail "$p が symlink（workspace link）＝独立性を満たさない"
+  [ -f "$dir/src/index.ts" ] || fail "$p が tarball から展開されていない"
+done
+installed_count=$(find "$APP/node_modules/@nanairo-sheet" -maxdepth 1 -mindepth 1 | wc -l | tr -d ' ')
+[ "$installed_count" -eq "${#CLOSURE_PKGS[@]}" ] || fail "@nanairo-sheet 配下が closure(${#CLOSURE_PKGS[@]}) と一致しない（$installed_count 個・stray の可能性）"
+log "  ok: 9 package 全て tarball 展開実体・symlink 0・stray 0"
+
+# ---- 5. 公開面だけで tsc --noEmit（consumer-app/src の型解決を pack から） ----
+log "[consumer-app] 5. tsc --noEmit（consumer 公開面の型解決）"
+(
+  cd "$APP"
+  node "$REPO_ROOT/node_modules/typescript/bin/tsc" -p tsconfig.json
+)
+log "  ok: consumer-app/src が Facade 公開型のみで型解決 green"
+
+# ---- 6. server-hono ServerInstance lifecycle（Node・独立 consumer から） ----
+log "[consumer-app] 6. server-hono ServerInstance lifecycle（Node/tsx）"
+(
+  cd "$APP"
+  node "$REPO_ROOT/node_modules/tsx/dist/cli.mjs" server/check-server.ts
+) | tee -a "$LOG"
+
+# ---- 7. 本番 build（pack closure を実バンドラで解決＝S1-4 最小サンプル・preview 配信の前提） ----
+log "[consumer-app] 7. vite build（pack closure を Rollup で bundle）"
+(
+  cd "$APP"
+  node "$REPO_ROOT/node_modules/vite/bin/vite.js" build
+) 2>&1 | tee -a "$LOG"
+
+# ---- 8. 実挙動 E2E（serve→mount→日本語入力→共同編集反映→destroy／再mount leak なし） ----
+log "[consumer-app] 8. Playwright 実挙動 E2E（lifecycle leak / scenario・production preview）"
+(
+  cd "$APP"
+  node "$REPO_ROOT/node_modules/@playwright/test/cli.js" test --config "$APP/playwright.config.ts"
+) 2>&1 | tee -a "$LOG"
+
+log "[consumer-app] OK: S1-3 不合格条件 0・pack closure 型解決 green・server lifecycle・実挙動 E2E（leak なし）全て green"

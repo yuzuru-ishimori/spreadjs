@@ -1,0 +1,138 @@
+{
+  "note": "DD-016-2 Phase 3 AC2 再mount leak 検証（production preview・SDK WS のみ計測・vite dev artifact 除外）",
+  "afterFirstMount": {
+    "canvas": 2,
+    "textarea": 1,
+    "stage": 1,
+    "openSockets": 1,
+    "totalSockets": 1,
+    "activeRaf": 1,
+    "activeIntervals": 1
+  },
+  "afterFirstDestroy": {
+    "canvas": 0,
+    "textarea": 0,
+    "stage": 0,
+    "openSockets": 0,
+    "totalSockets": 1,
+    "activeRaf": 0,
+    "activeIntervals": 0
+  },
+  "cycles": [
+    {
+      "cycle": 0,
+      "mounted": {
+        "canvas": 2,
+        "textarea": 1,
+        "stage": 1,
+        "openSockets": 1,
+        "totalSockets": 2,
+        "activeRaf": 1,
+        "activeIntervals": 1
+      },
+      "destroyed": {
+        "canvas": 0,
+        "textarea": 0,
+        "stage": 0,
+        "openSockets": 0,
+        "totalSockets": 2,
+        "activeRaf": 0,
+        "activeIntervals": 0
+      }
+    },
+    {
+      "cycle": 1,
+      "mounted": {
+        "canvas": 2,
+        "textarea": 1,
+        "stage": 1,
+        "openSockets": 1,
+        "totalSockets": 3,
+        "activeRaf": 1,
+        "activeIntervals": 1
+      },
+      "destroyed": {
+        "canvas": 0,
+        "textarea": 0,
+        "stage": 0,
+        "openSockets": 0,
+        "totalSockets": 3,
+        "activeRaf": 0,
+        "activeIntervals": 0
+      }
+    },
+    {
+      "cycle": 2,
+      "mounted": {
+        "canvas": 2,
+        "textarea": 1,
+        "stage": 1,
+        "openSockets": 1,
+        "totalSockets": 4,
+        "activeRaf": 1,
+        "activeIntervals": 1
+      },
+      "destroyed": {
+        "canvas": 0,
+        "textarea": 0,
+        "stage": 0,
+        "openSockets": 0,
+        "totalSockets": 4,
+        "activeRaf": 0,
+        "activeIntervals": 0
+      }
+    },
+    {
+      "cycle": 3,
+      "mounted": {
+        "canvas": 2,
+        "textarea": 1,
+        "stage": 1,
+        "openSockets": 1,
+        "totalSockets": 5,
+        "activeRaf": 1,
+        "activeIntervals": 1
+      },
+      "destroyed": {
+        "canvas": 0,
+        "textarea": 0,
+        "stage": 0,
+        "openSockets": 0,
+        "totalSockets": 5,
+        "activeRaf": 0,
+        "activeIntervals": 0
+      }
+    },
+    {
+      "cycle": 4,
+      "mounted": {
+        "canvas": 2,
+        "textarea": 1,
+        "stage": 1,
+        "openSockets": 1,
+        "totalSockets": 6,
+        "activeRaf": 1,
+        "activeIntervals": 1
+      },
+      "destroyed": {
+        "canvas": 0,
+        "textarea": 0,
+        "stage": 0,
+        "openSockets": 0,
+        "totalSockets": 6,
+        "activeRaf": 0,
+        "activeIntervals": 0
+      }
+    }
+  ],
+  "final": {
+    "canvas": 0,
+    "textarea": 0,
+    "stage": 0,
+    "openSockets": 0,
+    "totalSockets": 6,
+    "activeRaf": 0,
+    "activeIntervals": 0
+  },
+  "generatedAt": "2026-07-14T09:01:53.640Z"
+}

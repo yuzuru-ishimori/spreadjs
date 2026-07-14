@@ -15,7 +15,7 @@
     "typecheck": "tsc --noEmit",
     "typecheck:core": "tsc --noEmit -p tsconfig.core.json"
   },
-  "devDependencies": {
+  "dependencies": {
     "@nanairo-sheet/core": "*",
     "@nanairo-sheet/server": "*",
     "@nanairo-sheet/types": "*"

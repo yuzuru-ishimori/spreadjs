@@ -12,7 +12,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
-  "devDependencies": {
+  "dependencies": {
     "@nanairo-sheet/core": "*",
     "@nanairo-sheet/types": "*"
   }
