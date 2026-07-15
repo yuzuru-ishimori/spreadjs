@@ -6,8 +6,6 @@
 
 | DD | 件名 | ステータス | 補足 |
 |----|------|-----------|------|
-| DD-012-4 | 列幅行高リサイズ | 確認待ち | 実装・Codexレビュー（P1×1/P2×8 全反映）完了・全検証 green。残=実機確認（ユーザー・showcase scenario=resize／CG-6 headed p95） |
-| DD-012-5 | オーバーフロー表示折り返し自動行高 | 確認待ち | 実装＋Codex（P1×1/P2×4=4件反映・1件境界化）＋**headed perf フル再計測 完了**（scroll p95 16.8ms=前回同値・メモリ26.3MB・redraw 11.72ms=DD-016-2境界12ms内）。残=実機目視（ユーザー・scenario=text-display） |
 
 ## 保留・見送り
 
@@ -35,6 +33,8 @@
 | DD-012-1 | 入力縦切り | Phase 1〜4完了。型変換/date/ローカルOp/IME不変6項目/ADR-012/Codex＋CG-1解除済（実機PASS・先頭欠落0・順序B×Chrome/Edge）。実機で順序A不発（Chromium150）の知見を記録。抽出はDD-016委譲 |
 | DD-012-2 | 性能縦切り | 親=DD-012（案Y分割）。CG-6 担当。**Phase2/3 指標計測完了**（Playwright: scroll p95 16.8ms・メモリ 24MB≪300MB pass／redraw over-budget=render無変更ゆえ回帰不能のアーティファクト）。予算常設化・計測ハーネス・Codex 完了。**定義的確定（CG-6精密・render抽出・clean redraw）は DD-016 委譲** |
 | DD-012-3 | F2再編集キャレット位置IME確定バグ修正 | compositionend の base+data 近似上書きを sawCompositionInput で guard（キャレット位置保持）。S-C6/S-C7 追加・746 test＋invariants＋E2E 8本 green・Codex high findings 0・**実IME実機確認 OK（ユーザー 2026-07-15）＝AC1〜4 全充足** |
+| DD-012-4 | 列幅行高リサイズ | ヘッダー境界ドラッグで列幅・行高変更（view-local・layout イベント＋mount 初期値で利用側保存→F5復元）。Codex high P1×1/P2×8 全反映・766 test/E2E 11 green・headed perf 回帰なし（DD-012-5 と同一 run）・**実機確認 OK（ユーザー 2026-07-15）＝AC1〜8 充足** |
+| DD-012-5 | オーバーフロー表示折り返し自動行高 | オーバーフロー（右方向空セル延長・非空手前クリップ）＋列単位wrap＋自動行高（手動優先）。Codex high 4件反映/1件境界化・797 test/E2E 12＋3 green・headed perf 回帰なし（p95 16.8ms・redraw 境界12ms内）・**実機確認 OK（ユーザー 2026-07-15）＝AC1〜8 充足** |
 | DD-011 | 基盤実装 | 要確認①〜④回答済。DD-011-1 完了前提で全Phase実装＋Codex(high)4件全対応。Facade skeleton・boundary lint(baseline 41)・不変条件runner・consumer harness雛形・Risk Classヘッダ新設。typecheck/lint(+boundary)/build/test:invariants/contract/consumer-harness green。差分テストflaky恒久是正。ws-convergence.smokeは環境依存flaky据え置き。コミット済 |
 | DD-011-1 | packageリネーム | 実装完了（rename 5 package・66 renames＋import 全置換・dir==name 統一）・test 561/561・typecheck/lint/build green・Codex(medium) findings 0・旧名/旧dir 参照 0＋正典パッケージ名の現行構成整合。DD-011 の前提確定。コミット cbf7064系列（159d5e8） |
 | DD-010 | 安定ID・CellStore移行 | 実装・テスト（561 green）・Codexレビュー反映（findings 4件全対応）・**CG-2 解除**（index→RowId slot間接・serialization/replay整合証拠）まで完了。**ADR-0011 は Codex レビューをもって Accepted 確定**（ユーザー判断 2026-07-13＝ChatGPT ではなく Codex で十分・AC6 性能 baseline 解釈も同承認に含む）。コミット cbf7064 |
