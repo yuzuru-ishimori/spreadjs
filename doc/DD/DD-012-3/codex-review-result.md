@@ -1,0 +1,1 @@
+No actionable defects were found. The flag is reset on all relevant transitions, preserves the authoritative composing input for order B, and retains the no-input fallback behavior.

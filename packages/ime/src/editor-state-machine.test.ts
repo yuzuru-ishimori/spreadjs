@@ -240,6 +240,40 @@ describe('C. 既存値編集（EditingExisting）', () => {
     expect(m.getPhase()).toBe('EditingExisting');
     expect(m.getDraft()).toBe('');
   });
+
+  it('S-C6 ★回帰（DD-012-3）: F2 後にキャレット先頭で IME 挿入 → compositionend が base+data 近似で上書きしない', () => {
+    // 実機再現（2026-07-15 ユーザー報告）: 「柿食えば」を F2 → キャレットを先頭へ → 「いいい」を変換確定 → blur
+    // で「柿食えばいいい」になる。変換中 input（isComposing=true）は実 textarea 値「いいい柿食えば」を運んで
+    // いるのに、compositionend の暫定確定（compositionBase+data・キャレット末尾前提）が正値を壊していた。
+    // 順序B（Chromium 150 実測）: compositionend の後に確定 input は来ない → 近似値がそのまま Commit される。
+    const m = makeMachine({ values: [[A1, '柿食えば']] });
+    m.dispatch({ type: 'f2' });
+    // （キャレット移動の矢印キーは編集中は textarea 委譲＝機械イベントなし）
+    m.dispatch({ type: 'compositionstart' });
+    m.dispatch({ type: 'compositionupdate', data: 'い' });
+    m.dispatch(input('い柿食えば', true));
+    m.dispatch({ type: 'compositionupdate', data: 'いい' });
+    m.dispatch(input('いい柿食えば', true));
+    m.dispatch({ type: 'compositionupdate', data: 'いいい' });
+    m.dispatch(input('いいい柿食えば', true));
+    m.dispatch({ type: 'compositionend', data: 'いいい' });
+    // 順序B: これ以降 input は来ない。draft は実 textarea 値を保持していること。
+    expect(m.getDraft()).toBe('いいい柿食えば');
+    // 確定 Enter の keyup（抑止窓クローズ）→ 独立 Enter で commit（実機の確定→確定操作列）。
+    m.dispatch(keyup('Enter'));
+    const effects = m.dispatch(keydown('Enter'));
+    expect(effectOf(effects, 'Commit')).toEqual({ type: 'Commit', cell: A1, value: 'いいい柿食えば' });
+  });
+
+  it('S-C7 ★回帰（DD-012-3）: 変換中 input が来ない環境では従来どおり base+data で暫定確定（後退なし）', () => {
+    const m = makeMachine({ values: [[A1, '柿食えば']] });
+    m.dispatch({ type: 'f2' });
+    m.dispatch({ type: 'compositionstart' });
+    m.dispatch({ type: 'compositionupdate', data: 'いいい' });
+    m.dispatch({ type: 'compositionend', data: 'いいい' });
+    // input イベントが一切来ない synthetic/特殊環境: キャレット末尾前提の近似のまま（従来挙動を維持）。
+    expect(m.getDraft()).toBe('柿食えばいいい');
+  });
 });
 
 // ===========================================================================

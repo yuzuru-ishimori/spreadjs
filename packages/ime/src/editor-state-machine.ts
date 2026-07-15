@@ -139,6 +139,11 @@ export function createEditorStateMachine(options: EditorStateMachineOptions): Ed
   let editBaseMode: 'replace' | 'existing' = 'replace';
   // composition 開始時点の draft（変換文字列を base+data で組み立てる。caret 末尾前提）。
   let compositionBase = '';
+  // 今回の composition 中に実 textarea 値を運ぶ input（isComposing=true）を受けたか（DD-012-3）。
+  // 受けていれば draft は実値（caret 位置を含む）を保持しており、compositionend の base+data 近似
+  // （caret 末尾前提）で上書きしてはならない。F2 既存値編集で caret を先頭へ移して変換確定すると
+  // 挿入文字が末尾へ送られるバグの真因（順序B では compositionend 後に確定 input が来ない）。
+  let sawCompositionInput = false;
   // 変換中に Escape が押されたか。compositionend が「確定」か「取消」かの判別に使う
   // （§11.4: 変換中 Escape は IME 取消優先・S-D10/11/E4）。
   let escapePressedDuringComposition = false;
@@ -156,6 +161,7 @@ export function createEditorStateMachine(options: EditorStateMachineOptions): Ed
     compositionBase = '';
     escapePressedDuringComposition = false;
     blurPendingCommit = false;
+    sawCompositionInput = false;
   };
 
   const beginExisting = (cell: CellPosition): void => {
@@ -301,6 +307,7 @@ export function createEditorStateMachine(options: EditorStateMachineOptions): Ed
 
   const handleCompositionStart = (): Effect[] => {
     escapePressedDuringComposition = false;
+    sawCompositionInput = false;
     if (phase === 'Navigation') {
       // Navigation → EditingReplace（空開始）→ Composing（§11.2・S-D1）。
       editBaseMode = 'replace';
@@ -340,6 +347,7 @@ export function createEditorStateMachine(options: EditorStateMachineOptions): Ed
       // （pendingNavigation は保持 = 次の Escape で編集取消＋ClearPendingNavigation）。
       escapePressedDuringComposition = false;
       suppressCommitUntilKeyup = false;
+      sawCompositionInput = false;
       if (blurPendingCommit) {
         // 取消中に blur が来ていたら編集を畳んで Navigation へ（誤 commit しない）。
         enterNavigation();
@@ -352,14 +360,22 @@ export function createEditorStateMachine(options: EditorStateMachineOptions): Ed
     phase = 'EditingAwaitFinalInput';
     // 順序B（S-D5）: 確定 Enter を keyup まで抑止する互換フラグを立てる。
     suppressCommitUntilKeyup = true;
-    // 確定値は後続 input.value が正（I-1）。input が来ない環境向けに暫定確定しておく。
-    draft = compositionBase + data;
+    // 確定値は後続 input.value が正（I-1）。変換中 input を受けていれば draft は既に実 textarea 値
+    // （caret 位置を含む）を保持しているため base+data 近似（caret 末尾前提）で上書きしない（DD-012-3・
+    // S-C6: F2 既存値編集×caret 先頭挿入で挿入文字が末尾へ送られる）。input が一度も来ない環境
+    // （synthetic 等）だけ従来どおり暫定確定する（S-C7）。
+    if (!sawCompositionInput) {
+      draft = compositionBase + data;
+    }
+    sawCompositionInput = false;
     return [];
   };
 
   const handleInput = (value: string, isComposing: boolean): Effect[] => {
     if (isComposing) {
       // 変換中の input（insertCompositionText）。value を正としてドラフトへ（I-1）。
+      // 実値を受けた印を立て、compositionend の base+data 近似上書きを抑止する（DD-012-3）。
+      sawCompositionInput = true;
       draft = value;
       return [{ type: 'UpdateDraft', value }];
     }
