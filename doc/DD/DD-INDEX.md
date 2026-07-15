@@ -6,7 +6,6 @@
 
 | DD | 件名 | ステータス | 補足 |
 |----|------|-----------|------|
-| DD-012-3 | F2再編集キャレット位置IME確定バグ修正 | 確認待ち | 修正実装・回帰テスト2本（S-C6/S-C7）・全746 test＋invariants＋E2E 8本 green・Codex high **findings 0**。残=AC4 実IME実機確認（ユーザーの再現手順で再検証依頼） |
 
 ## 保留・見送り
 
@@ -33,6 +32,7 @@
 | DD-012 | 単一利用者IME縦切り | 案Y 2分割・両子DD完了アーカイブ済（DD-012-1＝CG-1解除／DD-012-2＝CG-6指標pass）。milestone残（ime/selection/render物理抽出・baseline縮退・CG-1統合後スモーク・CG-6精密メモリ）は**DD-016で確定＝完了**（DD-016-1 抽出・baseline縮退／DD-016-2 CG-1統合後スモークPASS・CG-6精密メモリPASS＋redraw境界化）。**AC2/AC4 充足＝本アンブレラ クローズ（2026-07-14）** |
 | DD-012-1 | 入力縦切り | Phase 1〜4完了。型変換/date/ローカルOp/IME不変6項目/ADR-012/Codex＋CG-1解除済（実機PASS・先頭欠落0・順序B×Chrome/Edge）。実機で順序A不発（Chromium150）の知見を記録。抽出はDD-016委譲 |
 | DD-012-2 | 性能縦切り | 親=DD-012（案Y分割）。CG-6 担当。**Phase2/3 指標計測完了**（Playwright: scroll p95 16.8ms・メモリ 24MB≪300MB pass／redraw over-budget=render無変更ゆえ回帰不能のアーティファクト）。予算常設化・計測ハーネス・Codex 完了。**定義的確定（CG-6精密・render抽出・clean redraw）は DD-016 委譲** |
+| DD-012-3 | F2再編集キャレット位置IME確定バグ修正 | compositionend の base+data 近似上書きを sawCompositionInput で guard（キャレット位置保持）。S-C6/S-C7 追加・746 test＋invariants＋E2E 8本 green・Codex high findings 0・**実IME実機確認 OK（ユーザー 2026-07-15）＝AC1〜4 全充足** |
 | DD-011 | 基盤実装 | 要確認①〜④回答済。DD-011-1 完了前提で全Phase実装＋Codex(high)4件全対応。Facade skeleton・boundary lint(baseline 41)・不変条件runner・consumer harness雛形・Risk Classヘッダ新設。typecheck/lint(+boundary)/build/test:invariants/contract/consumer-harness green。差分テストflaky恒久是正。ws-convergence.smokeは環境依存flaky据え置き。コミット済 |
 | DD-011-1 | packageリネーム | 実装完了（rename 5 package・66 renames＋import 全置換・dir==name 統一）・test 561/561・typecheck/lint/build green・Codex(medium) findings 0・旧名/旧dir 参照 0＋正典パッケージ名の現行構成整合。DD-011 の前提確定。コミット cbf7064系列（159d5e8） |
 | DD-010 | 安定ID・CellStore移行 | 実装・テスト（561 green）・Codexレビュー反映（findings 4件全対応）・**CG-2 解除**（index→RowId slot間接・serialization/replay整合証拠）まで完了。**ADR-0011 は Codex レビューをもって Accepted 確定**（ユーザー判断 2026-07-13＝ChatGPT ではなく Codex で十分・AC6 性能 baseline 解釈も同承認に含む）。コミット cbf7064 |
