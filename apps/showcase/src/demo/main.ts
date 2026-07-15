@@ -25,6 +25,10 @@ function loadLayout(): { columnWidths: Record<string, number>; rowHeights: Recor
 }
 const savedLayout = loadLayout();
 
+// DD-012-5: 「Excel風テキスト表示」シナリオだけ C 列（col-2）を折り返し（wrap）列にする。
+// 他シナリオは wrap 無し＝左寄せ文字列が右隣の空セルへはみ出すオーバーフロー挙動を見せる。
+const wrapColumns = scenario.id === 'text-display' ? ['col-2'] : undefined;
+
 // --- シナリオパネル ---------------------------------------------------------
 
 function byId(id: string): HTMLElement {
@@ -143,6 +147,7 @@ const instance = mount(
     displayName,
     columnWidths: savedLayout.columnWidths,
     rowHeights: savedLayout.rowHeights,
+    ...(wrapColumns !== undefined ? { wrapColumns } : {}),
     onEvent,
   },
 );

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { applyOperation, createDocument } from '@nanairo-sheet/core';
 import type { DocumentOperation, SheetDocument } from '@nanairo-sheet/core';
 import { col, insertRows, num, row, setCells, str } from '@nanairo-sheet/collab/test-support';
+import { createTextMetricsCache } from '@nanairo-sheet/render';
 
 import {
   DocumentView,
@@ -255,5 +256,169 @@ describe('DocumentView 列幅・行高 override（DD-012-4）', () => {
     view.setRowHeight(row('r0'), 30);
     expect(view.columnWidthOverrideRecord()).toEqual({ 'col-1': 90 });
     expect(view.rowHeightOverrideRecord()).toEqual({ r0: 30 });
+  });
+});
+
+describe('DocumentView 自動行高（DD-012-5 D5）', () => {
+  // 各文字幅 10px の決定論測定。colWidth=60 → wrap 内寸 60-10=50 → 1 行 5 文字。
+  const LINE_HEIGHT = 16;
+  // 期待行高 58 = 3 行 × LINE_HEIGHT(16) + padding(5)×2（CELL_TEXT_PADDING）。
+  const DEFAULT_ROW = 22;
+  const DEFAULT_COL = 60;
+
+  function createWrapHolder(): { view: DocumentView; apply: (op: DocumentOperation) => void } {
+    let doc = createDocument(COLS);
+    let revision = 0;
+    const apply = (op: DocumentOperation): void => {
+      revision += 1;
+      doc = applyOperation(doc, op, { revision }).document;
+    };
+    const wrapCache = createTextMetricsCache((text) => text.length * 10);
+    const view = new DocumentView({
+      getDocument: () => doc,
+      rowHeight: DEFAULT_ROW,
+      colWidth: DEFAULT_COL,
+      wrapColumns: ['col-1'],
+      wrapCache,
+      cellFont: 'f',
+      lineHeight: LINE_HEIGHT,
+    });
+    return { view, apply };
+  }
+
+  it('wrap 列の非空セルが複数行になると行高が自動拡張される（AC4/AC5）', () => {
+    const { view, apply } = createWrapHolder();
+    apply(insertRows(null, ['r0', 'r1']));
+    // 12 文字 → 5 文字/行 → 3 行 → 3*16+10=58px。
+    apply(setCells([{ rowId: row('r0'), columnId: col('col-1'), value: str('abcdefghijkl') }]));
+    view.markFullRebuild();
+    view.flush();
+    expect(view.rowAxis.size(view.rowIndexOf(row('r0')))).toBe(58);
+    expect(view.rowAxis.size(view.rowIndexOf(row('r1')))).toBe(DEFAULT_ROW); // 空行は既定
+    expect(view.autoRowHeightRecord()).toEqual({ r0: 58 });
+  });
+
+  it('非 wrap 列の長文は行高に影響しない（オーバーフローは描画のみ・D2）', () => {
+    const { view, apply } = createWrapHolder();
+    apply(insertRows(null, ['r0']));
+    apply(setCells([{ rowId: row('r0'), columnId: col('col-0'), value: str('abcdefghijklmnop') }]));
+    view.markFullRebuild();
+    view.flush();
+    expect(view.rowAxis.size(view.rowIndexOf(row('r0')))).toBe(DEFAULT_ROW);
+  });
+
+  it('値の短縮・削除で自動行高が縮小する（AC5・トリガー②）', () => {
+    const { view, apply } = createWrapHolder();
+    apply(insertRows(null, ['r0']));
+    apply(setCells([{ rowId: row('r0'), columnId: col('col-1'), value: str('abcdefghijkl') }]));
+    view.markFullRebuild();
+    view.flush();
+    expect(view.rowAxis.size(view.rowIndexOf(row('r0')))).toBe(58);
+
+    // 3 文字へ短縮 → 1 行 → 自動高解除（既定へ縮小）。
+    apply(setCells([{ rowId: row('r0'), columnId: col('col-1'), value: str('abc') }]));
+    view.recomputeAutoRowHeightsForRows([row('r0')]);
+    expect(view.rowAxis.size(view.rowIndexOf(row('r0')))).toBe(DEFAULT_ROW);
+    expect(view.autoRowHeightRecord()).toEqual({});
+  });
+
+  it('手動リサイズ済みの行は手動値を優先し自動高で上書きしない（AC5・D5 手動優先）', () => {
+    const { view, apply } = createWrapHolder();
+    apply(insertRows(null, ['r0']));
+    view.markFullRebuild();
+    view.flush();
+    // 手動で 100px に固定。
+    view.setRowHeight(row('r0'), 100);
+    expect(view.rowAxis.size(view.rowIndexOf(row('r0')))).toBe(100);
+    // その後 wrap セルに長文 → 自動高は算出されるが Axis は手動 100 のまま。
+    apply(setCells([{ rowId: row('r0'), columnId: col('col-1'), value: str('abcdefghijkl') }]));
+    view.recomputeAutoRowHeightsForRows([row('r0')]);
+    expect(view.rowAxis.size(view.rowIndexOf(row('r0')))).toBe(100);
+    // layout（手動 override）には自動高を含めない（D7）。
+    expect(view.rowHeightOverrideRecord()).toEqual({ r0: 100 });
+    expect(view.autoRowHeightRecord()).toEqual({ r0: 58 });
+
+    // 手動を既定へ戻すと自動高が復帰する（D5・手動解除で自動 fit）。
+    view.setRowHeight(row('r0'), DEFAULT_ROW);
+    expect(view.rowAxis.size(view.rowIndexOf(row('r0')))).toBe(58);
+    expect(view.rowHeightOverrideRecord()).toEqual({});
+  });
+
+  it('自動高は layout の override レコードに含まれない（D7）', () => {
+    const { view, apply } = createWrapHolder();
+    apply(insertRows(null, ['r0']));
+    apply(setCells([{ rowId: row('r0'), columnId: col('col-1'), value: str('abcdefghijkl') }]));
+    view.markFullRebuild();
+    view.flush();
+    expect(view.rowHeightOverrideRecord()).toEqual({}); // 手動 override 無し
+    expect(view.autoRowHeightRecord()).toEqual({ r0: 58 }); // 自動高は別レイヤ
+  });
+
+  it('構造Op（行挿入）後も自動行高が維持され、行 index がずれても RowId 単位で追従する（AC4/AC6）', () => {
+    const { view, apply } = createWrapHolder();
+    apply(insertRows(null, ['r0', 'r1']));
+    apply(setCells([{ rowId: row('r1'), columnId: col('col-1'), value: str('abcdefghijkl') }]));
+    view.markFullRebuild();
+    view.flush();
+    expect(view.rowAxis.size(view.rowIndexOf(row('r1')))).toBe(58);
+
+    // 先頭に 1 行挿入 → r1 の index はずれるが自動高は維持。
+    apply(insertRows(null, ['rNew']));
+    view.noteOperation(insertRows(null, ['rNew']));
+    view.flush();
+    expect(view.rowAxis.size(view.rowIndexOf(row('r1')))).toBe(58);
+  });
+
+  it('数値セルは wrap 列でも折り返さない（単一行扱い・行高に影響しない）', () => {
+    const { view, apply } = createWrapHolder();
+    apply(insertRows(null, ['r0']));
+    apply(setCells([{ rowId: row('r0'), columnId: col('col-1'), value: num(123456789012) }]));
+    view.markFullRebuild();
+    view.flush();
+    expect(view.rowAxis.size(view.rowIndexOf(row('r0')))).toBe(DEFAULT_ROW);
+  });
+
+  it('リサイズ取消は開始時の手動 override 状態へ戻し、自動高を手動化しない（Codex P2）', () => {
+    const { view, apply } = createWrapHolder();
+    apply(insertRows(null, ['r0']));
+    apply(setCells([{ rowId: row('r0'), columnId: col('col-1'), value: str('abcdefghijkl') }]));
+    view.markFullRebuild();
+    view.flush();
+    expect(view.rowAxis.size(view.rowIndexOf(row('r0')))).toBe(58); // 自動高
+
+    // 取消: 開始時は手動 override 無し（undefined）→ 実効 px でなく「手動なし」状態へ戻す。
+    view.restoreRowHeight(row('r0'), undefined);
+    expect(view.rowHeightOverrideRecord()).toEqual({}); // 自動高を手動化していない
+    expect(view.rowAxis.size(view.rowIndexOf(row('r0')))).toBe(58); // 自動高は維持
+
+    // 値短縮 → 自動縮小が効く（手動化されていたら効かないはず）。
+    apply(setCells([{ rowId: row('r0'), columnId: col('col-1'), value: str('abc') }]));
+    view.recomputeAutoRowHeightsForRows([row('r0')]);
+    expect(view.rowAxis.size(view.rowIndexOf(row('r0')))).toBe(DEFAULT_ROW);
+  });
+
+  it('削除行の自動高は一括再計算で掃除される（stale を溜めない・Codex P2）', () => {
+    const { view, apply } = createWrapHolder();
+    apply(insertRows(null, ['r0', 'r1']));
+    apply(setCells([{ rowId: row('r1'), columnId: col('col-1'), value: str('abcdefghijkl') }]));
+    view.markFullRebuild();
+    view.flush();
+    expect(view.autoRowHeightRecord()).toEqual({ r1: 58 });
+
+    // r1 を削除 → 構造再構築 → 一括再計算が軸から消えた r1 の自動高を prune。
+    apply({ type: 'deleteRows', rowIds: [row('r1')] });
+    view.markStructureDirty();
+    view.flush();
+    expect(view.autoRowHeightRecord()).toEqual({});
+  });
+
+  it('wrap 無効（wrapColumns 未指定）なら自動行高は動かない', () => {
+    const { view, apply } = createDocHolder();
+    apply(insertRows(null, ['r0']));
+    apply(setCells([{ rowId: row('r0'), columnId: col('col-1'), value: str('abcdefghijkl') }]));
+    view.markFullRebuild();
+    view.flush();
+    expect(view.autoRowHeightEnabled).toBe(false);
+    expect(view.rowAxis.size(view.rowIndexOf(row('r0')))).toBe(20); // createDocHolder は rowHeight=20
   });
 });

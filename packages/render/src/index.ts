@@ -6,6 +6,7 @@ export * from './viewport';
 export * from './scroll-anchor';
 export * from './dpi';
 export * from './text-cache';
+export * from './text-overflow';
 export * from './chunk-store';
 export * from './data-gen';
 export * from './prng';

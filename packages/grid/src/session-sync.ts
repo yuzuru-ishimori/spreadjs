@@ -11,6 +11,8 @@
 import { ClientSession } from '@nanairo-sheet/collab';
 import type { ClientTransport, SessionConfig, TransportListener } from '@nanairo-sheet/collab';
 import type { ServerMessage } from '@nanairo-sheet/core';
+import type { TextMetricsCache } from '@nanairo-sheet/render';
+import type { RowId } from '@nanairo-sheet/types';
 
 import { DocumentView } from './document-view';
 
@@ -77,6 +79,14 @@ export interface SessionSyncConfig {
   columnWidths?: Readonly<Record<string, number>>;
   /** 初期の行高 override（RowId 文字列→px・DD-012-4 D2）。 */
   rowHeights?: Readonly<Record<string, number>>;
+  /** 折り返し（wrap）列（ColumnId 文字列・DD-012-5 D1）。 */
+  wrapColumns?: readonly string[];
+  /** 行分割キャッシュ（DD-012-5 D4・base-layer と共有）。 */
+  wrapCache?: TextMetricsCache;
+  /** セル文字フォント（wrapLines 測定用・base-layer と一致）。 */
+  cellFont?: string;
+  /** wrap 折り返し行の行高（px・base-layer の lineHeight と一致）。 */
+  lineHeight?: number;
   /** 接続確立時（#6 計測 wsConnected）。 */
   onConnected?: () => void;
   /** operations 受信時（#6 計測 firstSync＝Document State 初回反映）。 */
@@ -103,6 +113,10 @@ export function createSessionSync(config: SessionSyncConfig): SessionSync {
     colWidth: config.colWidth,
     ...(config.columnWidths !== undefined ? { columnWidths: config.columnWidths } : {}),
     ...(config.rowHeights !== undefined ? { rowHeights: config.rowHeights } : {}),
+    ...(config.wrapColumns !== undefined ? { wrapColumns: config.wrapColumns } : {}),
+    ...(config.wrapCache !== undefined ? { wrapCache: config.wrapCache } : {}),
+    ...(config.cellFont !== undefined ? { cellFont: config.cellFont } : {}),
+    ...(config.lineHeight !== undefined ? { lineHeight: config.lineHeight } : {}),
   });
 
   let sawDisconnect = false;
@@ -116,16 +130,30 @@ export function createSessionSync(config: SessionSyncConfig): SessionSync {
           view.markFullRebuild();
           config.onOperations?.();
           break;
-        case 'operations':
+        case 'operations': {
+          // リモート適用後、変更セルの行だけ自動行高を再計算する（D5 トリガー②＝リモート SetCells）。
+          const changedRows: RowId[] = [];
           for (const envelope of message.operations) {
             view.noteOperation(envelope.operation);
+            const op = envelope.operation;
+            if (op.type === 'setCells') {
+              for (const change of op.changes) {
+                changedRows.push(change.rowId);
+              }
+            }
+          }
+          if (changedRows.length > 0) {
+            view.recomputeAutoRowHeightsForRows(changedRows);
           }
           config.onOperations?.();
           break;
+        }
         case 'operationRejected':
           // reject で楽観 pending がロールバックされ viewDocument が committed へ戻る（描画値が変わりうる）。
           // セル dirty を立てて可視範囲を描き直す。さもないと自分の rejected draft が Canvas に残る（Codex P1）。
           view.markCellDirty();
+          // rollback で描画値が縮む/伸びるため自動行高も追従する（D5 トリガー②＝rollback 後）。reject は稀ゆえ一括で正す。
+          view.recomputeAllAutoRowHeights();
           break;
         case 'presenceSnapshot':
         case 'presenceDelta':

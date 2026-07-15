@@ -111,11 +111,21 @@ export async function snapshot(page: Page): Promise<Snapshot> {
   });
 }
 
-/** 新しいクライアント（別ブラウザーコンテキスト＝別ユーザー）を開き、50,000行の初期ロード完了まで待つ。 */
-export async function openClient(browser: Browser, name: string): Promise<{ context: BrowserContext; page: Page }> {
+/**
+ * 新しいクライアント（別ブラウザーコンテキスト＝別ユーザー）を開き、50,000行の初期ロード完了まで待つ。
+ * extraQuery で追加のクエリ（例 DD-012-5 の `wrap=col-2`）を渡せる。
+ */
+export async function openClient(
+  browser: Browser,
+  name: string,
+  extraQuery?: Record<string, string>,
+): Promise<{ context: BrowserContext; page: Page }> {
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   const page = await context.newPage();
-  const url = `/poc-integration.html?name=${encodeURIComponent(name)}&server=${encodeURIComponent(WS_ORIGIN)}`;
+  const extra = Object.entries(extraQuery ?? {})
+    .map(([k, v]) => `&${k}=${encodeURIComponent(v)}`)
+    .join('');
+  const url = `/poc-integration.html?name=${encodeURIComponent(name)}&server=${encodeURIComponent(WS_ORIGIN)}${extra}`;
   await page.goto(url);
   // 常駐 textarea（boot 完了の目印）＋初期 replay（50,000行）完了を待つ。初期ロードは 18MB replay ではなく
   // E2E 用の縮小シード（SEED_NONEMPTY=3000・行数 50,000 維持）なので数百 ms で ready になる。

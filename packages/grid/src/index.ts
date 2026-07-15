@@ -94,6 +94,13 @@ export interface GridMountOptions {
   readonly columnWidths?: Readonly<Record<string, number>>;
   /** 初期の行高 override（RowId 文字列→px・Experimental 0.x・DD-012-4 D2）。 */
   readonly rowHeights?: Readonly<Record<string, number>>;
+  /**
+   * 折り返し（wrap）列（ColumnId 文字列の配列・Experimental 0.x・DD-012-5 D1）。指定列のセルは
+   * はみ出さずセル内で折り返し表示され、折り返しで収まらない行は必要な高さへ自動拡張される（Excel 風・自動行高）。
+   * 未指定（既定）の列は、左寄せ文字列が右隣の連続空セルへはみ出して表示される（オーバーフロー・描画のみ）。
+   * mount 時に固定（実行時切替は Stage 2）。キーは ColumnId 文字列。
+   */
+  readonly wrapColumns?: readonly string[];
   /** 初期イベント購読（mount 直後の connection/error を取りこぼさない）。 */
   readonly onEvent?: GridEventListener;
   /**

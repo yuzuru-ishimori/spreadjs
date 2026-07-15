@@ -29,6 +29,9 @@ if (!(stage instanceof HTMLElement)) {
 const params = new URLSearchParams(location.search);
 const serverUrl = params.get('server') ?? 'http://127.0.0.1:8787';
 const nameParam = params.get('name');
+// DD-012-5: 折り返し（wrap）列を URL で指定できる（E2E 用・例 ?wrap=col-2,col-3）。既定は無し（オーバーフローのみ）。
+const wrapParam = params.get('wrap');
+const wrapColumns = wrapParam !== null && wrapParam !== '' ? wrapParam.split(',') : undefined;
 
 // DD-012-4: 列幅・行高は view-local。利用側（このページ）が localStorage へ保存し、次回 mount の初期値へ渡す
 // ＝F5 リロードで復元される（保存・復元は利用側アプリの責務という D1/D2 契約の実演）。
@@ -108,6 +111,7 @@ const instance = mount(
     ...(nameParam !== null ? { displayName: nameParam } : {}),
     columnWidths: savedLayout.columnWidths,
     rowHeights: savedLayout.rowHeights,
+    ...(wrapColumns !== undefined ? { wrapColumns } : {}),
     onEvent: renderStatus,
   },
 );

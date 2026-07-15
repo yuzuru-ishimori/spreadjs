@@ -43,6 +43,15 @@
       "demo": "./demo.html?scenario=resize"
     },
     {
+      "id": "text-display",
+      "title": "Excel風テキスト表示",
+      "status": "available",
+      "summary": "長い文字列は右隣の空セルへはみ出して全文表示。隣に値が入るとその手前で省略表示。折り返し指定の列はセル内で折り返し、収まらない行は高さが自動で広がります（値を短くすると自動で戻ります）。",
+      "source": "DD-012・DD-012-5",
+      "meta": "",
+      "demo": "./demo.html?scenario=text-display"
+    },
+    {
       "id": "collab",
       "title": "リアルタイム共同編集",
       "status": "available",

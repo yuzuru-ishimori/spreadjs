@@ -12,14 +12,16 @@ import { createColumnId, createDocumentId, createRowId } from '@nanairo-sheet/ty
 import type { ColumnId, RowId } from '@nanairo-sheet/types';
 import type { Clock, IdGenerator, PresenceUpdate, SessionEvent } from '@nanairo-sheet/collab';
 import {
+  CELL_TEXT_LINE_HEIGHT,
   backingSize,
   captureAnchor,
   correctScroll,
   createBaseLayer,
   createOverlayLayer,
+  createTextMetricsCache,
   createViewportTransform,
 } from '@nanairo-sheet/render';
-import type { FrameViewport, OverlayFrame, ViewportTransform } from '@nanairo-sheet/render';
+import type { FrameViewport, OverlayFrame, TextMetricsCache, ViewportTransform } from '@nanairo-sheet/render';
 import { singleCell } from '@nanairo-sheet/selection';
 import type { CellRange } from '@nanairo-sheet/selection';
 import type { GridLayout } from '@nanairo-sheet/ime';
@@ -54,6 +56,8 @@ const HEADER_HEIGHT = 24;
 const ROW_HEIGHT = 22;
 const COL_WIDTH = 80;
 const TICK_INTERVAL_MS = 1_000;
+// セル文字フォント（base-layer 描画・自動行高の測定で共有する。両者で一致していないと wrap 行数がずれる・DD-012-5）。
+const CELL_FONT = '13px system-ui, sans-serif';
 
 interface ResolvedConfig {
   documentId: string;
@@ -73,6 +77,17 @@ export function createGridController(target: GridMountTarget, options: GridMount
   const frozenRowCount = 1;
   const frozenColCount = 1;
   const metrics = createLoadMetrics();
+
+  // DD-012-5: 折り返し（wrap）列（ColumnId 文字列）。mount 時固定（D1・実行時切替は Stage 2）。
+  const wrapColumns = options.wrapColumns ?? [];
+  const wrapColumnStrings = new Set<string>(wrapColumns);
+  const wrapEnabled = wrapColumnStrings.size > 0;
+  // 行分割・文字測定の共有キャッシュ（base-layer 描画と自動行高計算で共有し line 数を一致させる・D4）。
+  // measure は baseCtx.measureText（描画と同一フォント計測）。base-layer とキャッシュを共有する。
+  const cellTextCache: TextMetricsCache = createTextMetricsCache((text, font) => {
+    baseCtx.font = font;
+    return baseCtx.measureText(text).width;
+  });
 
   // ---- 可変状態 ----
   let sync: SessionSync | undefined;
@@ -265,7 +280,12 @@ export function createGridController(target: GridMountTarget, options: GridMount
     provisionCanvas(baseCanvas, baseCtx);
     provisionCanvas(overlayCanvas, overlayCtx);
     baseLayer?.textCache.clear();
-    syncSpacer();
+    // DPR・Web font 変更で行分割キャッシュが消える → 折り返し行数が変わりうるため自動行高を再計算する（D5 ③相当）。
+    if (wrapEnabled) {
+      sync?.view.onTextMetricsChanged();
+    }
+    syncSpacer(); // 自動行高変化で総サイズが変わる → spacer を更新
+
     sync?.view.markViewportDirty();
   }
 
@@ -320,6 +340,10 @@ export function createGridController(target: GridMountTarget, options: GridMount
       } else {
         const result = view.flush();
         if (result.needsRedraw) {
+          // 自動行高が変わると総サイズ（totalSize）が変わるため spacer を同期する（末尾まで scroll 可能に維持）。
+          if (wrapEnabled) {
+            syncSpacer();
+          }
           redraw();
           markFirstDataDraw();
         }
@@ -341,7 +365,15 @@ export function createGridController(target: GridMountTarget, options: GridMount
   // originalSize は pointercancel/capture 喪失時に開始時サイズへ戻すため（D2 は pointerup のみ確定・Codex[P2]）。
   type ResizeDrag =
     | { readonly axis: 'column'; readonly columnId: ColumnId; readonly pointerId: number; readonly originalSize: number }
-    | { readonly axis: 'row'; readonly rowId: RowId; readonly pointerId: number; readonly originalSize: number };
+    | {
+        readonly axis: 'row';
+        readonly rowId: RowId;
+        readonly pointerId: number;
+        readonly originalSize: number;
+        // 開始時の手動 override 状態（DD-012-5 Codex P2）。取消時に実効 px でなくこの状態へ戻す
+        // （自動高を誤って手動化しない＝以後の自動縮小を殺さない）。undefined=開始時は手動 override 無し。
+        readonly originalManual: number | undefined;
+      };
   let resizeDrag: ResizeDrag | null = null;
 
   function resizeHit(transform: ViewportTransform, x: number, y: number): ResizeTarget | null {
@@ -374,6 +406,12 @@ export function createGridController(target: GridMountTarget, options: GridMount
       return;
     }
     if (emitLayout) {
+      // 列幅変更の確定で、wrap 列の折り返し行数が変わりうる → 自動行高を一括再計算する（D5 トリガー③）。
+      // ドラッグ中（live）は再計算せず確定時のみ（batch を毎 move 走らせない・perf）。
+      if (wrapEnabled && drag.axis === 'column') {
+        sync.view.recomputeAllAutoRowHeights();
+        syncSpacer();
+      }
       emit({
         type: 'layout',
         columnWidths: sync.view.columnWidthOverrideRecord(),
@@ -384,7 +422,8 @@ export function createGridController(target: GridMountTarget, options: GridMount
       if (drag.axis === 'column') {
         sync.view.setColumnWidth(drag.columnId, drag.originalSize);
       } else {
-        sync.view.setRowHeight(drag.rowId, drag.originalSize);
+        // 行は「開始時の手動 override 状態」へ戻す（自動高を手動化しない・Codex P2）。
+        sync.view.restoreRowHeight(drag.rowId, drag.originalManual);
       }
       syncSpacer();
     }
@@ -493,7 +532,14 @@ export function createGridController(target: GridMountTarget, options: GridMount
           if (rowId === undefined) {
             return;
           }
-          resizeDrag = { axis: 'row', rowId, pointerId: event.pointerId, originalSize: sync.view.rowAxis.size(rz.index) };
+          resizeDrag = {
+            axis: 'row',
+            rowId,
+            pointerId: event.pointerId,
+            originalSize: sync.view.rowAxis.size(rz.index),
+            // 取消復元用に開始時の手動 override 値（無ければ undefined）を捕捉する（Codex P2）。
+            originalManual: sync.view.rowHeightOverrideRecord()[String(rowId)],
+          };
         }
         scroller.setPointerCapture(event.pointerId);
         scroller.style.cursor = rz.axis === 'column' ? 'col-resize' : 'row-resize';
@@ -655,6 +701,11 @@ export function createGridController(target: GridMountTarget, options: GridMount
       colWidth: COL_WIDTH,
       ...(options.columnWidths !== undefined ? { columnWidths: options.columnWidths } : {}),
       ...(options.rowHeights !== undefined ? { rowHeights: options.rowHeights } : {}),
+      // DD-012-5: wrap 列・行分割キャッシュ・フォント・行高を DocumentView へ渡す（自動行高の計算基盤）。
+      ...(wrapEnabled ? { wrapColumns } : {}),
+      wrapCache: cellTextCache,
+      cellFont: CELL_FONT,
+      lineHeight: CELL_TEXT_LINE_HEIGHT,
       onConnected: () => {
         metrics.mark('wsConnected');
       },
@@ -670,6 +721,18 @@ export function createGridController(target: GridMountTarget, options: GridMount
       store: syncRef.view.store,
       headerWidth: HEADER_WIDTH,
       headerHeight: HEADER_HEIGHT,
+      // DD-012-5: 共有キャッシュ・wrap 判定・pane 境界・折り返し行高を渡す（オーバーフロー／折り返し描画）。
+      cellFont: CELL_FONT,
+      textCache: cellTextCache,
+      frozenColCount,
+      lineHeight: CELL_TEXT_LINE_HEIGHT,
+      isWrapColumn: (colIndex) => {
+        if (!wrapEnabled) {
+          return false;
+        }
+        const id = syncRef.view.columnIdAt(colIndex);
+        return id !== undefined && wrapColumnStrings.has(String(id));
+      },
     });
 
     // ---- IME×共同編集の結線 ----
@@ -696,7 +759,14 @@ export function createGridController(target: GridMountTarget, options: GridMount
     editor = createIntegrationEditor({
       host: stage,
       document: docPort,
-      submit: (op) => syncRef.session.submitLocalOperation(op),
+      submit: (op) => {
+        const id = syncRef.session.submitLocalOperation(op);
+        // ローカル楽観適用の直後に、編集した行の自動行高を再計算する（D5 トリガー②＝ローカル・SetCells のみ）。
+        if (wrapEnabled) {
+          syncRef.view.recomputeAutoRowHeightsForRows(op.changes.map((c) => c.rowId));
+        }
+        return id;
+      },
       layout: editorLayout,
       onPresenceChange: (update: PresenceUpdate) => {
         syncRef.session.sendPresence(update);

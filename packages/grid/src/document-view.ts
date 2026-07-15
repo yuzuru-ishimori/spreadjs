@@ -22,9 +22,17 @@ import type { CellScalar, DocumentOperation, SheetDocument } from '@nanairo-shee
 import { createColumnId, createRowId } from '@nanairo-sheet/types';
 import type { ColumnId, RowId } from '@nanairo-sheet/types';
 
-import { createAxis, type Axis } from '@nanairo-sheet/render';
+import {
+  CELL_TEXT_LINE_HEIGHT,
+  CELL_TEXT_PADDING,
+  createAxis,
+  isNumericCell,
+  type Axis,
+  type TextMetricsCache,
+} from '@nanairo-sheet/render';
 import type { ChunkStore, RangeVisitor } from '@nanairo-sheet/render';
 
+import { autoRowHeight } from './auto-row-height';
 import { clampColumnWidth, clampRowHeight } from './resize-interaction';
 
 /** dirty の種別（#5 更新コスト分離のための分類）。 */
@@ -39,6 +47,14 @@ export interface DocumentViewConfig {
   columnWidths?: Readonly<Record<string, number>>;
   /** 初期の行高 override（RowId 文字列→px・DD-012-4 D2）。 */
   rowHeights?: Readonly<Record<string, number>>;
+  /** 折り返し（wrap）列（ColumnId 文字列・DD-012-5 D1）。指定列は自動行高の対象になる。 */
+  wrapColumns?: readonly string[];
+  /** 行分割キャッシュ（DD-012-5 D4・base-layer と共有し描画/行高の line 数を一致させる）。wrap 有効時に必須。 */
+  wrapCache?: TextMetricsCache;
+  /** セル文字フォント（wrapLines の測定に使う・base-layer と一致させる）。 */
+  cellFont?: string;
+  /** wrap 折り返し行の行高（px・base-layer の lineHeight と一致・既定 CELL_TEXT_LINE_HEIGHT）。 */
+  lineHeight?: number;
 }
 
 export interface FlushResult {
@@ -82,6 +98,19 @@ export class DocumentView {
    */
   private readonly colWidthOverrides: Map<ColumnId, number>;
   private readonly rowHeightOverrides: Map<RowId, number>;
+  /**
+   * 自動行高の別レイヤ（DD-012-5 D5）。手動 override（rowHeightOverrides）とは別に保持し、手動があれば手動を優先する。
+   * layout イベントには含めない（D7・自動高は環境・フォントで再現される導出値）。
+   */
+  private readonly rowAutoHeights = new Map<RowId, number>();
+  /** wrap（折り返し）列の集合（DD-012-5 D1・mount 時固定）。 */
+  private readonly wrapColumnSet: Set<ColumnId>;
+  private readonly wrapCache: TextMetricsCache | undefined;
+  private readonly cellFont: string;
+  private readonly lineHeight: number;
+  private readonly wrapEnabled: boolean;
+  /** 直近の自動行高一括計算の所要（ms・D6 予算判定・perf 記録用）。 */
+  private lastAutoHeightBatchMs = 0;
   /** base/overlay-layer が束縛する read-through ストア（安定参照・内部で最新 Axis と文書を読む）。 */
   readonly store: ChunkStore;
 
@@ -114,6 +143,11 @@ export class DocumentView {
         }
       }
     }
+    this.wrapColumnSet = new Set((config.wrapColumns ?? []).map((id) => createColumnId(id)));
+    this.wrapCache = config.wrapCache;
+    this.cellFont = config.cellFont ?? '13px system-ui, sans-serif';
+    this.lineHeight = config.lineHeight ?? CELL_TEXT_LINE_HEIGHT;
+    this.wrapEnabled = this.wrapColumnSet.size > 0 && this.wrapCache !== undefined;
     this.currentColAxis = createAxis({
       ids: this.getDocument().columnOrder,
       defaultSize: this.colWidth,
@@ -122,7 +156,8 @@ export class DocumentView {
     this.currentRowAxis = createAxis({
       ids: displayRowOrder(this.getDocument()),
       defaultSize: this.rowHeight,
-      overrides: this.rowHeightOverrides,
+      // 手動 override と自動高を合成して渡す（手動優先・D5）。
+      overrides: this.combinedRowOverrides(),
     });
     this.store = this.createReadThroughStore();
   }
@@ -148,20 +183,36 @@ export class DocumentView {
     this.markViewportDirty();
   }
 
-  /** 行高を override 設定する（DD-012-4 リサイズ）。既定値へ戻したときは override を解除する。 */
+  /** 行高を override 設定する（DD-012-4 リサイズ）。既定値へ戻したときは手動 override を解除し自動高を復帰する。 */
   setRowHeight(rowId: RowId, height: number): void {
     if (height === this.rowHeight) {
       if (this.rowHeightOverrides.delete(rowId)) {
-        const idx = this.currentRowAxis.getIndex(rowId);
-        if (idx >= 0) {
-          this.currentRowAxis.resetSize(idx);
-        }
+        // 手動を外したら自動高（あれば）を適用する（D5・手動解除で自動 fit へ戻る）。
+        this.applyEffectiveRowHeight(rowId);
         this.markViewportDirty();
       }
       return;
     }
+    // 手動リサイズは自動高より優先（D5）。手動値を Axis へ即時反映する。
     this.rowHeightOverrides.set(rowId, height);
     this.currentRowAxis.setSizeById(rowId, height);
+    this.markViewportDirty();
+  }
+
+  /**
+   * リサイズ取消（pointercancel/capture 喪失）で行高を開始時の**手動 override 状態**へ戻す（DD-012-5 Codex P2）。
+   * manual=undefined は「開始時に手動 override が無かった」＝手動を外し自動高/既定へ戻す（自動 fit を殺さない）。
+   * manual=数値は開始時の手動値を復元する。ドラッグ開始時の実効 px をそのまま setRowHeight すると、自動高を
+   * 誤って手動 override として記録してしまい以後の自動縮小が止まるため、状態で復元する。
+   */
+  restoreRowHeight(rowId: RowId, manual: number | undefined): void {
+    if (manual === undefined) {
+      this.rowHeightOverrides.delete(rowId);
+      this.applyEffectiveRowHeight(rowId); // 自動高（あれば）or 既定へ
+    } else {
+      this.rowHeightOverrides.set(rowId, manual);
+      this.currentRowAxis.setSizeById(rowId, manual);
+    }
     this.markViewportDirty();
   }
 
@@ -174,13 +225,183 @@ export class DocumentView {
     return out;
   }
 
-  /** 行高 override のスナップショット（既定値の行は含まない）。 */
+  /** 行高 override のスナップショット（既定値の行は含まない）。自動高は含めない（D7）。 */
   rowHeightOverrideRecord(): Record<string, number> {
     const out: Record<string, number> = {};
     for (const [id, px] of this.rowHeightOverrides) {
       out[String(id)] = px;
     }
     return out;
+  }
+
+  /** wrap（折り返し・自動行高）機能が有効か（wrap 列指定＋キャッシュあり）。 */
+  get autoRowHeightEnabled(): boolean {
+    return this.wrapEnabled;
+  }
+
+  /** 直近の自動行高一括計算の所要（ms・D6 予算判定・perf 記録用）。 */
+  get lastAutoRowHeightBatchMs(): number {
+    return this.lastAutoHeightBatchMs;
+  }
+
+  /** 自動高スナップショット（検証用・layout には含めない＝D7）。 */
+  autoRowHeightRecord(): Record<string, number> {
+    const out: Record<string, number> = {};
+    for (const [id, px] of this.rowAutoHeights) {
+      out[String(id)] = px;
+    }
+    return out;
+  }
+
+  /** 手動 override（優先）と自動高を合成した Axis 用 override マップ（D5 手動優先）。 */
+  private combinedRowOverrides(): Map<RowId, number> {
+    const merged = new Map<RowId, number>(this.rowAutoHeights);
+    for (const [id, px] of this.rowHeightOverrides) {
+      merged.set(id, px); // 手動が自動を上書き（手動優先・D5）
+    }
+    return merged;
+  }
+
+  /** rowId の実効行高（手動 ?? 自動 ?? 既定）を Axis へ反映する。手動があれば手動を尊重して触らない。 */
+  private applyEffectiveRowHeight(rowId: RowId): void {
+    if (this.rowHeightOverrides.has(rowId)) {
+      return; // 手動優先（D5）: Axis は手動値のまま
+    }
+    const idx = this.currentRowAxis.getIndex(rowId);
+    if (idx < 0) {
+      return;
+    }
+    const auto = this.rowAutoHeights.get(rowId);
+    if (auto !== undefined) {
+      this.currentRowAxis.setSizeById(rowId, auto);
+    } else {
+      this.currentRowAxis.resetSize(idx);
+    }
+  }
+
+  /** 1 行の自動行高を算出する（wrap 列の非空セルの折り返し行数の最大から。拡張不要なら undefined）。 */
+  private computeAutoHeightForRow(rowId: RowId): number | undefined {
+    const cache = this.wrapCache;
+    if (!this.wrapEnabled || cache === undefined) {
+      return undefined;
+    }
+    const doc = this.getDocument();
+    const lineCounts: number[] = [];
+    for (const columnId of this.wrapColumnSet) {
+      const record = getCell(doc, rowId, columnId);
+      if (record === undefined) {
+        continue;
+      }
+      const text = cellScalarToDisplay(record.value);
+      if (text === '') {
+        continue;
+      }
+      if (isNumericCell(text)) {
+        lineCounts.push(1); // 数値は折り返さない（右寄せ・単一行）
+        continue;
+      }
+      const colIdx = this.currentColAxis.getIndex(columnId);
+      if (colIdx < 0) {
+        continue;
+      }
+      const maxWidth = this.currentColAxis.size(colIdx) - CELL_TEXT_PADDING * 2;
+      lineCounts.push(cache.wrapLines(text, this.cellFont, maxWidth).length);
+    }
+    return autoRowHeight({
+      lineCounts,
+      lineHeight: this.lineHeight,
+      padding: CELL_TEXT_PADDING,
+      defaultHeight: this.rowHeight,
+    });
+  }
+
+  /** rowId の自動高を再算出し、変化があれば rowAutoHeights と Axis を更新する（内部・戻り値=変化したか）。 */
+  private updateAutoHeightForRow(rowId: RowId): boolean {
+    const next = this.computeAutoHeightForRow(rowId);
+    const prev = this.rowAutoHeights.get(rowId);
+    if (next === prev) {
+      return false;
+    }
+    if (next === undefined) {
+      this.rowAutoHeights.delete(rowId);
+    } else {
+      this.rowAutoHeights.set(rowId, next);
+    }
+    this.applyEffectiveRowHeight(rowId);
+    return true;
+  }
+
+  /**
+   * 指定行だけ自動行高を再計算する（D5 トリガー②＝セル値変更: ローカル楽観適用・リモート適用）。
+   * wrap 無効時・存在しない行は no-op。変化があれば viewport dirty を立て再描画させる。
+   */
+  recomputeAutoRowHeightsForRows(rowIds: Iterable<RowId>): void {
+    if (!this.wrapEnabled) {
+      return;
+    }
+    let changed = false;
+    const seen = new Set<RowId>();
+    for (const rowId of rowIds) {
+      if (seen.has(rowId)) {
+        continue;
+      }
+      seen.add(rowId);
+      if (this.updateAutoHeightForRow(rowId)) {
+        changed = true;
+      }
+    }
+    if (changed) {
+      this.markViewportDirty();
+    }
+  }
+
+  /**
+   * 全行の自動行高を一括計算する（D5 トリガー①bootstrap／③列幅変更／DPR・font 変更）。
+   * 空行は文書スロット有無で早期スキップし O(非空行) に抑える。所要を lastAutoHeightBatchMs へ記録（D6 予算判定）。
+   */
+  recomputeAllAutoRowHeights(): void {
+    if (!this.wrapEnabled) {
+      return;
+    }
+    const start = performance.now();
+    const doc = this.getDocument();
+    const axis = this.currentRowAxis;
+    const count = axis.count();
+    let changed = false;
+    // 削除・bootstrap 差し替えで軸から消えた行の自動高を掃除する（stale 導出状態を溜めない・Codex P2）。
+    for (const rowId of [...this.rowAutoHeights.keys()]) {
+      if (axis.getIndex(rowId) < 0) {
+        this.rowAutoHeights.delete(rowId);
+        changed = true;
+      }
+    }
+    for (let i = 0; i < count; i += 1) {
+      const rowId = axis.getId(i);
+      const slot = slotOf(doc, rowId);
+      const hasContent = slot !== undefined && doc.cells.hasRow(slot);
+      // 内容が無い行は自動高を持たない（値削除で自動縮小・D5）。内容がある行だけ算出する。
+      const next = hasContent ? this.computeAutoHeightForRow(rowId) : undefined;
+      const prev = this.rowAutoHeights.get(rowId);
+      if (next === prev) {
+        continue;
+      }
+      if (next === undefined) {
+        this.rowAutoHeights.delete(rowId);
+      } else {
+        this.rowAutoHeights.set(rowId, next);
+      }
+      this.applyEffectiveRowHeight(rowId);
+      changed = true;
+    }
+    this.lastAutoHeightBatchMs = performance.now() - start;
+    if (changed) {
+      this.markViewportDirty();
+    }
+  }
+
+  /** DPR・Web font 変更で行分割キャッシュが無効化されたときの再計算（③相当・base-layer.clear と同期）。 */
+  onTextMetricsChanged(): void {
+    this.recomputeAllAutoRowHeights();
   }
 
   /** 現在の行 Axis（RowId 列。構造Op で再構築される。呼び出し側は毎フレーム getter で取得すること）。 */
@@ -273,10 +494,11 @@ export class DocumentView {
     if (this.dirtyStructure) {
       const doc = this.getDocument();
       // override を渡して再構築する。渡さないとリサイズ済みの列幅・行高が構造Op で失われる（DD-012-4 AC4）。
+      // 手動 override と自動高を合成する（手動優先・DD-012-5 D5）。
       this.currentRowAxis = createAxis({
         ids: displayRowOrder(doc),
         defaultSize: this.rowHeight,
-        overrides: this.rowHeightOverrides,
+        overrides: this.combinedRowOverrides(),
       });
       if (doc.columnOrder.length !== this.currentColAxis.count()) {
         // 列 Operation は PoC に無いが、列数変化があれば防御的に再構築（通常は通らない）。
@@ -288,6 +510,8 @@ export class DocumentView {
       }
       this.structuralRebuilds += 1;
       structuralRebuilt = true;
+      // ① bootstrap 直後／再接続の全再構築で自動行高を一括計算する（D5 トリガー①・D6 予算計測）。
+      this.recomputeAllAutoRowHeights();
     }
     const needsRedraw = this.dirtyCell || this.dirtyStructure || this.dirtyViewport;
     this.dirtyCell = false;

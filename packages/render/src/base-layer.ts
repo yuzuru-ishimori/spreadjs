@@ -8,6 +8,7 @@
 import type { ChunkStore } from './chunk-store';
 import { deviceLineWidth, snapToDevice } from './dpi';
 import { createTextMetricsCache, type TextMetricsCache } from './text-cache';
+import { MAX_LEFT_INFLOW_SCAN, nearestLeftNonEmpty, overflowRightExtent } from './text-overflow';
 import type { PaneId, PaneRange, ViewportTransform } from './viewport';
 
 /** 1 フレーム分の viewport 情報（base/overlay 共通）。 */
@@ -46,6 +47,17 @@ export interface BaseLayerDeps {
   readonly colors?: BaseLayerColors;
   readonly cellFont?: string;
   readonly headerFont?: string;
+  /**
+   * measureText キャッシュ（DD-012-5）。指定すると base-layer は自前生成せず共有インスタンスを使う。
+   * 自動行高計算（DocumentView）と行分割キャッシュ（wrapLines）を共有し、描画と行高の line 数を一致させる。
+   */
+  readonly textCache?: TextMetricsCache;
+  /** 列 index が折り返し（wrap）列か（DD-012-5 D1・列単位 wrap）。未指定なら全列オーバーフロー扱い。 */
+  readonly isWrapColumn?: (colIndex: number) => boolean;
+  /** 固定列数（DD-012-5 D2・オーバーフロー左外流入が pane 境界＝固定/本体境界を越えないための下限）。 */
+  readonly frozenColCount?: number;
+  /** wrap 折り返し行の行高（px・DD-012-5 D4/D5・自動行高計算と一致させる）。 */
+  readonly lineHeight?: number;
 }
 
 export interface BaseLayer {
@@ -54,8 +66,17 @@ export interface BaseLayer {
   readonly textCache: TextMetricsCache;
 }
 
-const CELL_PADDING = 5;
+/** セル文字の左右パディング（px・DD-012-5 で自動行高計算と共有）。 */
+export const CELL_TEXT_PADDING = 5;
+/** wrap 折り返し行の既定行高（px・13px フォント想定・自動行高計算と一致させる）。 */
+export const CELL_TEXT_LINE_HEIGHT = 16;
+const CELL_PADDING = CELL_TEXT_PADDING;
 const NUMERIC_RE = /^-?\d+(\.\d+)?$/;
+
+/** 表示文字列が数値（右寄せ・オーバーフロー対象外）か。base-layer と自動行高計算で同一判定を使う。 */
+export function isNumericCell(value: string): boolean {
+  return NUMERIC_RE.test(value);
+}
 
 /** 列 index → A, B, ..., Z, AA, ... の列記号。 */
 function columnLabel(col: number): string {
@@ -81,10 +102,15 @@ export function createBaseLayer(deps: BaseLayerDeps): BaseLayer {
   const colors = deps.colors ?? DEFAULT_BASE_COLORS;
   const cellFont = deps.cellFont ?? '13px system-ui, sans-serif';
   const headerFont = deps.headerFont ?? '12px system-ui, sans-serif';
-  const textCache = createTextMetricsCache((text, font) => {
-    ctx.font = font;
-    return ctx.measureText(text).width;
-  });
+  const isWrapColumn = deps.isWrapColumn ?? (() => false);
+  const frozenColCount = deps.frozenColCount ?? 0;
+  const lineHeight = deps.lineHeight ?? CELL_TEXT_LINE_HEIGHT;
+  const textCache =
+    deps.textCache ??
+    createTextMetricsCache((text, font) => {
+      ctx.font = font;
+      return ctx.measureText(text).width;
+    });
 
   const drawPaneGrid = (frame: FrameViewport, pane: PaneRange): void => {
     const { transform, dpr } = frame;
@@ -119,24 +145,123 @@ export function createBaseLayer(deps: BaseLayerDeps): BaseLayer {
     ctx.stroke();
   };
 
+  /** wrap 列セル: 折り返し複数行をセル内に clip して描く（DD-012-5 D4）。clipTop/clipBottom は pane 可視帯（Codex P1 対策）。 */
+  const drawWrapCell = (
+    transform: ViewportTransform,
+    row: number,
+    col: number,
+    value: string,
+    clipTop: number,
+    clipBottom: number,
+  ): void => {
+    const rect = transform.cellRect(row, col);
+    const maxWidth = rect.width - CELL_PADDING * 2;
+    const lines = textCache.wrapLines(value, cellFont, maxWidth);
+    ctx.textAlign = 'left';
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(rect.x, rect.y, rect.width, rect.height);
+    ctx.clip();
+    if (lines.length <= 1) {
+      ctx.fillText(lines[0] ?? value, rect.x + CELL_PADDING, rect.y + rect.height / 2);
+    } else {
+      // pane 可視帯に交差する行だけ描く（超長文でも O(可視行数)。無制限 fillText でフレームが凍る回帰を防ぐ・Codex P1）。
+      const top = rect.y + CELL_PADDING;
+      const first = Math.max(0, Math.floor((clipTop - top) / lineHeight));
+      const last = Math.min(lines.length, Math.ceil((clipBottom - top) / lineHeight) + 1);
+      for (let i = first; i < last; i += 1) {
+        ctx.fillText(lines[i] ?? '', rect.x + CELL_PADDING, top + lineHeight / 2 + i * lineHeight);
+      }
+    }
+    ctx.restore();
+  };
+
+  /**
+   * 左寄せ文字列セル: 右方向の連続空セルへオーバーフロー描画する（DD-012-5 D2）。
+   * 非空セル手前で止まったら省略記号でクリップ（AC2）、可視端まで空なら全文（pane clip で自然に切れる・AC1）。
+   */
+  const drawOverflowCell = (
+    transform: ViewportTransform,
+    row: number,
+    col: number,
+    value: string,
+    maxColExclusive: number,
+    isEmptyAt: (col: number) => boolean,
+  ): void => {
+    const rect = transform.cellRect(row, col);
+    ctx.textAlign = 'left';
+    // 高速パス: 自セル内に収まる文字列はオーバーフロー走査せず素描画する（DD-012-2 予算保護・非オーバーフロー時は従来コスト）。
+    if (textCache.measureWidth(value, cellFont) <= rect.width - CELL_PADDING * 2) {
+      ctx.fillText(value, rect.x + CELL_PADDING, rect.y + rect.height / 2);
+      return;
+    }
+    const ext = overflowRightExtent(col, maxColExclusive, isEmptyAt);
+    let rightEdge = rect.x + rect.width;
+    if (ext.endColExclusive > col + 1) {
+      const lastRect = transform.cellRect(row, ext.endColExclusive - 1);
+      rightEdge = lastRect.x + lastRect.width;
+    }
+    if (ext.blocked) {
+      // 非空セル手前でクリップ（省略記号）。延長幅ぶんまで載せ、収まらなければ … で切る（AC1/AC2）。
+      const availWidth = rightEdge - CELL_PADDING - (rect.x + CELL_PADDING);
+      const maxWidth = Math.max(rect.width - CELL_PADDING * 2, availWidth);
+      const text = textCache.fitText(value, cellFont, maxWidth);
+      ctx.fillText(text, rect.x + CELL_PADDING, rect.y + rect.height / 2);
+    } else {
+      // 可視端まで空 → 全文を描き pane clip に任せる（Excel 風のハードクリップ・AC1）。
+      ctx.fillText(value, rect.x + CELL_PADDING, rect.y + rect.height / 2);
+    }
+  };
+
   const drawPaneValues = (frame: FrameViewport, pane: PaneRange): void => {
     const { transform } = frame;
     ctx.font = cellFont;
     ctx.textBaseline = 'middle';
+    const maxCol = pane.cols.end;
+    const clipTop = pane.clip.y;
+    const clipBottom = pane.clip.y + pane.clip.height;
+    const isEmptyAt = (row: number) => (col: number): boolean => store.get(row, col) === '';
+
+    // Pass 1: pane 内の非空セルを描く（数値=右寄せ／wrap=折り返し／左寄せ文字列=オーバーフロー）。
     store.queryRange(pane.rows.start, pane.rows.end, pane.cols.start, pane.cols.end, (row, col, value) => {
-      const rect = transform.cellRect(row, col);
-      const maxWidth = rect.width - CELL_PADDING * 2;
-      const isNumber = NUMERIC_RE.test(value);
+      const isNumber = isNumericCell(value);
       ctx.fillStyle = isNumber ? colors.numberText : colors.cellText;
-      const text = textCache.fitText(value, cellFont, maxWidth);
-      if (isNumber) {
-        ctx.textAlign = 'right';
-        ctx.fillText(text, rect.x + rect.width - CELL_PADDING, rect.y + rect.height / 2);
-      } else {
-        ctx.textAlign = 'left';
-        ctx.fillText(text, rect.x + CELL_PADDING, rect.y + rect.height / 2);
+      if (!isNumber && isWrapColumn(col)) {
+        drawWrapCell(transform, row, col, value, clipTop, clipBottom);
+        return;
       }
+      if (isNumber) {
+        const rect = transform.cellRect(row, col);
+        ctx.textAlign = 'right';
+        const text = textCache.fitText(value, cellFont, rect.width - CELL_PADDING * 2);
+        ctx.fillText(text, rect.x + rect.width - CELL_PADDING, rect.y + rect.height / 2);
+        return;
+      }
+      drawOverflowCell(transform, row, col, value, maxCol, isEmptyAt(row));
     });
+
+    // Pass 2: 可視範囲の左外にあるはみ出し元からの流入を描く（D3・最大 20 列遡り・pane 境界で停止）。
+    // 固定列（frozenColCount）を越えて遡らない＝pane 境界でオーバーフローを止める（D2）。
+    if (pane.cols.start > frozenColCount) {
+      for (let row = pane.rows.start; row < pane.rows.end; row += 1) {
+        // 可視左端セルが埋まっていれば左外流入は届かない（origin→可視の間に非空セルが要る）→ 走査省略（予算保護）。
+        if (store.get(row, pane.cols.start) !== '') {
+          continue;
+        }
+        const isEmpty = isEmptyAt(row);
+        const originCol = nearestLeftNonEmpty(pane.cols.start, frozenColCount, MAX_LEFT_INFLOW_SCAN, isEmpty);
+        if (originCol === null) {
+          continue;
+        }
+        const value = store.get(row, originCol);
+        // 数値・wrap 列はオーバーフローしない（左寄せ文字列のみ流入）。自セル内に収まる値は流入しない。
+        if (isNumericCell(value) || isWrapColumn(originCol)) {
+          continue;
+        }
+        ctx.fillStyle = colors.cellText;
+        drawOverflowCell(transform, row, originCol, value, maxCol, isEmpty);
+      }
+    }
   };
 
   const drawPane = (frame: FrameViewport, pane: PaneRange): void => {
