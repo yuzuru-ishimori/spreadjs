@@ -238,6 +238,27 @@ export async function editorProbe(page: Page): Promise<{
   });
 }
 
+/** 表示 (row,col) セルの viewport 矩形（可視外は null）。DD-012-4 リサイズ後の幅・高の検証に使う。 */
+export async function cellRectAt(page: Page, row: number, col: number): Promise<CellRect | null> {
+  return callApi<CellRect | null>(page, 'cellRectAt', [row, col]);
+}
+/** DD-012-4: 列記号ヘッダーの矩形（境界ドラッグ開始点の算出・幅検証）。 */
+export async function columnHeaderRectAt(page: Page, col: number): Promise<CellRect | null> {
+  return callApi<CellRect | null>(page, 'columnHeaderRectAt', [col]);
+}
+/** DD-012-4: 行番号ヘッダーの矩形（境界ドラッグ開始点の算出・高検証）。 */
+export async function rowHeaderRectAt(page: Page, row: number): Promise<CellRect | null> {
+  return callApi<CellRect | null>(page, 'rowHeaderRectAt', [row]);
+}
+/** DD-012-4: 列幅 override のスナップショット（layout の override-only 内容の検証）。 */
+export async function columnWidthOverrides(page: Page): Promise<Record<string, number>> {
+  return callApi<Record<string, number>>(page, 'columnWidthOverrides', []);
+}
+/** DD-012-4: 行高 override のスナップショット。 */
+export async function rowHeightOverrides(page: Page): Promise<Record<string, number>> {
+  return callApi<Record<string, number>>(page, 'rowHeightOverrides', []);
+}
+
 /** 表示 index → RowId/ColumnId 文字列（クライアント間で同一）。 */
 export async function rowIdAt(page: Page, index: number): Promise<string | undefined> {
   return callApi<string | undefined>(page, 'rowIdAt', [index]);

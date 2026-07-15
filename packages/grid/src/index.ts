@@ -55,6 +55,17 @@ export type GridEvent =
       /** 安定した公開エラーコード（一覧は doc/DD/DD-017/error-codes.md＝GRID_ERROR_CODES）。 */
       readonly code: GridErrorCode;
       readonly message: string;
+    }
+  /**
+   * レイアウト（列幅・行高）変更の確定通知（Experimental 0.x・DD-012-4 D2）。ヘッダー境界ドラッグの確定時
+   * （pointerup）に発火する。columnWidths/rowHeights は **既定値と異なる列/行だけ**を含む（override のみ）。
+   * 設定は view-local（他ユーザーへ即時同期しない）。利用側がこれを保存し、次回 mount の columnWidths/rowHeights へ
+   * 渡せば F5 リロードで復元できる（共有保存にすれば他ユーザーへも反映）。キーは ColumnId/RowId 文字列。
+   */
+  | {
+      readonly type: 'layout';
+      readonly columnWidths: Record<string, number>;
+      readonly rowHeights: Record<string, number>;
     };
 
 export type GridEventListener = (event: GridEvent) => void;
@@ -76,6 +87,13 @@ export interface GridMountOptions {
   readonly displayName?: string;
   /** 再接続で不変のクライアント ID。未指定なら生成する（crypto.randomUUID）。 */
   readonly clientId?: string;
+  /**
+   * 初期の列幅 override（ColumnId 文字列→px・Experimental 0.x・DD-012-4 D2）。利用側が保存した設定を
+   * 渡すと初期表示がその幅になる（F5 リロードでの復元手段）。既定値でよい列は含めない。
+   */
+  readonly columnWidths?: Readonly<Record<string, number>>;
+  /** 初期の行高 override（RowId 文字列→px・Experimental 0.x・DD-012-4 D2）。 */
+  readonly rowHeights?: Readonly<Record<string, number>>;
   /** 初期イベント購読（mount 直後の connection/error を取りこぼさない）。 */
   readonly onEvent?: GridEventListener;
   /**

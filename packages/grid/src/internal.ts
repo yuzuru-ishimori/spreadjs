@@ -56,6 +56,14 @@ export interface GridDebugApi {
   colIdAt(index: number): string | undefined;
   rowIndexOf(rowId: string): number;
   cellRectAt(row: number, col: number): GridDebugCellRect | null;
+  /** 列記号ヘッダーの矩形（DD-012-4 E2E: 境界ドラッグ開始点の算出用）。 */
+  columnHeaderRectAt(col: number): GridDebugCellRect | null;
+  /** 行番号ヘッダーの矩形（DD-012-4 E2E）。 */
+  rowHeaderRectAt(row: number): GridDebugCellRect | null;
+  /** 列幅 override のスナップショット（DD-012-4 E2E: layout 内容・復元検証用）。 */
+  columnWidthOverrides(): Record<string, number>;
+  /** 行高 override のスナップショット（DD-012-4 E2E）。 */
+  rowHeightOverrides(): Record<string, number>;
   committedCell(rowId: string, columnId: string): string;
   displayCell(rowId: string, columnId: string): string;
   submitInsertRowsAfter(afterRowId: string | null, newRowId: string): void;

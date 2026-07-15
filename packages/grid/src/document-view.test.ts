@@ -156,3 +156,104 @@ describe('DocumentView（ClientSession 文書の読み取りアダプター・#2
     expect(view.flush().needsRedraw).toBe(false);
   });
 });
+
+describe('DocumentView 列幅・行高 override（DD-012-4）', () => {
+  it('初期 columnWidths/rowHeights が Axis のサイズへ反映される（保存済み設定の復元＝AC4）', () => {
+    let doc = createDocument(COLS);
+    doc = applyOperation(doc, insertRows(null, ['r0', 'r1']), { revision: 1 }).document;
+    const view = new DocumentView({
+      getDocument: () => doc,
+      rowHeight: 20,
+      colWidth: 60,
+      columnWidths: { 'col-1': 140 },
+      rowHeights: { r1: 40 },
+    });
+    view.markStructureDirty();
+    view.flush();
+    expect(view.colAxis.size(view.colIndexOf(col('col-1')))).toBe(140);
+    expect(view.colAxis.size(view.colIndexOf(col('col-0')))).toBe(60); // 既定
+    expect(view.rowAxis.size(view.rowIndexOf(row('r1')))).toBe(40);
+    expect(view.rowAxis.size(view.rowIndexOf(row('r0')))).toBe(20); // 既定
+  });
+
+  it('setColumnWidth/setRowHeight が Axis へ即時反映し viewport dirty を立てる', () => {
+    const { view, apply } = createDocHolder();
+    apply(insertRows(null, ['r0', 'r1']));
+    view.markFullRebuild();
+    view.flush();
+    view.setColumnWidth(col('col-2'), 150);
+    view.setRowHeight(row('r0'), 33);
+    expect(view.colAxis.size(view.colIndexOf(col('col-2')))).toBe(150);
+    expect(view.rowAxis.size(view.rowIndexOf(row('r0')))).toBe(33);
+    const result = view.flush();
+    expect(result.dirty.viewport).toBe(true);
+  });
+
+  it('override は構造Op の Axis 再構築後も維持される（DD-012-4 の最重要不変・AC4）', () => {
+    const { view, apply } = createDocHolder();
+    apply(insertRows(null, ['r0', 'r1', 'r2']));
+    view.markFullRebuild();
+    view.flush();
+    view.setRowHeight(row('r2'), 44);
+    view.setColumnWidth(col('col-0'), 111);
+
+    // 先頭に 1 行挿入 → rowAxis を作り直す（構造Op）。
+    apply(insertRows(null, ['rNew']));
+    view.noteOperation(insertRows(null, ['rNew']));
+    const result = view.flush();
+    expect(result.structuralRebuilt).toBe(true);
+
+    // r2 は index がずれるが RowId 単位の override は失われない。
+    expect(view.rowAxis.size(view.rowIndexOf(row('r2')))).toBe(44);
+    // 列 override も維持。
+    expect(view.colAxis.size(view.colIndexOf(col('col-0')))).toBe(111);
+  });
+
+  it('初期 override は有限数へ絞りクランプされ、既定値は保持しない（Codex[P2]）', () => {
+    let doc = createDocument(COLS);
+    doc = applyOperation(doc, insertRows(null, ['r0']), { revision: 1 }).document;
+    const view = new DocumentView({
+      getDocument: () => doc,
+      rowHeight: 20,
+      colWidth: 60,
+      // -5→20 クランプ / 99999→2000 クランプ / 60=既定→除外 / NaN→無視
+      columnWidths: { 'col-0': -5, 'col-1': 99999, 'col-2': 60, bogus: Number.NaN },
+    });
+    expect(view.columnWidthOverrideRecord()).toEqual({ 'col-0': 20, 'col-1': 2000 });
+    view.markStructureDirty();
+    view.flush();
+    expect(view.colAxis.size(view.colIndexOf(col('col-0')))).toBe(20);
+    expect(view.colAxis.size(view.colIndexOf(col('col-1')))).toBe(2000);
+    expect(view.colAxis.size(view.colIndexOf(col('col-2')))).toBe(60); // 既定
+  });
+
+  it('既定値へ戻すと override が解除される（layout の override-only を維持・Codex[P2]）', () => {
+    const { view, apply } = createDocHolder();
+    apply(insertRows(null, ['r0']));
+    view.markFullRebuild();
+    view.flush();
+    view.setColumnWidth(col('col-1'), 150);
+    view.setRowHeight(row('r0'), 40);
+    expect(view.columnWidthOverrideRecord()).toEqual({ 'col-1': 150 });
+    // 既定サイズ（colWidth=60 / rowHeight=20）へ戻す → override 消滅。
+    view.setColumnWidth(col('col-1'), 60);
+    view.setRowHeight(row('r0'), 20);
+    expect(view.columnWidthOverrideRecord()).toEqual({});
+    expect(view.rowHeightOverrideRecord()).toEqual({});
+    expect(view.colAxis.size(view.colIndexOf(col('col-1')))).toBe(60);
+    expect(view.rowAxis.size(view.rowIndexOf(row('r0')))).toBe(20);
+  });
+
+  it('override レコードは既定値の列/行を含まない（layout イベントは override のみ＝AC3）', () => {
+    const { view, apply } = createDocHolder();
+    apply(insertRows(null, ['r0', 'r1']));
+    view.markFullRebuild();
+    view.flush();
+    expect(view.columnWidthOverrideRecord()).toEqual({});
+    expect(view.rowHeightOverrideRecord()).toEqual({});
+    view.setColumnWidth(col('col-1'), 90);
+    view.setRowHeight(row('r0'), 30);
+    expect(view.columnWidthOverrideRecord()).toEqual({ 'col-1': 90 });
+    expect(view.rowHeightOverrideRecord()).toEqual({ r0: 30 });
+  });
+});

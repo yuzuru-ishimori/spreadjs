@@ -73,6 +73,10 @@ export interface SessionSyncConfig {
   sessionConfig: Omit<SessionConfig, 'transport'>;
   rowHeight: number;
   colWidth: number;
+  /** 初期の列幅 override（ColumnId 文字列→px・DD-012-4 D2・保存済み設定の復元）。 */
+  columnWidths?: Readonly<Record<string, number>>;
+  /** 初期の行高 override（RowId 文字列→px・DD-012-4 D2）。 */
+  rowHeights?: Readonly<Record<string, number>>;
   /** 接続確立時（#6 計測 wsConnected）。 */
   onConnected?: () => void;
   /** operations 受信時（#6 計測 firstSync＝Document State 初回反映）。 */
@@ -97,6 +101,8 @@ export function createSessionSync(config: SessionSyncConfig): SessionSync {
     getDocument: () => session.viewDocument, // 唯一の正本を読む派生 Adapter
     rowHeight: config.rowHeight,
     colWidth: config.colWidth,
+    ...(config.columnWidths !== undefined ? { columnWidths: config.columnWidths } : {}),
+    ...(config.rowHeights !== undefined ? { rowHeights: config.rowHeights } : {}),
   });
 
   let sawDisconnect = false;

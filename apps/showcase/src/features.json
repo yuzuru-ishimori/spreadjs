@@ -34,6 +34,15 @@
       "demo": "./demo.html?scenario=editing"
     },
     {
+      "id": "resize",
+      "title": "列幅・行高の変更",
+      "status": "available",
+      "summary": "列ヘッダー・行ヘッダーの境界をドラッグして列幅・行高を変更。変更内容は利用側アプリが保存でき、再読込で復元されます。",
+      "source": "DD-012・DD-012-4",
+      "meta": "",
+      "demo": "./demo.html?scenario=resize"
+    },
+    {
       "id": "collab",
       "title": "リアルタイム共同編集",
       "status": "available",

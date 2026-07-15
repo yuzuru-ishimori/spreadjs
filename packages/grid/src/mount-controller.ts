@@ -35,6 +35,8 @@ import { toPresenceUsers } from './presence-adapter';
 import { createSessionSync } from './session-sync';
 import type { SessionSync } from './session-sync';
 import { buildScaffold } from './dom-scaffold';
+import { computeResizeSize, resizeHitTest } from './resize-interaction';
+import type { ResizeTarget } from './resize-interaction';
 import { GridBootError, toGridConflictCode } from './error-codes';
 import { createDiagnosticSink } from './diagnostics';
 import { debugRegistry } from './internal';
@@ -328,11 +330,139 @@ export function createGridController(target: GridMountTarget, options: GridMount
     }
   }
 
-  // ---- ポインター（選択・ダブルクリックで編集）----
+  // ---- ポインター（選択・ダブルクリックで編集・ヘッダー境界リサイズ）----
   function stageLocal(event: PointerEvent): { x: number; y: number } {
     const rect = stage.getBoundingClientRect();
     return { x: event.clientX - rect.left, y: event.clientY - rect.top };
   }
+
+  // 列幅・行高リサイズのドラッグ状態（DD-012-4）。null=非リサイズ。対象は index ではなく Id で保持し、
+  // ドラッグ中に他クライアントの構造Op で Axis が作り直されても正しい列/行を追い続ける（Codex[P2]）。
+  // originalSize は pointercancel/capture 喪失時に開始時サイズへ戻すため（D2 は pointerup のみ確定・Codex[P2]）。
+  type ResizeDrag =
+    | { readonly axis: 'column'; readonly columnId: ColumnId; readonly pointerId: number; readonly originalSize: number }
+    | { readonly axis: 'row'; readonly rowId: RowId; readonly pointerId: number; readonly originalSize: number };
+  let resizeDrag: ResizeDrag | null = null;
+
+  function resizeHit(transform: ViewportTransform, x: number, y: number): ResizeTarget | null {
+    if (sync === undefined) {
+      return null;
+    }
+    return resizeHitTest(transform, x, y, {
+      headerWidth: HEADER_WIDTH,
+      headerHeight: HEADER_HEIGHT,
+      rowCount: sync.view.rowAxis.count(),
+      colCount: sync.view.colAxis.count(),
+    });
+  }
+
+  /**
+   * リサイズ終了。emitLayout=true（pointerup）は override のみを含む layout を 1 度だけ発火する（D2）。
+   * emitLayout=false（pointercancel/capture 喪失）は確定せず開始時サイズへ戻す（途中状態を保存しない）。
+   */
+  function finishResize(pointerId: number, emitLayout: boolean): void {
+    if (resizeDrag === null || resizeDrag.pointerId !== pointerId) {
+      return;
+    }
+    const drag = resizeDrag;
+    resizeDrag = null; // release より先に null 化（release が誘発する lostpointercapture の二重処理を無効化）
+    if (scroller.hasPointerCapture(pointerId)) {
+      scroller.releasePointerCapture(pointerId);
+    }
+    scroller.style.cursor = '';
+    if (sync === undefined) {
+      return;
+    }
+    if (emitLayout) {
+      emit({
+        type: 'layout',
+        columnWidths: sync.view.columnWidthOverrideRecord(),
+        rowHeights: sync.view.rowHeightOverrideRecord(),
+      });
+    } else {
+      // 途中状態を破棄して開始時サイズへ戻す（cancel/capture 喪失は確定ではない）。
+      if (drag.axis === 'column') {
+        sync.view.setColumnWidth(drag.columnId, drag.originalSize);
+      } else {
+        sync.view.setRowHeight(drag.rowId, drag.originalSize);
+      }
+      syncSpacer();
+    }
+  }
+
+  scroller.addEventListener(
+    'pointermove',
+    (event) => {
+      if (sync === undefined) {
+        return;
+      }
+      const { x, y } = stageLocal(event);
+      if (resizeDrag !== null) {
+        if (event.pointerId !== resizeDrag.pointerId) {
+          return; // active pointer 以外の move は無視（マルチタッチでの誤リサイズ防止・Codex[P2]）
+        }
+        // 新サイズを Axis へ反映（markViewportDirty → rAF でライブ再描画）。editor へは流さない（D5）。
+        // 対象の左端/上端は現在 transform から毎回再解決する（scroll・構造Op に追従・Codex[P2]）。
+        const transform = currentTransform();
+        if (transform === undefined) {
+          return;
+        }
+        if (resizeDrag.axis === 'column') {
+          const idx = sync.view.colIndexOf(resizeDrag.columnId);
+          if (idx < 0) {
+            return; // 対象列が消えた（防御）
+          }
+          const edge = transform.columnHeaderRect(idx).x;
+          sync.view.setColumnWidth(resizeDrag.columnId, computeResizeSize('column', x, edge));
+        } else {
+          const idx = sync.view.rowIndexOf(resizeDrag.rowId);
+          if (idx < 0) {
+            return;
+          }
+          const edge = transform.rowHeaderRect(idx).y;
+          sync.view.setRowHeight(resizeDrag.rowId, computeResizeSize('row', y, edge));
+        }
+        syncSpacer(); // 総サイズが変わる → spacer を同期（末尾までスクロール可能に・Codex[P1]）
+        return;
+      }
+      // 非ドラッグ: ヘッダー境界上でのみ resize カーソルへ切替（セル領域は cheap に既定へ戻す）。
+      if (x >= HEADER_WIDTH && y >= HEADER_HEIGHT) {
+        if (scroller.style.cursor !== '') {
+          scroller.style.cursor = '';
+        }
+        return;
+      }
+      const transform = currentTransform();
+      if (transform === undefined) {
+        return;
+      }
+      const rz = resizeHit(transform, x, y);
+      scroller.style.cursor = rz === null ? '' : rz.axis === 'column' ? 'col-resize' : 'row-resize';
+    },
+    { signal },
+  );
+
+  scroller.addEventListener(
+    'pointerup',
+    (event) => {
+      finishResize(event.pointerId, true);
+    },
+    { signal },
+  );
+  scroller.addEventListener(
+    'pointercancel',
+    (event) => {
+      finishResize(event.pointerId, false);
+    },
+    { signal },
+  );
+  scroller.addEventListener(
+    'lostpointercapture',
+    (event) => {
+      finishResize(event.pointerId, false);
+    },
+    { signal },
+  );
 
   scroller.addEventListener(
     'pointerdown',
@@ -340,11 +470,35 @@ export function createGridController(target: GridMountTarget, options: GridMount
       if (event.button !== 0 || sync === undefined || editor === undefined) {
         return;
       }
+      if (resizeDrag !== null) {
+        return; // ドラッグ中の追加 pointerdown は無視（capture 漏れ・状態上書き防止・Codex[P2]）
+      }
       const transform = currentTransform();
       if (transform === undefined) {
         return;
       }
       const { x, y } = stageLocal(event);
+      // ヘッダー境界のリサイズを先取りする（editor へイベントを流さない＝D5・IME 不変）。
+      const rz = resizeHit(transform, x, y);
+      if (rz !== null) {
+        event.preventDefault();
+        if (rz.axis === 'column') {
+          const columnId = sync.view.columnIdAt(rz.index);
+          if (columnId === undefined) {
+            return;
+          }
+          resizeDrag = { axis: 'column', columnId, pointerId: event.pointerId, originalSize: sync.view.colAxis.size(rz.index) };
+        } else {
+          const rowId = sync.view.rowIdAt(rz.index);
+          if (rowId === undefined) {
+            return;
+          }
+          resizeDrag = { axis: 'row', rowId, pointerId: event.pointerId, originalSize: sync.view.rowAxis.size(rz.index) };
+        }
+        scroller.setPointerCapture(event.pointerId);
+        scroller.style.cursor = rz.axis === 'column' ? 'col-resize' : 'row-resize';
+        return;
+      }
       const hit = transform.hitTest(x, y);
       if (hit.area !== 'cell') {
         editor.pointerdownCell(null);
@@ -499,6 +653,8 @@ export function createGridController(target: GridMountTarget, options: GridMount
       },
       rowHeight: ROW_HEIGHT,
       colWidth: COL_WIDTH,
+      ...(options.columnWidths !== undefined ? { columnWidths: options.columnWidths } : {}),
+      ...(options.rowHeights !== undefined ? { rowHeights: options.rowHeights } : {}),
       onConnected: () => {
         metrics.mark('wsConnected');
       },
@@ -652,6 +808,10 @@ export function createGridController(target: GridMountTarget, options: GridMount
     },
     rowIndexOf: (rowId) => sync?.view.rowIndexOf(createRowId(rowId)) ?? -1,
     cellRectAt: (row, col) => currentTransform()?.cellRect(row, col) ?? null,
+    columnHeaderRectAt: (col) => currentTransform()?.columnHeaderRect(col) ?? null,
+    rowHeaderRectAt: (row) => currentTransform()?.rowHeaderRect(row) ?? null,
+    columnWidthOverrides: () => sync?.view.columnWidthOverrideRecord() ?? {},
+    rowHeightOverrides: () => sync?.view.rowHeightOverrideRecord() ?? {},
     committedCell: (rowId, columnId) => {
       if (sync === undefined) {
         return '';

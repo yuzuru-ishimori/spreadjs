@@ -30,6 +30,34 @@ const params = new URLSearchParams(location.search);
 const serverUrl = params.get('server') ?? 'http://127.0.0.1:8787';
 const nameParam = params.get('name');
 
+// DD-012-4: 列幅・行高は view-local。利用側（このページ）が localStorage へ保存し、次回 mount の初期値へ渡す
+// ＝F5 リロードで復元される（保存・復元は利用側アプリの責務という D1/D2 契約の実演）。
+const LAYOUT_KEY = 'nsheet:playground:layout';
+interface SavedLayout {
+  columnWidths: Record<string, number>;
+  rowHeights: Record<string, number>;
+}
+function loadLayout(): SavedLayout {
+  try {
+    const raw = localStorage.getItem(LAYOUT_KEY);
+    if (raw === null) {
+      return { columnWidths: {}, rowHeights: {} };
+    }
+    const parsed = JSON.parse(raw) as Partial<SavedLayout>;
+    return { columnWidths: parsed.columnWidths ?? {}, rowHeights: parsed.rowHeights ?? {} };
+  } catch {
+    return { columnWidths: {}, rowHeights: {} };
+  }
+}
+function saveLayout(layout: SavedLayout): void {
+  try {
+    localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout));
+  } catch {
+    // ストレージ不可（プライベートモード等）でも致命ではない＝保存を諦めるだけ。
+  }
+}
+const savedLayout = loadLayout();
+
 let connLabel = '未接続';
 let pendingNow = 0;
 function renderBar(): void {
@@ -66,6 +94,10 @@ function renderStatus(event: GridEvent): void {
     case 'error':
       statusEl.textContent = `起動/接続エラー[${event.phase}]: ${event.message}`;
       break;
+    case 'layout':
+      // DD-012-4: 列幅・行高の確定 → 利用側で保存（次回 mount で復元）。
+      saveLayout({ columnWidths: event.columnWidths, rowHeights: event.rowHeights });
+      break;
   }
 }
 
@@ -74,6 +106,8 @@ const instance = mount(
   {
     serverUrl,
     ...(nameParam !== null ? { displayName: nameParam } : {}),
+    columnWidths: savedLayout.columnWidths,
+    rowHeights: savedLayout.rowHeights,
     onEvent: renderStatus,
   },
 );

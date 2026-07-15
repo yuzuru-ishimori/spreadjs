@@ -11,6 +11,20 @@ const serverUrl = params.get('server') ?? 'http://127.0.0.1:9499';
 const scenario = findScenario(params.get('scenario'));
 const displayName = params.get('name') ?? `見学者-${Math.floor(Math.random() * 1000)}`;
 
+// DD-012-4: 列幅・行高は view-local。利用側（デモ）が localStorage へ保存し次回 mount へ渡す＝F5 で復元される。
+const LAYOUT_KEY = 'nsheet:showcase:layout';
+function loadLayout(): { columnWidths: Record<string, number>; rowHeights: Record<string, number> } {
+  try {
+    const raw = localStorage.getItem(LAYOUT_KEY);
+    if (raw === null) return { columnWidths: {}, rowHeights: {} };
+    const p = JSON.parse(raw) as { columnWidths?: Record<string, number>; rowHeights?: Record<string, number> };
+    return { columnWidths: p.columnWidths ?? {}, rowHeights: p.rowHeights ?? {} };
+  } catch {
+    return { columnWidths: {}, rowHeights: {} };
+  }
+}
+const savedLayout = loadLayout();
+
 // --- シナリオパネル ---------------------------------------------------------
 
 function byId(id: string): HTMLElement {
@@ -106,11 +120,31 @@ function onEvent(event: GridEvent): void {
     case 'error':
       log(`エラー [${event.phase}/${event.code}] ${event.message}`);
       break;
+    case 'layout':
+      try {
+        localStorage.setItem(
+          LAYOUT_KEY,
+          JSON.stringify({ columnWidths: event.columnWidths, rowHeights: event.rowHeights }),
+        );
+      } catch {
+        // 保存不可でも致命ではない。
+      }
+      log(`レイアウト変更を保存（列 ${Object.keys(event.columnWidths).length} / 行 ${Object.keys(event.rowHeights).length}）`);
+      break;
   }
 }
 
 // --- グリッド組み込み（Facade のみ） -----------------------------------------
 
-const instance = mount({ container: byId('stage') }, { serverUrl, displayName, onEvent });
+const instance = mount(
+  { container: byId('stage') },
+  {
+    serverUrl,
+    displayName,
+    columnWidths: savedLayout.columnWidths,
+    rowHeights: savedLayout.rowHeights,
+    onEvent,
+  },
+);
 byId('stage').addEventListener('click', () => instance.focus());
 log(`mount 完了（server: ${serverUrl} / 表示名: ${displayName}）`);

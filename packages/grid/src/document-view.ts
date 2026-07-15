@@ -19,10 +19,13 @@
 
 import { displayRowOrder, getCell, slotOf } from '@nanairo-sheet/core';
 import type { CellScalar, DocumentOperation, SheetDocument } from '@nanairo-sheet/core';
+import { createColumnId, createRowId } from '@nanairo-sheet/types';
 import type { ColumnId, RowId } from '@nanairo-sheet/types';
 
 import { createAxis, type Axis } from '@nanairo-sheet/render';
 import type { ChunkStore, RangeVisitor } from '@nanairo-sheet/render';
+
+import { clampColumnWidth, clampRowHeight } from './resize-interaction';
 
 /** dirty の種別（#5 更新コスト分離のための分類）。 */
 export type DirtyKind = 'cell' | 'row-structure' | 'viewport';
@@ -32,6 +35,10 @@ export interface DocumentViewConfig {
   getDocument: () => SheetDocument;
   rowHeight: number;
   colWidth: number;
+  /** 初期の列幅 override（ColumnId 文字列→px・DD-012-4 D2）。利用側が保存した設定の復元に使う。 */
+  columnWidths?: Readonly<Record<string, number>>;
+  /** 初期の行高 override（RowId 文字列→px・DD-012-4 D2）。 */
+  rowHeights?: Readonly<Record<string, number>>;
 }
 
 export interface FlushResult {
@@ -69,6 +76,12 @@ export class DocumentView {
   private readonly colWidth: number;
   private currentRowAxis: Axis<RowId>;
   private currentColAxis: Axis<ColumnId>;
+  /**
+   * 列幅・行高の override（Id キーで保持・DD-012-4）。Axis と別に DocumentView 側でも保持し、構造Op で Axis を
+   * 作り直しても override を失わない（AC4・DD-012-4 の「構造再構築時に override が失われない」不変を成立させる）。
+   */
+  private readonly colWidthOverrides: Map<ColumnId, number>;
+  private readonly rowHeightOverrides: Map<RowId, number>;
   /** base/overlay-layer が束縛する read-through ストア（安定参照・内部で最新 Axis と文書を読む）。 */
   readonly store: ChunkStore;
 
@@ -81,15 +94,93 @@ export class DocumentView {
     this.getDocument = config.getDocument;
     this.rowHeight = config.rowHeight;
     this.colWidth = config.colWidth;
+    // 初期 override は無検証で Axis に入れると prefix sum の単調性が壊れる（負値/0/非有限）ため、有限数へ絞り
+    // D3 のクランプを適用する。既定値と一致するものは override として保持しない（layout の override-only 契約）。
+    this.colWidthOverrides = new Map();
+    for (const [id, px] of Object.entries(config.columnWidths ?? {})) {
+      if (Number.isFinite(px)) {
+        const clamped = clampColumnWidth(px);
+        if (clamped !== this.colWidth) {
+          this.colWidthOverrides.set(createColumnId(id), clamped);
+        }
+      }
+    }
+    this.rowHeightOverrides = new Map();
+    for (const [id, px] of Object.entries(config.rowHeights ?? {})) {
+      if (Number.isFinite(px)) {
+        const clamped = clampRowHeight(px);
+        if (clamped !== this.rowHeight) {
+          this.rowHeightOverrides.set(createRowId(id), clamped);
+        }
+      }
+    }
     this.currentColAxis = createAxis({
       ids: this.getDocument().columnOrder,
       defaultSize: this.colWidth,
+      overrides: this.colWidthOverrides,
     });
     this.currentRowAxis = createAxis({
       ids: displayRowOrder(this.getDocument()),
       defaultSize: this.rowHeight,
+      overrides: this.rowHeightOverrides,
     });
     this.store = this.createReadThroughStore();
+  }
+
+  /**
+   * 列幅を override 設定する（DD-012-4 リサイズ）。Axis へ即時反映（ライブ再描画）し、override マップにも保持して
+   * 構造Op 後の Axis 再構築でも維持する。呼び出し側（mount-controller）が px をクランプ済みで渡す。
+   */
+  setColumnWidth(columnId: ColumnId, width: number): void {
+    if (width === this.colWidth) {
+      // 既定値へ戻した → override を解除する（layout の override-only 契約・Codex[P2]）。
+      if (this.colWidthOverrides.delete(columnId)) {
+        const idx = this.currentColAxis.getIndex(columnId);
+        if (idx >= 0) {
+          this.currentColAxis.resetSize(idx);
+        }
+        this.markViewportDirty();
+      }
+      return;
+    }
+    this.colWidthOverrides.set(columnId, width);
+    this.currentColAxis.setSizeById(columnId, width);
+    this.markViewportDirty();
+  }
+
+  /** 行高を override 設定する（DD-012-4 リサイズ）。既定値へ戻したときは override を解除する。 */
+  setRowHeight(rowId: RowId, height: number): void {
+    if (height === this.rowHeight) {
+      if (this.rowHeightOverrides.delete(rowId)) {
+        const idx = this.currentRowAxis.getIndex(rowId);
+        if (idx >= 0) {
+          this.currentRowAxis.resetSize(idx);
+        }
+        this.markViewportDirty();
+      }
+      return;
+    }
+    this.rowHeightOverrides.set(rowId, height);
+    this.currentRowAxis.setSizeById(rowId, height);
+    this.markViewportDirty();
+  }
+
+  /** 列幅 override のスナップショット（既定値の列は含まない＝override のみ・DD-012-4 layout イベント用）。 */
+  columnWidthOverrideRecord(): Record<string, number> {
+    const out: Record<string, number> = {};
+    for (const [id, px] of this.colWidthOverrides) {
+      out[String(id)] = px;
+    }
+    return out;
+  }
+
+  /** 行高 override のスナップショット（既定値の行は含まない）。 */
+  rowHeightOverrideRecord(): Record<string, number> {
+    const out: Record<string, number> = {};
+    for (const [id, px] of this.rowHeightOverrides) {
+      out[String(id)] = px;
+    }
+    return out;
   }
 
   /** 現在の行 Axis（RowId 列。構造Op で再構築される。呼び出し側は毎フレーム getter で取得すること）。 */
@@ -181,13 +272,19 @@ export class DocumentView {
     let structuralRebuilt = false;
     if (this.dirtyStructure) {
       const doc = this.getDocument();
+      // override を渡して再構築する。渡さないとリサイズ済みの列幅・行高が構造Op で失われる（DD-012-4 AC4）。
       this.currentRowAxis = createAxis({
         ids: displayRowOrder(doc),
         defaultSize: this.rowHeight,
+        overrides: this.rowHeightOverrides,
       });
       if (doc.columnOrder.length !== this.currentColAxis.count()) {
         // 列 Operation は PoC に無いが、列数変化があれば防御的に再構築（通常は通らない）。
-        this.currentColAxis = createAxis({ ids: doc.columnOrder, defaultSize: this.colWidth });
+        this.currentColAxis = createAxis({
+          ids: doc.columnOrder,
+          defaultSize: this.colWidth,
+          overrides: this.colWidthOverrides,
+        });
       }
       this.structuralRebuilds += 1;
       structuralRebuilt = true;

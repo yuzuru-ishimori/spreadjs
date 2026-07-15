@@ -15,6 +15,20 @@
 |---|---|---|---|
 | `0.1.0-alpha.0` | `alpha` | `0.1.0-experimental` | 初回 Alpha 配布（DD-017） |
 
+## [Unreleased]
+
+### Added
+
+- **grid 列幅・行高リサイズ（Experimental・DD-012-4）**: 列ヘッダー右端／行ヘッダー下端の境界ドラッグで列幅・行高を変更できる
+  （±4px の掴み代・`col-resize`/`row-resize` カーソル・最小 列20px/行16px・最大 2000px でクランプ）。設定は **view-local**
+  （他ユーザーへ即時同期しない）。
+  - `GridMountOptions.columnWidths?: Readonly<Record<string, number>>`（ColumnId 文字列→px・初期 override）を追加。
+  - `GridMountOptions.rowHeights?: Readonly<Record<string, number>>`（RowId 文字列→px・初期 override）を追加。
+  - `GridEvent` に `{ type: 'layout'; columnWidths: Record<string, number>; rowHeights: Record<string, number> }` を追加。
+    境界ドラッグ確定時（pointerup）に発火し、**既定値と異なる列/行だけ**（override のみ）を含む。利用側はこれを保存し、次回 mount の
+    `columnWidths`/`rowHeights` へ渡すと F5 リロードで復元できる（保存先を共有にすれば他ユーザーへも反映）。
+  - IME 不変（I-3）維持: リサイズの pointer 操作は編集状態機械へ流さず、変換中でも textarea の value/selection/DOM 親に触れない。
+
 ## [0.1.0-alpha.0] — 2026-07-14（DD-017）
 
 初回の Alpha 配布版。配布 closure = `@nanairo-sheet/{grid,server-hono,core,types,collab,render,selection,ime,server}`（9 package）。
