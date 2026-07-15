@@ -13,9 +13,10 @@
   },
   "scripts": {
     "dev": "npm run dev --workspace apps/playground",
-    "build": "npm run build --workspace apps/playground",
+    "build": "npm run build --workspaces --if-present",
     "test": "vitest run",
     "test:e2e": "playwright test --config apps/playground/playwright.config.ts",
+    "test:e2e:showcase": "playwright test --config apps/showcase/playwright.config.ts",
     "test:invariants": "vitest run tests/invariants",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "eslint . && npm run lint:boundary",

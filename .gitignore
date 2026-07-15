@@ -22,6 +22,9 @@ Thumbs.db
 # Playwright MCP の一時出力（スナップショット・コンソールログ・スクリーンショット）
 .playwright-mcp/
 
+# dev-start.sh --showcase のデモ用ファイル永続化（oplog＋snapshot。リセットは削除でよい）
+.dev-persistence/
+
 # Playwright E2E の実行結果・レポート
 test-results/
 playwright-report/

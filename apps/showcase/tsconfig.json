@@ -1,0 +1,11 @@
+{
+  // showcase はブラウザーで動くため DOM lib を足す（base には DOM を入れない方針・playground と同型）。
+  // features.json（機能カタログの単一データ源）を import するため resolveJsonModule を有効化する。
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": [],
+    "resolveJsonModule": true
+  },
+  "include": ["src/**/*.ts", "src/**/*.json"]
+}

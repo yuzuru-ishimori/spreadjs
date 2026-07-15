@@ -10,6 +10,7 @@
 | `doc/project-overview.md` | プロジェクトスコープ・環境・方針（未作成。最初に書くことを推奨） |
 | `README.md`（ルート） | 製品概要・アーキテクチャ・ロードマップ（開発者向けの入口） |
 | `doc/quick-start.md` | consumer 向け Quick Start（配布成果物 install → serve → mount → 日本語入力・前提=Node22/Tier1/TSビルド環境。S1-4・DD-017） |
+| `apps/showcase/README.md` | SDK紹介サイト・機能カタログ＋動作デモの起動手順と5分デモ台本（進捗可視化。機能カタログの表示データは `apps/showcase/src/features.json` に一元化・DD完了時更新義務。DD-017-2） |
 | `CHANGELOG.md`（ルート） | `@nanairo-sheet/*` Alpha 変更履歴・運用ルール（Experimental 0.x・破壊的変更必記・package版↔API版対応。S1-5・ADR-0015 D1・DD-017） |
 
 ## 製品戦略（最上位正典）

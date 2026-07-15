@@ -1,0 +1,156 @@
+{
+  "_doc": "機能カタログの単一データ源（DD-017-2 D2）。正本は doc/plan/phase1-dd-roadmap.md §4／stage2-backlog.md／roadmap §6。DD完了時に本ファイルを更新する（AGENTS.md ドキュメント更新義務）。status: available=提供中 / planned=開発予定 / out-of-scope=対象外。",
+  "updated": "2026-07-15",
+  "stage": {
+    "current": "Stage 1「社内SDK Alpha」到達",
+    "date": "2026-07-15"
+  },
+  "features": [
+    {
+      "id": "ime",
+      "title": "日本語入力（IME）",
+      "status": "available",
+      "summary": "変換中の文字を取りこぼさない日本語入力。変換ウィンドウ表示中に他ユーザーの編集が届いても、入力中の文字は壊れません。",
+      "source": "DD-002・DD-012・DD-012-1（CG-1 実機検証済）",
+      "meta": "実機検証: Chrome / Edge",
+      "demo": "./demo.html?scenario=ime"
+    },
+    {
+      "id": "scroll",
+      "title": "大量データの高速表示",
+      "status": "available",
+      "summary": "数万行のデータを Canvas 描画で滑らかにスクロール。実測: スクロール応答 p95 16.8ms・メモリ 65MB（予算 300MB）。",
+      "source": "DD-004・DD-012-2（CG-6）",
+      "meta": "5万行 実測済み",
+      "demo": "./demo.html?scenario=scroll"
+    },
+    {
+      "id": "editing",
+      "title": "セル編集・データ型",
+      "status": "available",
+      "summary": "文字列・数値・日付の型変換、キーボードナビゲーション、範囲選択、編集セルへのスクロール追従。",
+      "source": "DD-012-1・DD-016-3",
+      "meta": "",
+      "demo": "./demo.html?scenario=editing"
+    },
+    {
+      "id": "collab",
+      "title": "リアルタイム共同編集",
+      "status": "available",
+      "summary": "複数人の同時編集をサーバーが一列に整列。競合は検出して通知し、他の人の入力を黙って上書きすることがありません。",
+      "source": "DD-003・DD-005・DD-013",
+      "meta": "9セッション同時 検証済み",
+      "demo": "./demo.html?scenario=collab"
+    },
+    {
+      "id": "persist",
+      "title": "保存と復元",
+      "status": "available",
+      "summary": "書き込み保証付きの保存。サーバーを再起動してもデータは復元されます（10万行を1秒以内で復旧）。",
+      "source": "DD-010・DD-014・DD-014-1・DD-018-1（CG-2・CG-3）",
+      "meta": "",
+      "demo": "./demo.html?scenario=persist"
+    },
+    {
+      "id": "reconnect",
+      "title": "切断・再接続耐性",
+      "status": "available",
+      "summary": "一時的な回線切断で入力データを失いません。再接続後に自動で再送・追いつきを行い、二重適用も防ぎます。",
+      "source": "DD-015（CG-5）",
+      "meta": "障害注入テスト済み",
+      "demo": "./demo.html?scenario=reconnect"
+    },
+    {
+      "id": "sdk",
+      "title": "SDKとしての組み込み",
+      "status": "available",
+      "summary": "npm パッケージとして導入。公開 API（Facade）・TypeScript 型定義・Quick Start を同梱し、独立プロジェクトからの組み込みを実証済み。",
+      "source": "DD-016・DD-016-1・DD-016-2（S1-3）",
+      "meta": "Quick Start あり"
+    },
+    {
+      "id": "distribution",
+      "title": "配布と診断",
+      "status": "available",
+      "summary": "バージョン付き配布物・変更履歴（CHANGELOG）・エラーコード語彙・デバッグ用フック。導入後の切り分けに必要な最小の診断手段を提供。",
+      "source": "DD-017・DD-017-1（S1-6）",
+      "meta": ""
+    },
+    {
+      "id": "quality",
+      "title": "品質保証の仕組み",
+      "status": "available",
+      "summary": "自動テスト 738件、日本語入力・共同編集・公開APIの不変条件スイートを常設。対応環境を明記した互換性マトリクス付き。",
+      "source": "DD-009・DD-011・DD-011-1・DD-018（CG-4）",
+      "meta": ""
+    },
+    {
+      "id": "presence",
+      "title": "他ユーザーの編集位置表示",
+      "status": "planned",
+      "summary": "誰がどのセルを見て・編集しているかをリアルタイムに表示（カーソル・選択範囲の共有）。",
+      "source": "DD-019（stage2-backlog §1）",
+      "meta": "Stage 2"
+    },
+    {
+      "id": "clipboard",
+      "title": "コピー&ペースト",
+      "status": "planned",
+      "summary": "範囲選択してコピー・貼り付け。型変換・複数セルの一括貼り付け・競合検出・元に戻す（Undo）まで一貫して扱います。",
+      "source": "DD-020（stage2-backlog §1）",
+      "meta": "Stage 2 先頭"
+    },
+    {
+      "id": "row-ops",
+      "title": "行の挿入・削除",
+      "status": "planned",
+      "summary": "共同編集中でも整合が崩れない行操作。複数人が同時に行を挿入・削除してもデータは正しく収束します。",
+      "source": "DD-021（stage2-backlog §1・3分割予定）",
+      "meta": "Stage 2"
+    },
+    {
+      "id": "formula",
+      "title": "数式",
+      "status": "planned",
+      "summary": "四則演算・セル参照・SUM。行を移動しても参照が壊れない方式で、依存セルは自動再計算されます（技術検証は完了済み）。",
+      "source": "DD-022（stage2-backlog §1）",
+      "meta": "Stage 2"
+    },
+    {
+      "id": "ops-maturity",
+      "title": "配布・運用の本格化",
+      "status": "planned",
+      "summary": "社内パッケージレジストリからの配布、ビルド済み配布物、PostgreSQL による永続化、React 用ラッパー、テレメトリ。",
+      "source": "stage2-backlog §2（DD-017 決定事項A/B・ADR-0023）",
+      "meta": "Stage 2"
+    },
+    {
+      "id": "oos-platform",
+      "title": "macOS・Firefox・モバイル",
+      "status": "out-of-scope",
+      "summary": "対応環境を Windows の Chrome / Edge に集中して品質を担保します。対応拡大は将来段階で判断します。",
+      "source": "roadmap §6（CG-4）・ADR-0015"
+    },
+    {
+      "id": "oos-production",
+      "title": "本番運用機能",
+      "status": "out-of-scope",
+      "summary": "認証認可・テナント分離・高可用性・バックアップ運用は SDK の範囲外。信頼できる社内環境での利用を前提とし、運用要件は利用側システムが担います。",
+      "source": "roadmap §6"
+    },
+    {
+      "id": "oos-offline",
+      "title": "オフライン編集",
+      "status": "out-of-scope",
+      "summary": "長時間オフラインでの編集継続や複数端末のオフライン統合は保証しません（一時的な切断は「切断・再接続耐性」でカバーします）。",
+      "source": "roadmap §6"
+    },
+    {
+      "id": "oos-compat",
+      "title": "長期のAPI後方互換",
+      "status": "out-of-scope",
+      "summary": "Alpha 期間の API は 0.x（実験的）。変更はすべて変更履歴で追跡できますが、長期の後方互換は約束しません。",
+      "source": "roadmap §6・ADR-0015"
+    }
+  ]
+}

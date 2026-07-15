@@ -1,0 +1,16 @@
+{
+  "name": "@nanairo-sheet/showcase",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "SDK紹介サイト・機能カタログ＋動作デモ（@nanairo-sheet/grid Facade の consumer。DD-017-2）",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@nanairo-sheet/grid": "*",
+    "vite": "^6.0.5"
+  }
+}
