@@ -34,6 +34,14 @@
 | ~~P2-3~~ | ~~recovery の documentId/revision 相互検証欠如~~ | DD-014 既知制約 | **DD-018-1 で回収済** | documentId 照合＋封筒 revision 相互検査 fail-fast を実装（誤公開防止） |
 | ~~P2-4~~ | ~~restoreFrom＋persistenceDir 併用の revision 不連続~~ | DD-014 既知制約 | **DD-018-1 で回収済** | restoreFrom×persistenceDir を明示拒否（throw）。全ログ durable bootstrap は現 caller 不在ゆえ不採用 |
 
+## 3.5 機能追加DD（DD-012-4/5・2026-07-15 起票）からの送り項目
+
+| 項目 | 内容 | 出典DD | Stage 2 での対応 |
+|---|---|---|---|
+| 列幅・行高・wrap設定の全ユーザー共有 | 現状は view-local＋利用側保存API（F5反映は初期値注入）。リアルタイム共有は Operation 化・snapshot 拡張が必要 | DD-012-4 D1・DD-012-5 D1 | 書式・レイアウトの文書プロパティ化とあわせて設計 |
+| セル単位の書式モデル | wrap は列単位で提供。セル単位書式（折り返し・色・罫線等）は書式モデル新設＝共同編集・永続化へ波及 | DD-012-5 D1 | Stage 2（Clipboard・数式の書式要件と統合） |
+| ダブルクリック auto-fit（列幅自動調整） | 対象外とした（測定コスト・仕様確定を分離） | DD-012-4 D3 | リサイズ実装の延長で追加 |
+
 ## 4. 製品境界化（Stage 2 送りではない・Alpha で明示済み）
 
 > 以下は「延期」ではなく roadmap §6 Alpha 製品境界で明示済み（参考記載・DD-018 判定で境界化＝合格扱い）。
