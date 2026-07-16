@@ -47,6 +47,7 @@ import { computeResizeSize, resizeHitTest } from './resize-interaction';
 import type { ResizeTarget } from './resize-interaction';
 import { createSelectionController, decideNavigationIntercept } from './selection-controller';
 import { GridBootError, toGridConflictCode } from './error-codes';
+import type { GridConflictCode } from './error-codes';
 import { createDiagnosticSink } from './diagnostics';
 import { debugRegistry } from './internal';
 import type { GridDebugApi, GridDebugCellAddress } from './internal';
@@ -887,9 +888,27 @@ export function createGridController(target: GridMountTarget, options: GridMount
     };
 
     /**
+     * 実行前拒否（上限超過・はみ出し）の通知（範囲クリア／paste／cut 共有）。診断は常に出す。公開 rejected は
+     * **共同編集モードのみ**発火する: standalone は DD-024 契約（ClientSession/transport 非生成＝
+     * connection/pending/rejected/divergence 非発火）を守り、client 側実行前拒否を server 競合の rejected 経路へ
+     * 混ぜない（consumer が collab 競合と誤認しないため。standalone は診断のみ・Codex[P2]）。operationId は空＝未 submit。
+     */
+    const notifyPreExecutionReject = (code: GridConflictCode, diagCode: string, detail: string): void => {
+      diag.emit('warn', diagCode, detail);
+      if (isStandalone) {
+        return;
+      }
+      emit({
+        type: 'rejected',
+        pendingCount: backend.session.pendingCount,
+        conflict: { operationId: '', reason: 'rejected', code },
+      });
+    };
+
+    /**
      * 範囲クリア（DD-020-1 AC5/AC6）: 明示レンジを 1 つの原子的 SetCells（非空セルのみ・beforeRevision 付き）
      * で blank 化する。生成・上限検査は range-ops（純粋関数）・submit は IME 確定と同じ共有経路（submitSetCells）。
-     * 上限超過は submit せず rejected イベント（公開 code=range-too-large・operationId は空＝未 submit）で通知する。
+     * 上限超過は submit せず notifyPreExecutionReject（共同編集は rejected code=range-too-large・standalone は診断のみ）。
      * レンジは維持する（AC5: Delete は解除トリガーではない／AC6: 縮めて再実行できる）。
      * （arrow 式: 上の backend undefined ガード後の narrowing を閉包へ効かせる＝hoist される function 宣言にしない）
      */
@@ -903,12 +922,11 @@ export function createGridController(target: GridMountTarget, options: GridMount
         case 'noop':
           return; // 範囲内が全て空 → 変更なし（submit しない）
         case 'too-large':
-          diag.emit('warn', 'range-clear-too-large', `範囲 ${outcome.cellCount} セル > 上限 ${outcome.limit}（拒否）`);
-          emit({
-            type: 'rejected',
-            pendingCount: backend.session.pendingCount,
-            conflict: { operationId: '', reason: 'rejected', code: 'range-too-large' },
-          });
+          notifyPreExecutionReject(
+            'range-too-large',
+            'range-clear-too-large',
+            `範囲 ${outcome.cellCount} セル > 上限 ${outcome.limit}（拒否）`,
+          );
           return;
         case 'submit':
           submitSetCells(outcome.operation);
@@ -944,12 +962,11 @@ export function createGridController(target: GridMountTarget, options: GridMount
       const range = selectionCtrl.selectedRange(editor.session.getActiveCell());
       const outcome = buildRangeClear(docPort, range);
       if (outcome.kind === 'too-large') {
-        diag.emit('warn', 'cut-too-large', `cut 範囲 ${outcome.cellCount} セル > 上限 ${outcome.limit}（拒否）`);
-        emit({
-          type: 'rejected',
-          pendingCount: backend.session.pendingCount,
-          conflict: { operationId: '', reason: 'rejected', code: 'range-too-large' },
-        });
+        notifyPreExecutionReject(
+          'range-too-large',
+          'cut-too-large',
+          `cut 範囲 ${outcome.cellCount} セル > 上限 ${outcome.limit}（拒否）`,
+        );
         return null; // クリップボードは変更しない（Navigation の空 textarea への既定 cut は no-op）
       }
       const tsv = serializeSelectionToTsv(clipPort, range);
@@ -976,20 +993,18 @@ export function createGridController(target: GridMountTarget, options: GridMount
         case 'noop':
           return true; // 空 paste・全欠け → 消費のみ（textarea へ入れない）
         case 'too-large':
-          diag.emit('warn', 'paste-too-large', `貼り付け ${outcome.cellCount} セル > 上限 ${outcome.limit}（拒否）`);
-          emit({
-            type: 'rejected',
-            pendingCount: backend.session.pendingCount,
-            conflict: { operationId: '', reason: 'rejected', code: 'paste-too-large' },
-          });
+          notifyPreExecutionReject(
+            'paste-too-large',
+            'paste-too-large',
+            `貼り付け ${outcome.cellCount} セル > 上限 ${outcome.limit}（拒否）`,
+          );
           return true;
         case 'out-of-bounds':
-          diag.emit('warn', 'paste-out-of-bounds', `貼り付け ${outcome.rows}×${outcome.cols} が行/列端を越える（拒否）`);
-          emit({
-            type: 'rejected',
-            pendingCount: backend.session.pendingCount,
-            conflict: { operationId: '', reason: 'rejected', code: 'paste-out-of-bounds' },
-          });
+          notifyPreExecutionReject(
+            'paste-out-of-bounds',
+            'paste-out-of-bounds',
+            `貼り付け ${outcome.rows}×${outcome.cols} が行/列端を越える（拒否）`,
+          );
           return true;
         case 'submit':
           submitSetCells(outcome.operation);

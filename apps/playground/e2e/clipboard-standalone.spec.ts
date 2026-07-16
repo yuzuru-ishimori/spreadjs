@@ -15,6 +15,7 @@ import {
   selectCell,
   waitReady,
 } from './standalone-helpers';
+import { dispatchSyntheticPaste } from './integration-helpers';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -98,6 +99,33 @@ test('#2 単独モードで cut → 範囲クリアの cell-commit（before/afte
         { message: 'cut クリアの cell-commit' },
       )
       .toBe(true);
+  } finally {
+    await context.close();
+  }
+});
+
+test('#3 単独モードで はみ出し paste は rejected を発火しない（DD-024 契約維持・Codex[P2]）', async ({ browser }) => {
+  const { context, page } = await openStandalone(browser);
+  try {
+    await page.evaluate(() => {
+      window.__standalone?.destroy();
+      window.__standalone?.clearSaved();
+      window.__standalone?.mount();
+    });
+    await waitReady(page);
+
+    // 最終行 (19,col-a) を選択して 2 行 TSV を貼る → 行末を越える（out-of-bounds）。
+    await selectCell(page, 19, 0);
+    const row = (await rowIdAt(page, 19))!;
+    const col = (await colIdAt(page, 0))!;
+    const before = await displayCell(page, row, col);
+    await dispatchSyntheticPaste(page, 'x\ny'); // [['x'],['y']]＝2 行
+
+    // rejected（server 系イベント）は 1 件も発火しない（DD-024 契約: standalone は rejected 非発火）。
+    // 貼り付けは適用されない（対象セル不変）。
+    await page.waitForTimeout(150);
+    expect((await events(page)).filter((e) => e.type === 'rejected')).toHaveLength(0);
+    expect(await displayCell(page, row, col)).toBe(before); // 実行前拒否＝無変更
   } finally {
     await context.close();
   }
