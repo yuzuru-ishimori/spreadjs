@@ -52,7 +52,15 @@ export type RangeClearOutcome =
  * 生成のみで submit はしない（呼び出し側が GridBackendSession.submitLocalOperation へ流す＝commit-bridge と同じ分担）。
  */
 export function buildRangeClear(port: RangeDocumentPort, range: CellRange): RangeClearOutcome {
-  const cellCount = countRangeCells(range);
+  // 空/逆転レンジは走査前に no-op（Codex[P2]）: 片側 span が 0 以下だと面積（cellCount）が 0 になり上限検査を
+  // 通過するが、外側ループは rowEnd-rowStart 回まわる（例: rowEnd=10 億 × colSpan=0 で UI が停止する）。
+  // UI 由来のレンジは正規化済み（rangeFromAnchorFocus）だが、本関数は DD-020-2 が再利用する内部 API のため防御する。
+  const rowSpan = range.rowEnd - range.rowStart;
+  const colSpan = range.colEnd - range.colStart;
+  if (rowSpan <= 0 || colSpan <= 0) {
+    return { kind: 'noop' };
+  }
+  const cellCount = rowSpan * colSpan;
   if (cellCount > SETCELLS_MAX_CELLS) {
     return { kind: 'too-large', cellCount, limit: SETCELLS_MAX_CELLS };
   }

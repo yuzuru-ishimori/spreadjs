@@ -155,6 +155,33 @@ describe('buildRangeClear: 上限（AC6・親①=100,000）', () => {
     // 実在セルは全て空 → noop（too-large にならないことが本ケースの主張）。
     expect(buildRangeClear(portOf(doc), range)).toEqual({ kind: 'noop' });
   });
+
+  it('片側 span が 0/負のレンジは走査せず noop（Codex P2: 面積 0 が上限検査を通過しても外側ループを回さない）', () => {
+    const throwingPort: RangeDocumentPort = {
+      getCommittedDocument: () => {
+        throw new Error('空レンジで committed を読んではならない');
+      },
+      displayText: () => {
+        throw new Error('空レンジで走査してはならない');
+      },
+      rowIdAt: () => {
+        throw new Error('空レンジで行を解決してはならない');
+      },
+      colIdAt: () => {
+        throw new Error('空レンジで列を解決してはならない');
+      },
+    };
+    // 列 span=−1 だが行 span=10 億: 面積 0 で too-large にならず、外側ループも回してはならない。
+    expect(
+      buildRangeClear(throwingPort, { rowStart: 0, rowEnd: 1_000_000_000, colStart: 1, colEnd: 0 }),
+    ).toEqual({ kind: 'noop' });
+    expect(buildRangeClear(throwingPort, { rowStart: 5, rowEnd: 3, colStart: 2, colEnd: 1 })).toEqual({
+      kind: 'noop',
+    });
+    expect(buildRangeClear(throwingPort, { rowStart: 3, rowEnd: 3, colStart: 0, colEnd: 5 })).toEqual({
+      kind: 'noop',
+    });
+  });
 });
 
 describe('buildRangeClear: 原子性（AC5・I-5）', () => {

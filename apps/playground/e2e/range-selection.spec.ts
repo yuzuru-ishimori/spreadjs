@@ -64,6 +64,40 @@ test('S1/S2: ドラッグで dragRange が描かれ pointerup で確定・クリ
   }
 });
 
+test('S1補: ドラッグが viewport 外（下端の外）へ出ても不可視セルへ拡張しない（Codex P1）', async ({
+  browser,
+}) => {
+  const { context, page } = await openClient(browser, '範囲-外側ドラッグ');
+  try {
+    const start = await cellCenter(page, 2, 2);
+    const mid = await cellCenter(page, 4, 3);
+    await page.mouse.move(start.x, start.y);
+    await page.mouse.down();
+    await page.mouse.move(mid.x, mid.y, { steps: 3 });
+    await expect
+      .poll(async () => dragRange(page), { message: 'viewport 内で dragRange が形成される' })
+      .toEqual({ rowStart: 2, rowEnd: 5, colStart: 2, colEnd: 4 });
+
+    // pointer capture 中に scroller の下端の外（stage 外）へ move。hitTest は下端外も Axis セルへ
+    // 解決してしまうため、境界検査が無いと不可視セルまで範囲が伸びる（→ Delete で画面外を消す事故）。
+    // steps は指定しない（単一ジャンプ）: 中間点が viewport 内を通ると正当な focus 更新が起きるため。
+    const box = await page.locator('.nsheet-scroller').boundingBox();
+    expect(box).not.toBeNull();
+    await page.mouse.move(box!.x + 300, box!.y + box!.height + 6);
+    expect(await dragRange(page), 'viewport 外では直近 focus を保持する').toEqual({
+      rowStart: 2,
+      rowEnd: 5,
+      colStart: 2,
+      colEnd: 4,
+    });
+
+    await page.mouse.up();
+    expect(await selectionRange(page)).toEqual({ rowStart: 2, rowEnd: 5, colStart: 2, colEnd: 4 });
+  } finally {
+    await context.close();
+  }
+});
+
 test('S3: Shift+クリックで activeCell（anchor）〜クリック位置の矩形が選択される（AC2）', async ({
   browser,
 }) => {

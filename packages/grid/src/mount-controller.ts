@@ -516,11 +516,18 @@ export function createGridController(target: GridMountTarget, options: GridMount
         if (event.pointerId !== selectionDrag.pointerId) {
           return; // active pointer 以外の move は無視（マルチタッチでの誤更新防止）
         }
+        // viewport 外は直近 focus を保持する（autoscroll 対象外=既定案・Codex[P1]）。pointer capture 中は
+        // 外へ出ても move が届き、hitTest は右/下端の**外側**も Axis 上のセルへ解決してしまうため、
+        // hitTest の前に境界で弾く（不可視セルへ範囲が伸び、Delete で画面外の値を消す事故を防ぐ）。
+        // 左/上（ヘッダー側）は下の hit.area==='cell' ガードが同じ役割を担う。
+        if (x < 0 || y < 0 || x >= viewportWidth || y >= viewportHeight) {
+          return;
+        }
         const transform = currentTransform();
         if (transform === undefined) {
           return;
         }
-        // セル領域のみ focus を更新する（ヘッダー上/viewport 外は直近セルを保持。autoscroll は対象外=既定案）。
+        // セル領域のみ focus を更新する（ヘッダー上は直近セルを保持）。
         const hit = transform.hitTest(x, y);
         if (hit.area === 'cell') {
           selectionCtrl.updateDrag({ row: hit.rowIndex, col: hit.colIndex });
