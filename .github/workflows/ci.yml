@@ -1,0 +1,61 @@
+# 継続回帰CI（DD-028・S2-4）。main への push / PR / 週1 schedule / 手動で、
+# lint（boundary 含む）・typecheck・test（invariants/contract 込み）・E2E（playground＋showcase）を継続実行する。
+#
+# 設計（DD-028 決定②・ユーザー確定 2026-07-16）:
+#   - 2 job 並列: checks（静的検査＋vitest）／ e2e（Playwright・chromium のみ）。
+#     E2E は blocking（決定⑥）。flake 検知時は quarantine 運用（exclude＋continue-on-error の別ステップで
+#     実行は継続=履歴保持・恒久是正は発火条件付き子DD。既知候補: server-hono ws-convergence.smoke）。
+#   - ブラウザーは chromium のみ: CI の E2E は synthetic composition（実IMEではない）。Tier 1 実機 IME は
+#     doc/plan/ime-manual-gate-ledger.md の変更トリガー方式で別建て（synthetic と実IMEを混同しない・憲章 §15 S2-4）。
+#   - 性能予算は checks の `npm test` 内の node perf smoke＋perf-judge＋予算ピンが継続実行される
+#     （headed フル再計測 scripts/cg-perf/ は共有ランナーの計時ノイズで false red を量産するため CI 化しない＝DD-028 検討6）。
+#   - schedule は月曜 09:00 JST（= 00:00 UTC）: push が無い週も回帰履歴を途切れさせない。
+#   - concurrency: 同一 ref の連続 push は古い run を cancel（分数節約）。「連続 green」履歴を稼ぐときは
+#     run 完了を待ってから push する（cancelled は green にならない）。
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '0 0 * * 1' # 月曜 00:00 UTC = 月曜 09:00 JST
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: checks (lint / typecheck / test)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22 # engines.node ">=22"（D-002）
+          cache: npm
+      - run: npm ci
+      - run: npm run lint # eslint ＋ boundary lint（R1〜R7）
+      - run: npm run typecheck
+      - run: npm test # vitest 全件（tests/invariants・tests/contract 込み）
+
+  e2e:
+    name: e2e (playground + showcase, chromium)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e # playground（統合・standalone・react ほか。webServer は config が自動起動）
+      - run: npm run test:e2e:showcase # showcase 起動・主要導線 smoke
