@@ -329,6 +329,47 @@ export async function colIdAt(page: Page, index: number): Promise<string | undef
 export async function committedCell(page: Page, rowId: string, columnId: string): Promise<string> {
   return callApi<string>(page, 'committedCell', [rowId, columnId]);
 }
+/** DD-020-2: committed セルの CellScalar kind（paste の型保持検証用）。 */
+export async function committedCellKind(page: Page, rowId: string, columnId: string): Promise<string> {
+  return callApi<string>(page, 'committedCellKind', [rowId, columnId]);
+}
+
+// ---- DD-020-2 clipboard E2E ヘルパー ----------------------------------------------------------
+
+/** 実 Clipboard API を read/write 可能にする（context 単位・grantPermissions）。 */
+export async function grantClipboard(context: BrowserContext): Promise<void> {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+}
+
+/** 実クリップボードへ text/plain を書く（Excel 方言の実ペイロード注入・実 Ctrl+V の前段）。 */
+export async function writeClipboard(page: Page, text: string): Promise<void> {
+  await page.evaluate((t: string) => navigator.clipboard.writeText(t), text);
+}
+
+/** 実クリップボードの text/plain を読む（copy/cut の書き出し検証）。 */
+export async function readClipboard(page: Page): Promise<string> {
+  return page.evaluate(() => navigator.clipboard.readText());
+}
+
+/**
+ * 常駐 textarea へ合成 ClipboardEvent（paste）を dispatch する（Excel 方言 fixture を byte 精密に注入する系統）。
+ * DataTransfer で text/plain を運ぶ（実クリップボードの EOL 正規化を受けない）。戻り値=既定が抑止されたか
+ * （グリッドが消費＝preventDefault したか）。
+ */
+export async function dispatchSyntheticPaste(page: Page, text: string): Promise<boolean> {
+  return page.evaluate((t: string) => {
+    const ta = document.querySelector('textarea.int-cell-editor');
+    if (!(ta instanceof HTMLTextAreaElement)) {
+      throw new Error('int-cell-editor が見つからない');
+    }
+    ta.focus();
+    const dt = new DataTransfer();
+    dt.setData('text/plain', t);
+    const event = new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true });
+    ta.dispatchEvent(event);
+    return event.defaultPrevented;
+  }, text);
+}
 /** DD-014-1 AC8: snapshot bootstrap の確立 revision（>0 なら全 replay 非依存で復元した）。 */
 export async function bootstrapRevision(page: Page): Promise<number> {
   return callApi<number>(page, 'bootstrapRevision', []);

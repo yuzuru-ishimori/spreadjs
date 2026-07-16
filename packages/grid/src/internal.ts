@@ -77,6 +77,8 @@ export interface GridDebugApi {
   /** 行高 override のスナップショット（DD-012-4 E2E）。 */
   rowHeightOverrides(): Record<string, number>;
   committedCell(rowId: string, columnId: string): string;
+  /** committed セルの CellScalar kind（'blank'|'string'|'number'|'date'）。DD-020-2 paste の型保持検証用。 */
+  committedCellKind(rowId: string, columnId: string): string;
   displayCell(rowId: string, columnId: string): string;
   submitInsertRowsAfter(afterRowId: string | null, newRowId: string): void;
   submitDeleteRow(rowId: string): void;

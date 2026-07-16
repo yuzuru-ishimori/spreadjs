@@ -1277,6 +1277,13 @@ export function createGridController(target: GridMountTarget, options: GridMount
       const record = getCell(sync.session.committedDocument, createRowId(rowId), createColumnId(columnId));
       return record === undefined ? '' : cellScalarToDisplay(record.value);
     },
+    committedCellKind: (rowId, columnId) => {
+      if (sync === undefined) {
+        return 'blank';
+      }
+      const record = getCell(sync.session.committedDocument, createRowId(rowId), createColumnId(columnId));
+      return record === undefined ? 'blank' : record.value.kind;
+    },
     displayCell: (rowId, columnId) =>
       sync === undefined ? '' : sync.view.cellDisplay(createRowId(rowId), createColumnId(columnId)),
     submitInsertRowsAfter: (afterRowId, newRowId) => {
