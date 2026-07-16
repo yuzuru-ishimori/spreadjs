@@ -18,6 +18,14 @@
 | ファイル | 説明 |
 |---------|------|
 | `doc/product/nanairo_sheet_product_charter_v1.md` | 製品憲章・SDK戦略（**製品戦略層の最上位正典**。製品の目的・利用者・提供形態・非目標・成熟段階の正。技術方式は開発計画、DD作業管理はロードマップが担当） |
+| `doc/product/deprecation-policy.md` | Deprecation Policy（非推奨・破壊的変更の運用規定。成熟度3層=0.x/Beta/Stable・P-10 確定=D-006。憲章 §18.3 の具体化・contract test 4本柱運用のフック。DD-028） |
+
+## SDK 移行ガイド（consumer 向け）
+
+| ファイル | 説明 |
+|---------|------|
+| `doc/migration/README.md` | Migration guide 運用規定（書く条件=CHANGELOG 破壊的変更節・書式・**dry-run 検証義務**=`tests/contract/migration-dryrun.test.ts`・CHANGELOG/型スナップショット/deprecation policy との対応関係。S2-3・DD-028） |
+| `doc/migration/0001-grid-conflict-code.md` | 移行ガイド #0001: grid `GridConflict.code` 型変更・任意→必須（0.1.0-alpha.0 の実績破壊的変更。before/after コードは dry-run 機械検証対象。DD-028） |
 
 ## 計画・構想
 

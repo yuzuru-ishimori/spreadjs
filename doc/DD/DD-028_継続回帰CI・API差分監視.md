@@ -118,12 +118,12 @@ SDK 機能DD群（DD-020/021/027）を連打する前に回帰防御を常設す
 - [x] 😈 **DA批判レビュー**: ①snapshot -u の乱用（fail を機械的に更新して破壊的変更が素通り）→ ヘッダ手順に CHANGELOG/migration/deprecation 判定を明記し Codex レビュー対象に含めた ②closure の相対 specifier 解決が `.js` 拡張子付き import に未対応→ 本 repo は拡張子なし import 統一（現状 0 件）のため許容・新規 Facade 追加時は snapshot 空になり entry 欠落 throw で検出 ③1 program 束ね emit で per-package tsconfig 差（grid types:[] 等)を反映しない→ 既存 R7 検査（DD-016 以降）と同一の共有 options を踏襲・公開宣言テキストの差分検出には影響なし
 
 ### Phase 3: migration guide 運用＋deprecation policy（P-10）
-- [ ] `doc/migration/README.md` 新設: 書く条件（CHANGELOG 破壊的変更節に載る変更=必須）・書式（対象版・影響 API・before/after・機械的手順）・dry-run 検証義務・CHANGELOG／型スナップショットとの対応関係
-- [ ] `doc/migration/0001-grid-conflict-code.md` 新設: 実績破壊的変更（`GridConflict.code` 型変更・任意→必須。CHANGELOG「Changed」節）の移行ガイド初版（before/after コード付き）
-- [ ] 🔬 **機械検証（dry-run・AC4）**: ガイドの before コードが現行 API で型 error・after コードが compile/実行 green になることを consumer 視点コード（一時ファイル＋`tsc --noEmit` または contract テスト内）で実走 → 結果をログへ
-- [ ] `doc/product/deprecation-policy.md` 新設（決定事項④の3層）＋憲章 `doc/product/nanairo_sheet_product_charter_v1.md` §27 P-10 行を決定済みへ（P-01 先例形式・最小差分）＋`doc/plan/phase2-dd-roadmap.md` §5 P-10 行へ決定記録＋`doc/decisions.md` へ次番（D-006 想定）追記
-- [ ] 🔬 **機械検証（AC5）**: `bash scripts/doc-check.sh` green＋grep で憲章 P-10 行に「決定済」が入っていること
-- [ ] 😈 **DA批判レビュー（「このPhaseで何が壊れるか」を探す。基準: da-method.md §3.4）**
+- [x] `doc/migration/README.md` 新設: 書く条件（CHANGELOG 破壊的変更節=必須）・書式（対象版・影響 API・`ts before`/`ts after` fenced block・機械的手順）・dry-run 検証義務（**常設 contract test 化**）・CHANGELOG／型スナップショット／deprecation policy との対応関係表・ガイド一覧
+- [x] `doc/migration/0001-grid-conflict-code.md` 新設: 実績破壊的変更（`GridConflict.code` 型変更・任意→必須。CHANGELOG「Changed」節）の移行ガイド初版（before/after コード＋写像表参照の機械的手順付き）
+- [x] 🔬 **機械検証（dry-run・AC4）**: `tests/contract/migration-dryrun.test.ts` 新設=全ガイドの before/after を抽出し in-memory 型検査（1 program 束ね・consumer 視点の仮想ファイル）。before=**TS2367**（生内部コード `'stale-cell-revision'` と公開語彙の重なりなし）＋**TS2741**（`code` 必須化）で型 error・after=0 diagnostics → **2/2 green**（一時ファイルでなく常設 test にしたため CI で dry-run が継続検証される）
+- [x] `doc/product/deprecation-policy.md` 新設（決定④の3層＋運用フック表＋成熟度現在地）＋憲章 §27 P-10 行を決定済みへ（P-01 先例形式・最小差分）＋roadmap §5 P-10 行へ決定記録＋`doc/decisions.md` D-006 追記
+- [x] 🔬 **機械検証（AC5）**: `bash scripts/doc-check.sh` green（DOC-MAP へ migration 2件＋deprecation-policy を登録済み）＋grep で憲章 P-10 行「決定済（2026-07-16）: 成熟度3層」=1 hit
+- [x] 😈 **DA批判レビュー**: ①dry-run が「実行 green」でなく型検査 green（AC4 の括弧定義=before=型 error／after=green は充足。挙動変更の移行は型 dry-run 対象外マーカー＋手動手順で README §3 が規定）②ガイドの before が将来 API 変化で型 error でなくなると test が fail する=**意図した設計**（ガイド陳腐化の検出器。README §3 に更新義務を明記）③deprecation policy の「30日」実測は Beta 後にしか発生しない→ 規定のみ先行は S2-3/P-10 の要求どおり（発生時の運用記録は当該DDへ）
 
 ### Phase 4: 実機 IME 記録規定・文書同期・総合検証
 - [ ] `doc/plan/ime-manual-gate-ledger.md` 新設: 検討5の内容（トリガー T1/T2/T3・Tier 1 最小シナリオ5点・記録様式〔synthetic/実IME 区別列必須〕・遡及初期行=DD-012-1/012-3/024/025 実績）

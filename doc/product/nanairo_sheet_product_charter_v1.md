@@ -860,7 +860,7 @@ Phase 0 Go後、ユーザー操作単位の縦切りDDに加えて、各DDで製
 | P-07 | Plugin API v1範囲 | Cell type／Adapter中心 | 2案件目開始前 |
 | P-08 | 支持ブラウザーTier | Win Chrome／Edge Tier 1 | Stage 1 Alpha前 |
 | P-09 | ライセンス・外部提供形態 | 社内非公開から開始 | Goal 2達成後 |
-| P-10 | 非推奨期間 | 未定 | Stage 2前 |
+| P-10 | 非推奨期間 → **決定済（2026-07-16）: 成熟度3層の deprecation policy で確定**（D-006・DD-028・正本 `doc/product/deprecation-policy.md`） | 未定 | Stage 2前 |
 | P-11 | Hono以外のserver adapter | 必要性発生時 | Goal 3検討時 |
 | P-12 | Telemetry標準 | opt-in Adapter候補 | Stage 2前 |
 | P-13 | サポートSLA | 未定 | Stage 4前 |

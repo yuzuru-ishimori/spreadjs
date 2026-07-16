@@ -97,7 +97,7 @@ DD-023 ロードマップ策定（本DD）
 | P-01 | 正式製品名 | Stage 1 リリース前（**超過**） | **決定済（2026-07-16・命名ゲート通過）**: Nanairo Sheet を正式製品名として確定（D-005）。scope/クラス名は変更なし |
 | P-14 | リポジトリ名称変更（`spreadjs`→） | Stage 1 Alpha 前（**超過**） | **決定済（2026-07-16）**: `nanairo-sheet` へ変更（D-005）。**リネーム実施=DD-031**（ローカルパス・スクリプト・並行セッションへ波及するため配布昇格と同時に一括反映） |
 | P-06 | versioning 方式 | Stage 2 前 | 現行 lockstep を暫定継続し、**DD-031 で正式化**（§18.1「Stage 2 では Facade を互換性管理対象へ」を含む） |
-| P-10 | 非推奨期間 | Stage 2 前 | **DD-028**（deprecation policy として API 差分監視・移行ガイドとセットで決定） |
+| P-10 | 非推奨期間 | Stage 2 前 | **決定済（2026-07-16・DD-028）**: 成熟度3層の deprecation policy を確定（0.x=CHANGELOG 必記＋型 snapshot 同伴／Beta=最低1 minor かつ 30日 かつ全統合 consumer 移行確認／Stable=major のみ・90日予告。正本 `doc/product/deprecation-policy.md`・D-006） |
 | P-12 | Telemetry 標準 | Stage 2 前 | **DD-029**（opt-in Adapter 候補の方針決定。汎用テレメトリ基盤=backlog §2 の回収先） |
 | P-07 | Plugin API v1 範囲 | 2案件目開始前 | **P-07 判断ゲート（§2・DD-030 起票前の独立ゲート）で判断**（材料=DD-027 実績＋ReadyCrew 事前要件調査。DD-030 の成果物にしない） |
 
