@@ -21,7 +21,7 @@
 旧 API（`code?: string`）前提のコード。生の内部コード文字列（例 `'stale-cell-revision'`）との比較と、
 `code` 省略の `GridConflict` 構築は、現行 API では型 error になる:
 
-```ts before
+```ts before expect=TS2367,TS2741
 import type { GridConflict } from '@nanairo-sheet/grid';
 
 /** 競合をユーザー向けメッセージへ整形する（旧: 生の内部 RejectCode に依存していた）。 */

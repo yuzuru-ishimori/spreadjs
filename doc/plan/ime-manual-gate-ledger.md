@@ -11,8 +11,8 @@
 
 | # | トリガー | 義務 | 実行タイミング |
 |---|---|---|---|
-| **T1** | **IME 経路の変更**: IME 状態機械・常駐 textarea・focus/selection 管理・composition イベント処理・確定値の commit-bridge 経路のいずれかを変更した DD | **必須** | 当該 DD の完了前（Manual Gate として DD に組み込む。正味目安 5〜10分） |
-| **T2** | **Beta リリースゲート**: DD-031（配布昇格）前・DD-032（Stage 2 移行判定）前 | **必須** | 各1回（変更が無くても実行し、判定時点の実機証拠を確保する） |
+| **T1** | **IME 経路の変更**: IME 状態機械・常駐 textarea・focus/selection 管理・composition イベント処理・確定値の commit-bridge 経路のいずれかを変更した DD | **必須** | 当該 DD の完了前（Manual Gate として DD に組み込む。IME=Microsoft IME 最小必須〔§2〕・正味目安 5〜10分） |
+| **T2** | **Beta リリースゲート**: DD-031（配布昇格）前・DD-032（Stage 2 移行判定）前 | **必須** | 各1回（変更が無くても実行し、判定時点の実機証拠を確保する。**IME 2種必須**=Microsoft IME＋Google 日本語入力〔§2〕） |
 | **T3** | Tier 1 ブラウザー（Chrome/Edge）のメジャー更新を検知した時 | 任意（推奨） | 更新後の作業の任意タイミング（順序A/B の観測が変わりうるため記録価値が高い） |
 
 - トリガー判定は DD 起票時の Risk Triggers 欄で行う（`dd-risk-class-header.md` の IME 経路項目と同一語彙）。
@@ -21,7 +21,13 @@
 
 ## 2. Tier 1 最小シナリオ（5点・1回の実機実行で全点を通す）
 
-環境: **Windows 11 × Chrome / Edge（Tier 1 両方）× 日本語 IME（Microsoft IME 基準）**。
+環境: **Windows 11 × Chrome / Edge（Tier 1 両ブラウザー必須）× 日本語 IME**。
+IME のカバレッジ（憲章 §20.2 の Tier 1 IME は Microsoft IME と Google 日本語入力の**2種**）:
+- **T1（変更トリガー）= Microsoft IME を最小必須**（Stage 1〜現在の全実機実績と同一基準。1回の正味 5〜10分を維持
+  =Manual Gate を水増ししない。Google 日本語入力の併走は任意・推奨）。
+- **T2（Beta リリースゲート）= 両 IME 必須**（Microsoft IME＋Google 日本語入力。宣言済み Tier 1 IME を
+  **Beta 前に必ず実機通過**させる＝T1 の最小化で生じるカバレッジ不足をリリースゲートで回収する。Codex P2・DD-028）。
+
 確定 Enter の**順序A/B の観測**（keydown Enter `isComposing` の値・`compositionend` との前後関係）を記録に含める。
 
 | # | シナリオ | 期待結果 |

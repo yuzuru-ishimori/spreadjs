@@ -6,7 +6,7 @@
 
 | DD | 件名 | ステータス | 補足 |
 |----|------|-----------|------|
-| DD-028 | 継続回帰CI・API差分監視 | 進行中 | 要確認①〜⑥ユーザー確定（既定案・フル委譲）。Phase 1 から実装中 |
+| DD-028 | 継続回帰CI・API差分監視 | 完了 | CI常設（Actions 2job・連続4run green）・API型snapshot=公開宣言closure・migration dry-run常設test・deprecation policy 3層（P-10/D-006）・IME実機台帳常設。835 test/E2E 25 green・Codex high P2×2 全反映 |
 
 ## 保留・見送り
 

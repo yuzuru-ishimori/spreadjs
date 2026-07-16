@@ -23,6 +23,10 @@
 - Before / After コードは info string 付き fenced block で書く（dry-run 検証の抽出対象）:
   - <code>```ts before</code> … **現行 API で型 error になる**移行前コード
   - <code>```ts after</code> … **現行 API で型検査 green になる**移行後コード
+- before ブロックには `expect=TS2367,TS2741` 形式で**期待する型 error コード集合**を付ける
+  （**1 ブロックに独立した複数の移行点を書く場合は必須**・単一移行点でも推奨）。指定すると dry-run は
+  観測コード集合との完全一致を要求し、移行点の**一部だけ**が将来の API 変化で陳腐化しても検出できる
+  （`expect` なしの before は「≥1 型 error」の判定のみ）。
 
 ## 3. dry-run 検証義務
 

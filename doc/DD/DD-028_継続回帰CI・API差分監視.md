@@ -2,7 +2,7 @@
 
 | 作成日 | 更新日 | ステータス | 補足 |
 |--------|--------|-----------|------|
-| 2026-07-16 | 2026-07-16 | 進行中 | 要確認①〜⑥ユーザー確定（既定案・フル委譲）。Phase 1 から実装中 |
+| 2026-07-16 | 2026-07-16 | 完了 | CI常設（Actions 2job・連続4run green）・API型snapshot=公開宣言closure・migration dry-run常設test・deprecation policy 3層（P-10/D-006）・IME実機台帳常設。835 test/E2E 25 green・Codex high P2×2 全反映 |
 
 ```text
 Risk Class: B（roadmap §1 指定。支配的リスク=回帰検出の継続性）
@@ -131,8 +131,8 @@ SDK 機能DD群（DD-020/021/027）を連打する前に回帰防御を常設す
 - [x] `apps/showcase/src/features.json` 更新要否の判断: 起票時見立て「対象外」を実物確認で**覆し更新**（`quality`「品質保証の仕組み」エントリは Stage 1 の「自動テスト 738件」記述のままで、CI 常設・API 差分監視・dry-run 検証は同エントリの実質スコープ拡張=AGENTS.md の更新義務対象と判断）→ summary を「835件＋E2E 25本を CI で継続実行＋API 差分監視＋dry-run 検証」へ・source へ DD-028 追記
 - [x] 🔬 **機械検証（AC6/AC7）**: `npm test` 835/835・`npm run typecheck`・`npm run lint`（boundary new=0）・`npm run build`・`bash scripts/doc-check.sh` 全 green＋grep で ime-manual-gate-ledger.md の必須節 4 hit・遡及DD 8 hit 確認
 - [x] 😈 **DA批判レビュー**（記録表 #6/#7: T1 トリガーの空振り防御・遡及行の粒度誠実性）
-- [ ] Codexレビュー自動実行（全Phase差分まとめて1回・high。依頼書生成→`bash scripts/codex-review.sh --request doc/DD/DD-028/codex-review-request.md --out doc/DD/DD-028/codex-review-result.md`）
-- [ ] Codexレビュー指摘への対応、または見送り理由をログに記録
+- [x] Codexレビュー自動実行（全Phase差分まとめて1回・high・`--base 818bcca`。依頼書 `doc/DD/DD-028/codex-review-request.md`→結果 `doc/DD/DD-028/codex-review-result.md`）→ **findings 2件（P2×2）・P1 0件**
+- [x] Codexレビュー指摘への対応（**2件とも反映**・見送り0。内容と検証はログ 2026-07-16〔Codex対応〕）
 
 ## ログ
 
@@ -157,6 +157,14 @@ SDK 機能DD群（DD-020/021/027）を連打する前に回帰防御を常設す
 - **Phase 2 デモ検証（AC2 実働証拠）**: `GridConflictCode` union へ一時値 `'dd028-demo-only'` 追加 → grid 公開宣言 closure snapshot **red**（value surface は green のまま=旧方式の盲点の実証）→ revert → 9/9 green
 - **Phase 3 dry-run 証跡（AC4）**: before=**TS2367**（`'stale-cell-revision'` と `GridConflictCode` に重なりなし）＋**TS2741**（`code` 必須）で型 error・after=0 diagnostics。恒久化のため一時ファイルでなく `tests/contract/migration-dryrun.test.ts`（全ガイド走査・1 program 束ね型検査）として常設
 - **Phase 4**: ime-manual-gate-ledger.md 新設（遡及初期行4件）・DOC-MAP 5 記載・features.json quality エントリ更新（起票時見立てを実物確認で覆した経緯はタスク欄）・総合検証 835/835 全 green・dd-health ⚠️0（DA表を統合記録で充足）
+- run#4（Phase 4 push・ee1d096）: https://github.com/ishimori/spreadjs/actions/runs/29497216947 → **success**（連続 4 run green）
+
+### 2026-07-16（Codex対応・完了）
+- **Codexレビュー実施**（high・全Phase差分 `--base 818bcca`）: findings **2件（P2×2）・P1 0件**。到達性×実害で仕分け→**2件とも実害ありと判断し反映**（見送り0）:
+  - **P2-1（dry-run の集約判定）**: before ブロックが独立2移行点（TS2367/TS2741）を含むのに「≥1 diagnostic」判定のため、**片方だけ**将来 API 変化で valid になっても green のまま=陳腐化検出の空振り → info string `expect=TS2367,TS2741` で**期待エラーコード集合の完全一致**を要求する機構を追加（`migration-dryrun.test.ts`・README §2 に記法を規定・0001 へ適用）。否定ケース検証: expect を TS2367 のみに改変→**fail**（「型 error 集合が期待とズレています」）→ revert → 11/11 green
+  - **P2-2（Tier 1 IME カバレッジ）**: 憲章 §20.2 の Tier 1 IME は Microsoft IME＋Google 日本語入力の**2種**だが台帳は MS IME 基準のみ=宣言済み IME が未検証のまま T1/T2 通過し得る → **T1=MS IME 最小必須（全実機実績と同一基準・Manual Gate を水増ししない）／T2（Beta リリースゲート）=両 IME 必須**へ規定を精密化（憲章の Tier 1 定義は変更せず、リリースゲートでカバレッジを回収する設計。ime-manual-gate-ledger.md §1/§2）
+- Codex対応後の検証: eslint・contract 11/11・doc-check 全 green
+- **全AC充足 → ステータス完了**（アーカイブは主セッション最終確認後）。AC対応: AC1=run#1〜3 連続 success（+run#4）／AC2=closure red/green デモ／AC3=react 3検査収載／AC4=dry-run 常設 test green（expect 機構込み）／AC5=doc-check green＋憲章 P-10 決定済 grep 1／AC6=台帳必須節 grep 4・遡及 4 DD／AC7=835/835・typecheck・lint・build・doc-check 全 green
 
 ---
 

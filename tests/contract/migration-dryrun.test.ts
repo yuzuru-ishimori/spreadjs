@@ -4,6 +4,9 @@
 // consumer 視点の仮想 TS ファイルとして現行 API に対し型検査する:
 //   - before ブロック: **現行 API で型 error（≥1 diagnostic）** — 「移行が必要な変更である」ことの証拠。
 //     （型検査基盤が壊れて全て 0 diagnostics になる故障は、この ≥1 検査が canary として検出する。）
+//     info string の `expect=TS2367,TS2741` で**期待エラーコード集合を固定**できる（Codex P2・DD-028）:
+//     1 ブロックに独立した複数の移行点を書いた場合、片方だけが将来の API 変化で valid になっても
+//     「≥1」では素通りするため、expect 指定時は観測コード集合との**完全一致**を要求する。
 //   - after ブロック: **型検査 green（0 diagnostics）** — 「ガイドの手順が現行 API で通る」ことの証拠。
 // CI（checks job・DD-028）で継続実行され、API が進化してガイドが古くなった時点で fail する
 // （その時はガイドを現行 API に合わせて更新する。運用規定: doc/migration/README.md §3）。
@@ -19,7 +22,8 @@ import { describe, expect, it } from 'vitest';
 const ROOT_ABS = fileURLToPath(new URL('../../', import.meta.url)).replace(/\\/g, '/');
 const MIGRATION_DIR = `${ROOT_ABS}doc/migration`;
 const GUIDE_FILE_RE = /^\d{4}-.+\.md$/;
-const SNIPPET_RE = /```ts (before|after)\n([\s\S]*?)```/g;
+const SNIPPET_RE = /```ts (before|after)([^\n]*)\n([\s\S]*?)```/g;
+const EXPECT_RE = /expect=(TS\d+(?:,TS\d+)*)/;
 const EXEMPT_MARKER = '型 dry-run の対象外';
 
 interface Snippet {
@@ -28,6 +32,8 @@ interface Snippet {
   readonly kind: 'before' | 'after';
   readonly guide: string;
   readonly code: string;
+  /** before の期待エラーコード集合（info string `expect=TS2367,TS2741`。指定時は完全一致を要求）。 */
+  readonly expectedCodes: readonly string[] | undefined;
 }
 
 /** doc/migration/ のガイドから before/after snippet を抽出する（改行は LF へ正規化）。 */
@@ -42,11 +48,13 @@ function collectSnippets(): { snippets: Snippet[]; guides: string[]; exemptGuide
     let found = 0;
     for (const match of content.matchAll(SNIPPET_RE)) {
       const kind = match[1] === 'before' ? 'before' : 'after';
+      const expectMatch = EXPECT_RE.exec(match[2]);
       snippets.push({
         virtualPath: `${ROOT_ABS}__migration-dryrun__/${guide.replace(/\.md$/, '')}.${kind}-${found}.ts`,
         kind,
         guide,
-        code: match[2],
+        code: match[3],
+        expectedCodes: expectMatch === null ? undefined : expectMatch[1].split(','),
       });
       found += 1;
     }
@@ -140,6 +148,14 @@ describe('contract: migration guide dry-run（before=現行APIで型error／afte
             diagnostics.length,
             `${snippet.guide} の before は現行 API で型 error になるべきです（0 件＝移行不要になった可能性。ガイドを見直すこと）`,
           ).toBeGreaterThan(0);
+          if (snippet.expectedCodes !== undefined) {
+            // expect 指定時は観測コード集合と完全一致（独立した移行点の片方だけ陳腐化しても検出する・Codex P2）。
+            const observed = [...new Set(diagnostics.map((d) => `TS${d.code}`))].sort();
+            expect(
+              observed,
+              `${snippet.guide} の before の型 error 集合が期待とズレています（ガイドの一部が陳腐化した可能性）:\n${formatDiagnostics(diagnostics)}`,
+            ).toEqual([...snippet.expectedCodes].sort());
+          }
         } else {
           expect(
             diagnostics.length,
