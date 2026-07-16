@@ -1,0 +1,4 @@
+# DD-020-2 TSV fixtures: byte 完全に保つ（EOL 無変換）。
+# core.autocrlf の LF↔CRLF 変換で引用内改行・行区切りの検証が崩れないよう -text で固定する。
+*.tsv -text
+*.txt -text

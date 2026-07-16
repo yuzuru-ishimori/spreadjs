@@ -2,6 +2,7 @@
 // re-export する。server-core / client（Phase 2 以降）はここから型と関数を import する。
 export * from './operations';
 export * from './cell-input';
+export * from './clipboard-text';
 export * from './cell-store';
 export * from './document';
 export * from './document-snapshot';
