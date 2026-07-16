@@ -2,6 +2,7 @@
 
 > **位置づけ**: DD-018（Stage 1移行判定・2026-07-15）で確定した「Stage 1 Alpha 対象外＝Stage 2 送り」項目の一覧。
 > **正典との関係**: Stage 2 開始時にこの一覧を DD ロードマップ化する（DD-007→`phase1-dd-roadmap.md` の先例に倣う）。本文書は**バックログ（出典・理由・依存の記録）**であり、DD 起票・設計はしない。
+> **ロードマップ化済み（DD-023・2026-07-16）**: `doc/plan/phase2-dd-roadmap.md`（正式版）へ全項目の回収先を確定（同 §7 対応表・突合記録=`doc/archived/DD/DD-023/traceability-check.md`）。本書は出典記録として保持する。
 > **確定根拠**: DD-018 要確認D（`doc/plan/stage2-backlog.md` 新設・ユーザー承認 2026-07-15）。各項目に出典DDを付す。
 
 ## 1. Stage 2 縦切りDD（roadmap §4 で番号確定済み）
