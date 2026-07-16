@@ -111,11 +111,11 @@ SDK 機能DD群（DD-020/021/027）を連打する前に回帰防御を常設す
 - [ ] 😈 **DA批判レビュー（「このPhaseで何が壊れるか」を探す。基準: da-method.md §3.4）**
 
 ### Phase 2: API 型スナップショット差分検出
-- [ ] `tests/contract/facade-surface.test.ts`: 公開 .d.ts 全文スナップショット3件追加（grid/server-hono/react。既存 `publicDeclaration()` の出力を `toMatchSnapshot()` で固定・timeout は既存 `DTS_EMIT_TIMEOUT_MS` を適用）
-- [ ] 同ファイル: react を value surface snapshot・R7 型漏洩0検査へ追加（`import * as react from '@nanairo-sheet/react'`・エントリ `packages/react/src/index.ts`。R7 の内部パッケージ正規表現は grid を含まないため react→grid 参照は正当に通る）
-- [ ] 同ファイルヘッダの【意図的な surface 変更の手順】を更新: `-u` → CHANGELOG 記録 → migration guide 要否判定（`doc/migration/README.md`）→ deprecation policy 適用判定
-- [ ] 🔬 **機械検証（AC2/AC3）**: `npx vitest run tests/contract` green ＋ デモ検証=Facade 公開型を一時変更→red 確認→revert→green（差分検出の実働証拠をログへ）
-- [ ] 😈 **DA批判レビュー（「このPhaseで何が壊れるか」を探す。基準: da-method.md §3.4）**
+- [x] `tests/contract/facade-surface.test.ts`: 公開 .d.ts 全文スナップショット3件追加（grid/server-hono/react。Phase 0 精査どおり**公開宣言 closure**〔エントリ＋相対 re-export の再帰〕を snapshot。3 エントリを 1 program に束ねて emit を1回に共有〔6.8s〕・LF 正規化で CI=Linux と決定性一致・timeout 60s）
+- [x] 同ファイル: react を value surface snapshot・R7 型漏洩0検査へ追加（`import * as react from '@nanairo-sheet/react'`。R7 は closure 全体へ強化＝再エクスポート元モジュールも検査。react→grid 参照は正当に通ることを確認）
+- [x] 同ファイルヘッダの【意図的な surface 変更の手順】を更新: `-u` → CHANGELOG 記録 → migration guide 要否判定（`doc/migration/README.md`）→ deprecation policy 適用判定（4本柱運用）
+- [x] 🔬 **機械検証（AC2/AC3）**: `npx vitest run tests/contract` 9/9 green ＋ デモ検証=`GridConflictCode` union へ一時値追加（**エントリ .d.ts 不変の再エクスポート型変更**）→ grid closure snapshot が red・value surface は green のまま（=旧方式では検出不能だった証拠）→ revert → 9/9 green
+- [x] 😈 **DA批判レビュー**: ①snapshot -u の乱用（fail を機械的に更新して破壊的変更が素通り）→ ヘッダ手順に CHANGELOG/migration/deprecation 判定を明記し Codex レビュー対象に含めた ②closure の相対 specifier 解決が `.js` 拡張子付き import に未対応→ 本 repo は拡張子なし import 統一（現状 0 件）のため許容・新規 Facade 追加時は snapshot 空になり entry 欠落 throw で検出 ③1 program 束ね emit で per-package tsconfig 差（grid types:[] 等)を反映しない→ 既存 R7 検査（DD-016 以降）と同一の共有 options を踏襲・公開宣言テキストの差分検出には影響なし
 
 ### Phase 3: migration guide 運用＋deprecation policy（P-10）
 - [ ] `doc/migration/README.md` 新設: 書く条件（CHANGELOG 破壊的変更節に載る変更=必須）・書式（対象版・影響 API・before/after・機械的手順）・dry-run 検証義務・CHANGELOG／型スナップショットとの対応関係
