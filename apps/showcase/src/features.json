@@ -69,6 +69,14 @@
       "meta": "E2E 検証済み（表示/注入・IME確定→cell-commit・F5復元・再mountリーク）"
     },
     {
+      "id": "react",
+      "title": "React 組み込み（<NanairoSheetView>）",
+      "status": "available",
+      "summary": "React アプリへ <NanairoSheetView> コンポーネントで自然に組み込めます。lifecycle と props/イベント変換だけを担い、グリッドの内部状態を React state へ複製しません。確定は onCellCommit、非同期取得データの反映は ref.setData。StrictMode・再mountでリークしません（react は peer 依存）。",
+      "source": "DD-025",
+      "meta": "peer: react ^19 ／ unit＋実ブラウザーE2E（StrictMode・leak）検証済み"
+    },
+    {
       "id": "persist",
       "title": "保存と復元",
       "status": "available",
@@ -146,7 +154,7 @@
       "id": "ops-maturity",
       "title": "配布・運用の本格化",
       "status": "planned",
-      "summary": "社内パッケージレジストリからの配布、ビルド済み配布物、PostgreSQL による永続化、React 用ラッパー、テレメトリ。",
+      "summary": "社内パッケージレジストリからの配布、ビルド済み配布物、PostgreSQL による永続化、テレメトリ。（React ラッパーは Alpha 提供済み＝DD-025・dist ビルド配布は DD-031）",
       "source": "stage2-backlog §2（DD-017 決定事項A/B・ADR-0023）",
       "meta": "Stage 2"
     },

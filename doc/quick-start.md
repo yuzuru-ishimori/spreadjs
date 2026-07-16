@@ -142,6 +142,72 @@ async function reload(): Promise<void> {
 - **fail-fast**: `mode:'standalone'` に `serverUrl`/`displayName`/`clientId` を混在させると `error`（`standalone-options-conflict`）、`columnOrder` 未指定/空は `standalone-options-invalid`。
 - **F5 復元**: cell-commit を利用側で保存し、次回 mount の `initialData` として戻せばリロードで値が復元される。
 
+## 4c. React 組み込み（`<NanairoSheetView>`・DD-025）
+
+React アプリには `@nanairo-sheet/react` の **`<NanairoSheetView>`** コンポーネントで組み込む。Facade は lifecycle と
+props/イベント変換だけを担い、**グリッドの内部状態を React state へ複製しない**（憲章 §11.2）。文書データは grid が唯一の
+真実源で、非同期取得の反映は **ref（`setData`）** で流す（react-query 等）。
+
+- **peer 依存**: `react ^19`（consumer が用意する。`react-dom` は不要＝Facade は render を行わない）。install 時は
+  配布 closure に `@nanairo-sheet/react` を加える（`react` は consumer 自身の依存）。
+
+```tsx
+import { useRef, useEffect } from 'react';
+import { NanairoSheetView } from '@nanairo-sheet/react';
+import type { NanairoSheetViewHandle } from '@nanairo-sheet/react';
+import type { GridCellCommitChange, GridStandaloneData } from '@nanairo-sheet/grid';
+
+export function OrderGrid() {
+  const ref = useRef<NanairoSheetViewHandle>(null);
+
+  // 非同期取得（例: react-query の結果）を effect から再注入する（React state に文書を持たせない）。
+  useEffect(() => {
+    void fetch('/api/rows')
+      .then((r) => r.json() as Promise<GridStandaloneData>)
+      .then((data) => ref.current?.setData(data));
+  }, []);
+
+  const handleCommit = (changes: readonly GridCellCommitChange[]) => {
+    for (const c of changes) {
+      void fetch('/api/cells', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ rowId: c.rowId, columnId: c.columnId, value: c.value }),
+      });
+      // 保存失敗時は ref.current?.setData(...) で見た目を戻す（利用側の判断）。
+    }
+  };
+
+  // 親（#nsheet-host）は幅・高さを CSS で確保しておく（style で container を埋める）。
+  return (
+    <div id="nsheet-host" style={{ position: 'relative', width: '100%', height: '600px' }}>
+      <NanairoSheetView
+        ref={ref}
+        mode="standalone"
+        columnOrder={['col-a', 'col-b', 'col-c']}
+        onCellCommit={handleCommit}
+        style={{ position: 'absolute', inset: 0 }}
+      />
+    </div>
+  );
+}
+```
+
+- **props の変更契約（3 分類）**:
+  - **識別系**（`mode`/`serverUrl`/`columnOrder`/`wrapColumns`/`documentId`/`displayName`/`clientId`）の変更は
+    **自動 remount**（destroy→mount）。配列（`columnOrder` 等）は**値**で比較するので、毎 render 新しい配列リテラルを
+    渡しても内容が同じなら remount しない（安定参照が理想だが Facade が吸収する）。
+  - **初期値系**（`initialData`/`initialColumnWidths`/`initialRowHeights`）は**初回 mount のみ**有効。mount 後の変更は
+    無視され診断 warn が出る。**データ再注入は `ref.setData`**、レイアウト保存は `onLayout`→次回 mount の初期値へ。
+  - **callback 系**（`onCellCommit`/`onLayout`/`onConnectionChange`/`onError`/`onEvent`/`onDiagnostic`）は
+    remount せず最新参照へ差し替わる（毎 render 新しい関数を渡してよい）。
+- **命令 API（ref）**: `setData(data)`（standalone 再注入）／`focus()`／`connectionState()`。`GridInstance` 本体は出さない。
+- **共同編集モード**: `mode="collaboration"`（省略時の既定）＋`serverUrl` を渡す。standalone props に `serverUrl` を
+  書くと**型エラー**（型で排他）。
+- **StrictMode**: `<StrictMode>` 配下の二重 mount/cleanup でもリークしない（内部で mount↔destroy が対で走る）。
+- **診断 hook の注意**: `onDiagnostic` は**mount 時に渡していれば**後から差し替え可（最新が呼ばれる）。mount 時に未指定で
+  後から付ける場合のみ再 mount（識別系変更）が要る（既定無出力＝性能影響ゼロを保つための仕様）。
+
 ## 5. エラーコード・診断
 
 - `GridEvent` の `error` / `rejected` は**安定した公開コード**を持つ（`GRID_ERROR_CODES` / `GRID_CONFLICT_CODES`）。

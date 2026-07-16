@@ -1,0 +1,11 @@
+{
+  // React Facade（@nanairo-sheet/react）。DOM 可（container 構築は grid・Facade は createElement のみ）。
+  // React 型は 'react' モジュール import 経由で解決する（ambient @types/node は持ち込まない＝types:[]）。
+  // JSX 構文糖は使わず createElement で container を返すため jsx オプションは不要（.tsx 配布回避・契約 §7）。
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": []
+  },
+  "include": ["src/**/*.ts"]
+}
