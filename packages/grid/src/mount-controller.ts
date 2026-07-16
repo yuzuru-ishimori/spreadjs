@@ -6,7 +6,7 @@
 // 持たず、代わりに destroy() で全リソース（RAF/interval/listener/ResizeObserver/WS/canvas/textarea）を解放する
 // （再mountで leak しない・AC2）④E2E 用 introspection は debugRegistry 経由（test-support）で露出する。
 
-import { documentHash, displayRowOrder, getCell } from '@nanairo-sheet/core';
+import { documentHash, displayRowOrder, getCell, parseClipboardText } from '@nanairo-sheet/core';
 import type { DeleteRowsOperation, InsertRowsOperation, SetCellsOperation } from '@nanairo-sheet/core';
 import { createColumnId, createDocumentId, createRowId } from '@nanairo-sheet/types';
 import type { ColumnId, OperationId, RowId } from '@nanairo-sheet/types';
@@ -37,6 +37,12 @@ import { toPresenceUsers } from './presence-adapter';
 import { createSessionSync } from './session-sync';
 import { buildScaffold } from './dom-scaffold';
 import { buildRangeClear } from './range-ops';
+import {
+  buildPaste,
+  serializeSelectionToTsv,
+  shouldInterceptClipboard,
+} from './clipboard-controller';
+import type { ClipboardDocumentPort } from './clipboard-controller';
 import { computeResizeSize, resizeHitTest } from './resize-interaction';
 import type { ResizeTarget } from './resize-interaction';
 import { createSelectionController, decideNavigationIntercept } from './selection-controller';
@@ -812,7 +818,10 @@ export function createGridController(target: GridMountTarget, options: GridMount
   }
 
   /**
-   * SetCells を backend へ submit する共有経路（IME 確定と DD-020-1 範囲クリアが共用する）。
+   * SetCells を backend へ submit する **確定単位 chokepoint**（DD-020-2 → DD-020-3 引き継ぎ）。
+   * 1 利用者操作 = 1 SetCells の全経路がここを通る: ①IME 単一セル確定（ime-editing-session の submit）
+   * ②範囲クリア（performRangeClear）③貼り付け（performPaste）④cut のクリア（performCut）。
+   * DD-020-3（Undo/Redo）は submit 直前にここで committed から逆値を捕捉する hook を挿す（単一記録点）。
    * 単独モードは submitLocalOperation 内で cell-commit を通知する（onCellCommit→emit・DD-024 決定②）。
    * ローカル楽観適用の直後に、変更行の自動行高を再計算する（D5 トリガー②＝ローカル・SetCells のみ）。
    */
@@ -867,6 +876,16 @@ export function createGridController(target: GridMountTarget, options: GridMount
       colIndexOf: (columnId) => backend.view.colIndexOf(columnId),
     };
 
+    // DD-020-2 clipboard: docPort（範囲読み取り）＋表示 Axis の寸法（貼り付けはみ出し判定の境界）。
+    const clipPort: ClipboardDocumentPort = {
+      getCommittedDocument: () => backend.session.committedDocument,
+      displayText: (rowId, columnId) => backend.view.cellDisplay(rowId, columnId),
+      rowIdAt: (index) => backend.view.rowIdAt(index),
+      colIdAt: (index) => backend.view.columnIdAt(index),
+      rowCount: () => backend.view.rowAxis.count(),
+      colCount: () => backend.view.colAxis.count(),
+    };
+
     /**
      * 範囲クリア（DD-020-1 AC5/AC6）: 明示レンジを 1 つの原子的 SetCells（非空セルのみ・beforeRevision 付き）
      * で blank 化する。生成・上限検査は range-ops（純粋関数）・submit は IME 確定と同じ共有経路（submitSetCells）。
@@ -896,6 +915,86 @@ export function createGridController(target: GridMountTarget, options: GridMount
           // 前段消費のため editor onChange（markViewportDirty）が走らない → 楽観適用の再描画をここで要求する。
           backend.view.markCellDirty();
           return;
+      }
+    };
+
+    // ---- DD-020-2 clipboard（copy/cut/paste）----
+    // 裁定: Navigation 位相かつ非 composing のみグリッド Command 化（親 D5）。編集/変換中はブラウザ既定
+    // （textarea 内テキスト編集）へ委譲し、composition の value/selection に介入しない（I-3）。
+    const clipboardActive = (): boolean =>
+      editor !== undefined && shouldInterceptClipboard(editor.session.getPhase(), editor.session.isComposing());
+
+    /** copy: 選択範囲（未選択時は activeCell 単一）の表示文字列を TSV 化して返す（書き出しは integration-editor）。 */
+    const performCopy = (): string | null => {
+      if (editor === undefined || !clipboardActive()) {
+        return null; // 非 Navigation → ブラウザ既定（textarea copy）
+      }
+      const range = selectionCtrl.selectedRange(editor.session.getActiveCell());
+      return serializeSelectionToTsv(clipPort, range);
+    };
+
+    /**
+     * cut（親④）: copy＋即時範囲クリア（移動セマンティクスにしない）。クリアが上限超過なら**cut 全体を拒否**し
+     * （copy もしない＝クリップボード不変）通知する。クリア対象が全空でも copy は成立させる（TSV を返す）。
+     */
+    const performCut = (): string | null => {
+      if (editor === undefined || !clipboardActive()) {
+        return null;
+      }
+      const range = selectionCtrl.selectedRange(editor.session.getActiveCell());
+      const outcome = buildRangeClear(docPort, range);
+      if (outcome.kind === 'too-large') {
+        diag.emit('warn', 'cut-too-large', `cut 範囲 ${outcome.cellCount} セル > 上限 ${outcome.limit}（拒否）`);
+        emit({
+          type: 'rejected',
+          pendingCount: backend.session.pendingCount,
+          conflict: { operationId: '', reason: 'rejected', code: 'range-too-large' },
+        });
+        return null; // クリップボードは変更しない（Navigation の空 textarea への既定 cut は no-op）
+      }
+      const tsv = serializeSelectionToTsv(clipPort, range);
+      if (outcome.kind === 'submit') {
+        submitSetCells(outcome.operation);
+        backend.view.markCellDirty();
+      }
+      return tsv;
+    };
+
+    /**
+     * paste: text/plain → parse → 敷き詰め/はみ出し全体拒否/上限/型変換 → 原子 SetCells（buildPaste）。
+     * Navigation では**必ず消費**（true 返却＝preventDefault）する。消費しないと browser 既定が textarea へ
+     * ペーストテキストを流し込み Navigation の input が編集を開始してしまう（グリッド paste 意図と乖離）。
+     */
+    const performPaste = (text: string): boolean => {
+      if (editor === undefined || !clipboardActive()) {
+        return false; // 編集/変換中は textarea へテキスト挿入（ブラウザ既定）
+      }
+      const matrix = parseClipboardText(text);
+      const range = selectionCtrl.selectedRange(editor.session.getActiveCell());
+      const outcome = buildPaste(clipPort, matrix, range);
+      switch (outcome.kind) {
+        case 'noop':
+          return true; // 空 paste・全欠け → 消費のみ（textarea へ入れない）
+        case 'too-large':
+          diag.emit('warn', 'paste-too-large', `貼り付け ${outcome.cellCount} セル > 上限 ${outcome.limit}（拒否）`);
+          emit({
+            type: 'rejected',
+            pendingCount: backend.session.pendingCount,
+            conflict: { operationId: '', reason: 'rejected', code: 'paste-too-large' },
+          });
+          return true;
+        case 'out-of-bounds':
+          diag.emit('warn', 'paste-out-of-bounds', `貼り付け ${outcome.rows}×${outcome.cols} が行/列端を越える（拒否）`);
+          emit({
+            type: 'rejected',
+            pendingCount: backend.session.pendingCount,
+            conflict: { operationId: '', reason: 'rejected', code: 'paste-out-of-bounds' },
+          });
+          return true;
+        case 'submit':
+          submitSetCells(outcome.operation);
+          backend.view.markCellDirty();
+          return true;
       }
     };
     const editorLayout: GridLayout = {
@@ -972,6 +1071,10 @@ export function createGridController(target: GridMountTarget, options: GridMount
           }
         }
       },
+      // DD-020-2 clipboard 裁定（Navigation 位相のみ）。composition/編集中は各 perform が null/false を返す。
+      onClipboardCopy: performCopy,
+      onClipboardCut: performCut,
+      onClipboardPaste: performPaste,
     });
 
     syncLayout();

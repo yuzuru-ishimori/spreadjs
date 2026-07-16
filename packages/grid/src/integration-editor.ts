@@ -54,6 +54,15 @@ export interface IntegrationEditorConfig {
    * 裁定側（decideNavigationIntercept）が必ず false を返す契約＝IME 経路（CG-1 資産）は変わらない（I-3）。
    */
   readonly interceptKeydown?: (input: KeydownInterceptInput) => boolean;
+  /**
+   * copy の裁定（DD-020-2）。書き出す TSV を返せば消費（clipboardData.setData＋preventDefault）。null=非消費
+   * （ブラウザ既定＝textarea 内テキストの copy）。Navigation 位相のみ TSV を返す契約（mount-controller 側で裁定）。
+   */
+  readonly onClipboardCopy?: () => string | null;
+  /** cut の裁定（DD-020-2）。copy＋範囲クリアを実行し書き出す TSV を返す。null=非消費（textarea 既定）。 */
+  readonly onClipboardCut?: () => string | null;
+  /** paste の裁定（DD-020-2）。text/plain を受け取り消費したら true（preventDefault）。false=非消費（textarea 既定）。 */
+  readonly onClipboardPaste?: (text: string) => boolean;
 }
 
 export interface IntegrationEditor {
@@ -242,6 +251,29 @@ export function createIntegrationEditor(config: IntegrationEditorConfig): Integr
   });
   on('keyup', (event) => {
     dispatch({ type: 'keyup', key: event.key, isComposing: event.isComposing });
+  });
+  // DD-020-2 clipboard 配線（常駐 textarea の ClipboardEvent＝IME 資産と共有）。裁定（Navigation 位相か・
+  // composition 中でないか）は mount-controller 側の callback が行い、消費時のみ preventDefault する。
+  // composition 中は callback が null/false を返す契約＝ブラウザ既定（textarea 内テキスト編集）のまま（I-3）。
+  on('copy', (event) => {
+    const tsv = config.onClipboardCopy?.();
+    if (tsv !== null && tsv !== undefined) {
+      event.clipboardData?.setData('text/plain', tsv);
+      event.preventDefault(); // 既定の textarea copy を止めてグリッド選択範囲を書き出す
+    }
+  });
+  on('cut', (event) => {
+    const tsv = config.onClipboardCut?.();
+    if (tsv !== null && tsv !== undefined) {
+      event.clipboardData?.setData('text/plain', tsv);
+      event.preventDefault();
+    }
+  });
+  on('paste', (event) => {
+    const text = event.clipboardData?.getData('text/plain') ?? '';
+    if (config.onClipboardPaste?.(text) === true) {
+      event.preventDefault(); // グリッドが消費（textarea へテキストを入れない）
+    }
   });
   on('focus', () => {
     dispatch({ type: 'focus' });

@@ -30,6 +30,8 @@ export const GRID_CONFLICT_CODES = [
   'revalidation-failed', // ローカル再検証に失敗（reason=revalidation-failed）
   'dependency', // 依存 Op の失敗に連鎖して不成立（reason=dependency）
   'range-too-large', // 範囲操作（範囲クリア等）のセル数が SetCells 上限（100,000）超過→実行前拒否（DD-020-1・submit なし）
+  'paste-too-large', // 貼り付け矩形のセル数が SetCells 上限（100,000）超過→実行前拒否（DD-020-2・submit なし）
+  'paste-out-of-bounds', // 貼り付け矩形が行/列端を越える→全体拒否（切り捨てず・DD-020-2・submit なし）
   'unknown', // 未知/未写像（前方互換フォールバック）
 ] as const;
 export type GridConflictCode = (typeof GRID_CONFLICT_CODES)[number];

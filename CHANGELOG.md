@@ -19,6 +19,17 @@
 
 ### Added
 
+- **grid clipboard copy/cut/paste（Experimental・DD-020-2）**: 常駐 textarea の ClipboardEvent を主経路に、Navigation 位相の
+  copy/cut/paste をグリッド Command として提供した（Editing/Composing 位相はブラウザ既定＝textarea 内テキスト編集・IME 非干渉）。
+  - **copy**: 選択範囲（未選択時は activeCell 単一）の表示文字列を TSV（text/plain）で書き出す（タブ/改行/`"` を含むセルのみ引用）。
+  - **cut（親④）**: copy＋即時範囲クリア（1 原子 SetCells・移動セマンティクスにしない）。クリアが上限超過なら cut 全体を拒否。
+  - **paste**: text/plain を TSV 解析し、**matrix 1×1 かつ複数セル選択なら選択範囲全体へ敷き詰め**／それ以外は選択左上
+    アンカーから matrix サイズで貼り付ける。各セルは `parseCellInput` で number/date/string へ変換し、セル単位 beforeRevision 付きの
+    **1 原子 SetCells**（全成功/全失敗＝OCC）で適用する。列数不整合 TSV の欠けセルは変更対象に含めない（skip）。
+  - **公開語彙追加**: `GRID_CONFLICT_CODES` に `'paste-too-large'`（貼り付けセル数が上限 100,000 超過→実行前拒否）・
+    `'paste-out-of-bounds'`（貼り付け矩形が行/列端を越える→全体拒否＝切り捨てない）を追加（いずれも submit 前拒否＝
+    `GridConflict.operationId` は空文字）。既存コードの意味変更なし（union 追加のみ）。公開 .d.ts snapshot 更新済み。
+  - TSV parser/serializer は `@nanairo-sheet/core`（`parseClipboardText`/`serializeMatrix`・純関数・依存ゼロ）。
 - **grid 矩形範囲選択・範囲クリア（Experimental・DD-020-1）**: ドラッグ／Shift+クリック／Shift+矢印による矩形範囲選択と、
   範囲 Delete（範囲内の非空セルを 1 つの原子的 SetCells で blank 化・セル単位 beforeRevision 付き＝OCC で全成功/全失敗）を追加した。
   - 上限: 範囲セル数が **100,000** を超える範囲クリアは実行前拒否し、`rejected` イベント（下記 `range-too-large`）で通知する

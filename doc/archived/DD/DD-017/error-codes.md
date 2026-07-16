@@ -36,7 +36,9 @@
 | `duplicate-row` | `duplicate-row` | 行 ID 重複 |
 | `revalidation-failed` | reason=`revalidation-failed` | ローカル再検証に失敗 |
 | `dependency` | reason=`dependency` | 依存 Op の失敗に連鎖して不成立 |
-| `range-too-large` | クライアント実行前検査（DD-020-1） | 範囲操作（範囲クリア等）のセル数が SetCells 上限（100,000）超過。submit 前に拒否され `operationId` は空文字 |
+| `range-too-large` | クライアント実行前検査（DD-020-1） | 範囲操作（範囲クリア・cut のクリア等）のセル数が SetCells 上限（100,000）超過。submit 前に拒否され `operationId` は空文字 |
+| `paste-too-large` | クライアント実行前検査（DD-020-2） | 貼り付け矩形のセル数が SetCells 上限（100,000）超過。submit 前に拒否され `operationId` は空文字 |
+| `paste-out-of-bounds` | クライアント実行前検査（DD-020-2） | 貼り付け矩形が行/列端を越える（切り捨てず全体拒否）。submit 前に拒否され `operationId` は空文字 |
 | `unknown` | 未写像/未知 | 上記いずれにも該当しない（前方互換フォールバック） |
 
 ## debug logging hook（`GridMountOptions.onDiagnostic`）
