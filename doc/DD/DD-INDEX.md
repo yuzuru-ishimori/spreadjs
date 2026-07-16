@@ -6,6 +6,7 @@
 
 | DD | 件名 | ステータス | 補足 |
 |----|------|-----------|------|
+| DD-024 | 単独グリッドモード | 検討中 | Stage 2 先頭の機能DD（phase2-dd-roadmap §1 採番済み・S2-6 関連・DD-025/026 の前提） |
 
 ## 保留・見送り
 
@@ -16,6 +17,7 @@
 
 | DD | 件名 | 主な成果 |
 |----|------|---------|
+| DD-023 | Stage2ロードマップ策定 | phase2-dd-roadmap 正式版昇格（S2-1〜6 ゲート・DD-024〜032 採番・命名/P-07 ゲート）＋stage3-outlook 新設。突合3点全OK・Codex high 10件全反映・見送り0・ユーザー承認2回 |
 | DD-018 | Stage1移行判定 | **総合判定=Stage 1 移行 可（Alpha 宣言可・ユーザー承認済 2026-07-15）**。S1-1〜6 全合格・CG-1〜6 全終端・cg-ledger 全CG終端化・stage2-backlog.md 新設。K7 は子DD DD-018-1（非ブロッカー=ユーザー承認・着手は別途判断）。Codex 証拠監査 high 4件全反映 |
 | DD-018-1 | documentId-persistenceDir-failfast | documentId 不一致（snapshot＋全 oplog entry）＋封筒 revision 相互検査＋restoreFrom×persistenceDir 排他の3 fail-fast で **DD-014 既知制約 P2-3/P2-4 回収**。全検証 green（738 pass）・Codex high 2件全反映・見送り0。AC1〜3 充足 |
 | DD-017 | Alpha配布・診断 | S1-6 充足（pack tarball 配布正式化・release automation・CHANGELOG・Quick Start・診断API・CG-4 実測記入・ADR-0015 Accepted）。Codex(high) 8件全対応・test 730 green。コミット 889b903。派生 flake は DD-017-1 で恒久是正済み |
