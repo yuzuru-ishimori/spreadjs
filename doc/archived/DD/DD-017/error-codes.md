@@ -15,8 +15,11 @@
 | `config-invalid` | `config` | `/config` の応答形式が不正（documentId/columnOrder 欠落等） | server-hono の版・応答を確認 |
 | `connect-failed` | `connect` | 初回 WS 接続の確立に失敗（接続確立前のトランスポートエラー） | ws 到達性・ポート・プロキシを確認 |
 | `runtime-fault` | `runtime` | boot 配線後の予期しない実行時例外 | 診断ログ（onDiagnostic）で詳細を採取 |
+| `standalone-options-conflict` | `config` | 単独グリッドモード（DD-024）に server 系 options（serverUrl/displayName/clientId）を混在指定 | 単独モードでは server 系 options を渡さない（認証・保存は利用側の責務） |
+| `standalone-options-invalid` | `config` | 単独グリッドモード（DD-024）で columnOrder が未指定/空 | `mode:'standalone'` では columnOrder を必須で渡す |
 
 > 接続確立**後**の一時切断は `error` ではなく `connection`（state=`offline`）で表現する（reconnect の一部）。
+> 単独グリッドモード（DD-024）では `connection`/`pending`/`rejected`/`divergence` は発火せず、`connectionState()` は `'standalone'` を返す。
 
 ## rejected イベント（`GridEvent` type=`rejected`）
 

@@ -10,6 +10,8 @@ export const GRID_ERROR_CODES = [
   'config-invalid', // /config の形式が不正（config phase）
   'connect-failed', // 初回 WS 接続の確立に失敗（connect phase）
   'runtime-fault', // 配線後の予期しない実行時例外（runtime phase）
+  'standalone-options-conflict', // 単独モードに server 系 options（serverUrl/displayName/clientId）を混在指定（config phase・DD-024）
+  'standalone-options-invalid', // 単独モードで columnOrder が未指定/空（config phase・DD-024）
 ] as const;
 export type GridErrorCode = (typeof GRID_ERROR_CODES)[number];
 

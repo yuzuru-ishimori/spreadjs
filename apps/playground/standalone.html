@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>spreadjs playground — 単独グリッドモード（DD-024・サーバー不要）</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        font-family: system-ui, sans-serif;
+        background: #f5f5f5;
+        color: #222;
+      }
+      .int-wrap {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        box-sizing: border-box;
+        padding: 8px 12px;
+      }
+      .int-header {
+        flex: 0 0 auto;
+      }
+      .int-header h1 {
+        font-size: 15px;
+        margin: 0 0 4px;
+      }
+      .int-status {
+        font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+        font-size: 12px;
+        color: #14522a;
+        margin-bottom: 6px;
+      }
+      /* Facade が #int-stage（container）内へ Canvas/scroller/常駐 textarea を構築する。size 済み container を渡す。 */
+      #int-stage {
+        flex: 1 1 auto;
+        position: relative;
+        min-height: 0;
+        border: 1px solid #dadce0;
+        background: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="int-wrap">
+      <div class="int-header">
+        <h1>単独グリッドモード（DD-024） — 共同編集サーバー不要</h1>
+        <div id="int-status" class="int-status">初期化中…</div>
+      </div>
+      <div id="int-stage"></div>
+    </div>
+    <script type="module" src="/src/integration/standalone-main.ts"></script>
+  </body>
+</html>

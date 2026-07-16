@@ -1,6 +1,6 @@
 {
   "_doc": "機能カタログの単一データ源（DD-017-2 D2）。正本は doc/plan/phase1-dd-roadmap.md §4／stage2-backlog.md／roadmap §6。DD完了時に本ファイルを更新する（AGENTS.md ドキュメント更新義務）。status: available=提供中 / planned=開発予定 / out-of-scope=対象外。",
-  "updated": "2026-07-15",
+  "updated": "2026-07-16",
   "stage": {
     "current": "Stage 1「社内SDK Alpha」到達",
     "date": "2026-07-15"
@@ -59,6 +59,14 @@
       "source": "DD-003・DD-005・DD-013",
       "meta": "9セッション同時 検証済み",
       "demo": "./demo.html?scenario=collab"
+    },
+    {
+      "id": "standalone",
+      "title": "単独グリッドモード（サーバー不要）",
+      "status": "available",
+      "summary": "共同編集サーバーを立てずに単独で使えるモード。確定した値は cell-commit イベントで通知され、保存は利用側アプリの API に接続します（認証・保存は利用側の責務）。react-query 等の非同期データは再注入で反映できます。",
+      "source": "DD-024",
+      "meta": "E2E 検証済み（表示/注入・IME確定→cell-commit・F5復元・再mountリーク）"
     },
     {
       "id": "persist",

@@ -35,7 +35,7 @@ export interface GridDebugPresenceView {
 export interface GridDebugApi {
   ready(): boolean;
   online(): boolean;
-  connectionState(): 'online' | 'offline' | 'stopped';
+  connectionState(): 'online' | 'offline' | 'stopped' | 'standalone';
   lastEventType(): string;
   rowCount(): number;
   committedRevision(): number;

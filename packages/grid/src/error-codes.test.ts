@@ -9,12 +9,14 @@ import {
 import type { GridConflictCode } from './error-codes';
 
 describe('error-codes: 公開エラー語彙', () => {
-  it('error コード語彙が phase 対応の4種で固定されている', () => {
+  it('error コード語彙が phase 対応で固定されている（共同編集4種＋単独モード2種・DD-024）', () => {
     expect([...GRID_ERROR_CODES]).toEqual([
       'config-unavailable',
       'config-invalid',
       'connect-failed',
       'runtime-fault',
+      'standalone-options-conflict',
+      'standalone-options-invalid',
     ]);
   });
 

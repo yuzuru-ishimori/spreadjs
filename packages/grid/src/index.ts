@@ -18,8 +18,12 @@ export type { GridDiagnostic, GridDiagnosticLevel, GridDiagnosticHook } from './
 import type { GridConflictCode, GridErrorCode } from './error-codes';
 import type { GridDiagnosticHook } from './diagnostics';
 
-/** 接続状態（consumer 表示用）。内部 collab の ConnectionState を写像した公開型（型は再exportしない）。 */
-export type GridConnectionState = 'online' | 'offline' | 'stopped';
+/**
+ * 接続状態（consumer 表示用）。内部 collab の ConnectionState を写像した公開型（型は再exportしない）。
+ * `'standalone'` は単独グリッドモード（DD-024・共同編集サーバー非接続）で常に返る値。`'offline'` は
+ * 「一時切断（再接続中）」を含意するため、恒常的に非接続な単独モードとは区別する。
+ */
+export type GridConnectionState = 'online' | 'offline' | 'stopped' | 'standalone';
 
 /** reject（競合）の理由。内部 collab の ConflictReason を写像した公開型。 */
 export type GridConflictReason = 'rejected' | 'revalidation-failed' | 'dependency';
@@ -66,27 +70,50 @@ export type GridEvent =
       readonly type: 'layout';
       readonly columnWidths: Record<string, number>;
       readonly rowHeights: Record<string, number>;
-    };
+    }
+  /**
+   * 確定値の通知（Experimental 0.x・DD-024・**単独グリッドモード専用**）。IME 確定・Delete 等で committed に
+   * なった値変更を 1 確定操作 = 1 イベント（SetCells の batch 単位）で通知する。**通知のみ**（grid は書き戻さない・
+   * 決定②）。利用側がこれを受けて認証・保存を行い（責務境界＝roadmap §6）、保存失敗時は `setData` 再注入で
+   * 見た目を戻す。共同編集モードでは発火しない（確定は既存の pending/connection 経路）。
+   */
+  | { readonly type: 'cell-commit'; readonly changes: readonly GridCellCommitChange[] };
+
+/** cell-commit の 1 セル変更（DD-024）。value/previousValue は表示文字列（内部 CellScalar は露出しない・R7）。 */
+export interface GridCellCommitChange {
+  readonly rowId: string;
+  readonly columnId: string;
+  /** 確定後の表示文字列。 */
+  readonly value: string;
+  /** 確定前の表示文字列。 */
+  readonly previousValue: string;
+}
 
 export type GridEventListener = (event: GridEvent) => void;
+
+/** 単独グリッドモードの 1 行（DD-024）。cells は ColumnId 文字列→値文字列（未指定列は空セル）。 */
+export interface GridStandaloneRow {
+  readonly rowId: string;
+  readonly cells?: Readonly<Record<string, string>>;
+}
+
+/**
+ * 単独グリッドモードの初期/再注入データ（DD-024・決定③）。rows は表示順。値は文字列で渡し、内部で
+ * parseCellInput により CellScalar（数値/日付/文字列）へ解釈される（cell-commit の value と round-trip する）。
+ */
+export interface GridStandaloneData {
+  readonly rows: readonly GridStandaloneRow[];
+}
 
 /** grid をマウントする DOM ターゲット（Facade が container 内部に Canvas/scroller/textarea を構築する）。 */
 export interface GridMountTarget {
   readonly container: HTMLElement;
 }
 
-/** mount 時オプション（Experimental 0.x）。 */
-export interface GridMountOptions {
-  /** 同期サーバーの HTTP オリジン（例 'http://127.0.0.1:8787'）。ws URL・/config はここから導出する。 */
-  readonly serverUrl: string;
-  /** 編集対象ドキュメント ID。未指定なら /config の documentId を使う。 */
-  readonly documentId?: string;
-  /** 列順。未指定なら serverUrl の /config から取得する（server-hono と対で運用・D1）。 */
-  readonly columnOrder?: readonly string[];
-  /** Presence 表示名。未指定なら匿名生成する。 */
-  readonly displayName?: string;
-  /** 再接続で不変のクライアント ID。未指定なら生成する（crypto.randomUUID）。 */
-  readonly clientId?: string;
+/**
+ * 両モード共通の mount オプション（Experimental 0.x）。共同編集・単独グリッドの双方で使える描画/購読系。
+ */
+export interface GridCommonMountOptions {
   /**
    * 初期の列幅 override（ColumnId 文字列→px・Experimental 0.x・DD-012-4 D2）。利用側が保存した設定を
    * 渡すと初期表示がその幅になる（F5 リロードでの復元手段）。既定値でよい列は含めない。
@@ -101,7 +128,7 @@ export interface GridMountOptions {
    * mount 時に固定（実行時切替は Stage 2）。キーは ColumnId 文字列。
    */
   readonly wrapColumns?: readonly string[];
-  /** 初期イベント購読（mount 直後の connection/error を取りこぼさない）。 */
+  /** 初期イベント購読（mount 直後の connection/error/cell-commit を取りこぼさない）。 */
   readonly onEvent?: GridEventListener;
   /**
    * 診断ログ hook（opt-in・既定無出力）。指定すると boot/接続/競合/破棄などの診断エントリが配信される。
@@ -109,6 +136,44 @@ export interface GridMountOptions {
    */
   readonly onDiagnostic?: GridDiagnosticHook;
 }
+
+/** 共同編集モードの mount オプション（Experimental 0.x）。`mode` 省略時は共同編集（後方互換）。 */
+export interface GridCollaborationMountOptions extends GridCommonMountOptions {
+  /** モード判別子。省略可（既定＝共同編集）。 */
+  readonly mode?: 'collaboration';
+  /** 同期サーバーの HTTP オリジン（例 'http://127.0.0.1:8787'）。ws URL・/config はここから導出する。 */
+  readonly serverUrl: string;
+  /** 編集対象ドキュメント ID。未指定なら /config の documentId を使う。 */
+  readonly documentId?: string;
+  /** 列順。未指定なら serverUrl の /config から取得する（server-hono と対で運用・D1）。 */
+  readonly columnOrder?: readonly string[];
+  /** Presence 表示名。未指定なら匿名生成する。 */
+  readonly displayName?: string;
+  /** 再接続で不変のクライアント ID。未指定なら生成する（crypto.randomUUID）。 */
+  readonly clientId?: string;
+}
+
+/**
+ * 単独グリッドモードの mount オプション（Experimental 0.x・DD-024）。共同編集サーバー無しで mount する。
+ * `serverUrl`/`displayName`/`clientId` は宣言しない（型で排他・混在指定はリテラルでコンパイルエラー、
+ * JS 経路は config error で fail-fast）。認証・保存の責務は全面的に利用側アプリ（roadmap §6）。
+ */
+export interface GridStandaloneMountOptions extends GridCommonMountOptions {
+  /** モード判別子（必須）。 */
+  readonly mode: 'standalone';
+  /** 列順（必須。/config が無いので利用側が与える）。 */
+  readonly columnOrder: readonly string[];
+  /** 編集対象ドキュメント ID（任意・表示/識別用）。 */
+  readonly documentId?: string;
+  /** mount 時の静的初期データ（決定③）。mount 後の再注入は GridInstance.setData。 */
+  readonly initialData?: GridStandaloneData;
+}
+
+/**
+ * mount 時オプション（Experimental 0.x）。`mode` を判別子とする union（DD-024・決定①）。
+ * 既存 consumer（`{ serverUrl }`・mode 省略）は共同編集変種として引き続き成立する（後方互換）。
+ */
+export type GridMountOptions = GridCollaborationMountOptions | GridStandaloneMountOptions;
 
 /** mount が返すハンドル（consumer lifecycle 契約）。 */
 export interface GridInstance {
@@ -120,6 +185,12 @@ export interface GridInstance {
   subscribe(listener: GridEventListener): () => void;
   /** グリッドへフォーカスする（入力受け口の常駐 textarea へ）。 */
   focus(): void;
+  /**
+   * 単独グリッドモード（DD-024・決定③）で文書を丸ごと再注入する（react-query 等の非同期取得・保存失敗時の
+   * 見た目復元に使う）。共同編集モードで呼ぶと no-op（診断 warn を出す）。編集中に呼ぶと編集対象行が
+   * 差し替わりうる（利用側は編集完了後の再注入を推奨）。
+   */
+  setData(data: GridStandaloneData): void;
   /** グリッドを破棄し DOM/listener/RAF/WS/canvas/textarea を解放する（再mountで leak しない）。 */
   destroy(): void;
 }

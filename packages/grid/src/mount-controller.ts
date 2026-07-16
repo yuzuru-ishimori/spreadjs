@@ -6,7 +6,7 @@
 // 持たず、代わりに destroy() で全リソース（RAF/interval/listener/ResizeObserver/WS/canvas/textarea）を解放する
 // （再mountで leak しない・AC2）④E2E 用 introspection は debugRegistry 経由（test-support）で露出する。
 
-import { documentHash, getCell } from '@nanairo-sheet/core';
+import { documentHash, displayRowOrder, getCell } from '@nanairo-sheet/core';
 import type { DeleteRowsOperation, InsertRowsOperation } from '@nanairo-sheet/core';
 import { createColumnId, createDocumentId, createRowId } from '@nanairo-sheet/types';
 import type { ColumnId, RowId } from '@nanairo-sheet/types';
@@ -35,7 +35,6 @@ import type { IntegrationEditor } from './integration-editor';
 import { createLoadMetrics } from './initial-load-metrics';
 import { toPresenceUsers } from './presence-adapter';
 import { createSessionSync } from './session-sync';
-import type { SessionSync } from './session-sync';
 import { buildScaffold } from './dom-scaffold';
 import { computeResizeSize, resizeHitTest } from './resize-interaction';
 import type { ResizeTarget } from './resize-interaction';
@@ -43,12 +42,19 @@ import { GridBootError, toGridConflictCode } from './error-codes';
 import { createDiagnosticSink } from './diagnostics';
 import { debugRegistry } from './internal';
 import type { GridDebugApi, GridDebugCellAddress } from './internal';
+import { createStandaloneSession } from './standalone-session';
+import type { StandaloneSession } from './standalone-session';
+import { validateStandaloneOptions } from './standalone-options';
+import type { GridBackend } from './grid-backend';
 import type {
+  GridCollaborationMountOptions,
   GridConnectionState,
   GridEvent,
   GridInstance,
   GridMountOptions,
   GridMountTarget,
+  GridStandaloneData,
+  GridStandaloneMountOptions,
 } from './index';
 
 const HEADER_WIDTH = 52;
@@ -69,10 +75,14 @@ export function createGridController(target: GridMountTarget, options: GridMount
   const scaffold = buildScaffold(target.container);
   const { stage, baseCanvas, overlayCanvas, scroller, spacer, baseCtx, overlayCtx } = scaffold;
 
-  const serverOrigin = options.serverUrl;
-  const displayName = options.displayName ?? `user-${Math.floor(Math.random() * 1000)}`;
-  const clientId = options.clientId ?? crypto.randomUUID(); // 再接続で不変（S-J4）
-  const wsUrl = `${serverOrigin.replace(/^http/, 'ws')}/ws`;
+  // モード判別（DD-024・決定①）。標準は共同編集（mode 省略時）。単独モードは serverUrl/WS を使わない。
+  const isStandalone = options.mode === 'standalone';
+  // server 系フィールドは共同編集モードでのみ意味を持つ（単独モードでは未参照・空文字で安全化）。
+  const collabOptions = isStandalone ? undefined : (options as GridCollaborationMountOptions);
+  const serverOrigin = collabOptions?.serverUrl ?? '';
+  const displayName = collabOptions?.displayName ?? `user-${Math.floor(Math.random() * 1000)}`;
+  const clientId = collabOptions?.clientId ?? crypto.randomUUID(); // 再接続で不変（S-J4）
+  const wsUrl = serverOrigin === '' ? '' : `${serverOrigin.replace(/^http/, 'ws')}/ws`;
 
   const frozenRowCount = 1;
   const frozenColCount = 1;
@@ -90,7 +100,12 @@ export function createGridController(target: GridMountTarget, options: GridMount
   });
 
   // ---- 可変状態 ----
-  let sync: SessionSync | undefined;
+  // backend は共同編集（SessionSync）と単独（StandaloneSession）の共通面（GridBackend・DD-024）。
+  let sync: GridBackend | undefined;
+  // 単独モードの再注入（setData）用の具体参照。共同編集モードでは undefined のまま。
+  let standalone: StandaloneSession | undefined;
+  // boot（microtask）完了前に setData が呼ばれたときの保留データ（Codex[P1]: mount 直後の同期 setData を捨てない）。
+  let pendingStandaloneData: GridStandaloneData | undefined;
   let editor: IntegrationEditor | undefined;
   let browserTransport: BrowserWebSocketTransport | undefined;
   let baseLayer: ReturnType<typeof createBaseLayer> | undefined;
@@ -715,10 +730,22 @@ export function createGridController(target: GridMountTarget, options: GridMount
       },
     });
 
-    const syncRef = sync;
+    attachBackendRendering();
+  }
+
+  /**
+   * backend（共同編集 SessionSync / 単独 StandaloneSession）を描画層・IME へ結線する（DD-024 で boot から抽出）。
+   * `sync` が設定済みであることを前提に、base-layer・docPort・editor を構築し syncLayout → backend.start() する。
+   * 共同編集/単独で共有し、両者の差分は「どの backend を作るか」だけに閉じる（案B・contract §5）。
+   */
+  function attachBackendRendering(): void {
+    const backend = sync;
+    if (backend === undefined) {
+      return;
+    }
     baseLayer = createBaseLayer({
       ctx: baseCtx,
-      store: syncRef.view.store,
+      store: backend.view.store,
       headerWidth: HEADER_WIDTH,
       headerHeight: HEADER_HEIGHT,
       // DD-012-5: 共有キャッシュ・wrap 判定・pane 境界・折り返し行高を渡す（オーバーフロー／折り返し描画）。
@@ -730,26 +757,26 @@ export function createGridController(target: GridMountTarget, options: GridMount
         if (!wrapEnabled) {
           return false;
         }
-        const id = syncRef.view.columnIdAt(colIndex);
+        const id = backend.view.columnIdAt(colIndex);
         return id !== undefined && wrapColumnStrings.has(String(id));
       },
     });
 
-    // ---- IME×共同編集の結線 ----
+    // ---- IME×backend の結線（値の源は backend.session／backend.view）----
     const docPort: EditingDocumentPort = {
-      getCommittedDocument: () => syncRef.session.committedDocument,
-      displayText: (rowId, columnId) => syncRef.view.cellDisplay(rowId, columnId),
-      rowIdAt: (index) => syncRef.view.rowIdAt(index),
-      colIdAt: (index) => syncRef.view.columnIdAt(index),
-      rowIndexOf: (rowId) => syncRef.view.rowIndexOf(rowId),
-      colIndexOf: (columnId) => syncRef.view.colIndexOf(columnId),
+      getCommittedDocument: () => backend.session.committedDocument,
+      displayText: (rowId, columnId) => backend.view.cellDisplay(rowId, columnId),
+      rowIdAt: (index) => backend.view.rowIdAt(index),
+      colIdAt: (index) => backend.view.columnIdAt(index),
+      rowIndexOf: (rowId) => backend.view.rowIndexOf(rowId),
+      colIndexOf: (columnId) => backend.view.colIndexOf(columnId),
     };
     const editorLayout: GridLayout = {
       get rowCount() {
-        return syncRef.view.rowAxis.count();
+        return backend.view.rowAxis.count();
       },
       get columnCount() {
-        return syncRef.view.colAxis.count();
+        return backend.view.colAxis.count();
       },
       rowHeaderWidth: HEADER_WIDTH,
       columnHeaderHeight: HEADER_HEIGHT,
@@ -760,16 +787,17 @@ export function createGridController(target: GridMountTarget, options: GridMount
       host: stage,
       document: docPort,
       submit: (op) => {
-        const id = syncRef.session.submitLocalOperation(op);
+        // 単独モードは submitLocalOperation 内で cell-commit を通知する（onCellCommit→emit・決定②）。
+        const id = backend.session.submitLocalOperation(op);
         // ローカル楽観適用の直後に、編集した行の自動行高を再計算する（D5 トリガー②＝ローカル・SetCells のみ）。
         if (wrapEnabled) {
-          syncRef.view.recomputeAutoRowHeightsForRows(op.changes.map((c) => c.rowId));
+          backend.view.recomputeAutoRowHeightsForRows(op.changes.map((c) => c.rowId));
         }
         return id;
       },
       layout: editorLayout,
       onPresenceChange: (update: PresenceUpdate) => {
-        syncRef.session.sendPresence(update);
+        backend.session.sendPresence(update);
       },
       onChange: () => {
         if (editor === undefined) {
@@ -781,12 +809,80 @@ export function createGridController(target: GridMountTarget, options: GridMount
         if (transform !== undefined) {
           editor.refreshPlacement(transform, placementConfig());
         }
-        syncRef.view.markViewportDirty();
+        backend.view.markViewportDirty();
       },
     });
 
     syncLayout();
-    sync.start();
+    backend.start();
+  }
+
+  /** 単独モードの backend を構築して結線する（同期・共同編集の boot に相当・DD-024）。 */
+  function bootStandalone(): void {
+    if (destroyed) {
+      return;
+    }
+    const errorCode = validateStandaloneOptions(options);
+    if (errorCode !== undefined) {
+      diag.emit('error', 'config-error', `${errorCode}: 単独モードの options 検証に失敗`);
+      emit({ type: 'error', phase: 'config', code: errorCode, message: `standalone options invalid (${errorCode})` });
+      return; // 配線しない（rAF ループは sync=undefined で no-op）
+    }
+    const standaloneOptions = options as GridStandaloneMountOptions;
+    resolvedDocumentId = standaloneOptions.documentId;
+    diag.emit('info', 'standalone-boot', `columns=${standaloneOptions.columnOrder.length}`);
+    standalone = createStandaloneSession({
+      columnOrder: standaloneOptions.columnOrder,
+      ...(standaloneOptions.initialData !== undefined ? { initialData: standaloneOptions.initialData } : {}),
+      rowHeight: ROW_HEIGHT,
+      colWidth: COL_WIDTH,
+      ...(options.columnWidths !== undefined ? { columnWidths: options.columnWidths } : {}),
+      ...(options.rowHeights !== undefined ? { rowHeights: options.rowHeights } : {}),
+      ...(wrapEnabled ? { wrapColumns } : {}),
+      wrapCache: cellTextCache,
+      cellFont: CELL_FONT,
+      lineHeight: CELL_TEXT_LINE_HEIGHT,
+      // 確定通知（決定②「通知のみ」）: 表示文字列 batch を cell-commit イベントへ写して購読者へ配信する。
+      onCellCommit: (changes) => {
+        emit({ type: 'cell-commit', changes });
+      },
+    });
+    sync = standalone;
+    attachBackendRendering();
+    // boot 前に呼ばれた setData（キャッシュ済みデータの mount 直後注入等）を適用する（Codex[P1]）。
+    if (pendingStandaloneData !== undefined) {
+      const data = pendingStandaloneData;
+      pendingStandaloneData = undefined;
+      applyStandaloneData(data);
+    }
+  }
+
+  /**
+   * 単独モードの再注入を適用する（setData 経由）。文書差し替え後、IME state machine の activeCell が新しい行/列
+   * 範囲外に取り残されると以後の入力/Delete が無効 RowId へ落ちて無言で失われるため、範囲外なら active cell を
+   * クランプして再シートする（Codex[P2]）。合成中は I-3 を守って触らない（利用側は編集完了後の再注入を推奨）。
+   */
+  function applyStandaloneData(data: GridStandaloneData): void {
+    if (standalone === undefined) {
+      return;
+    }
+    standalone.setData(data);
+    if (editor === undefined || editor.session.isComposing()) {
+      return;
+    }
+    // 新文書（差し替え直後・Axis は次 flush で再構築される）から行数・列数を読む。
+    const doc = standalone.session.committedDocument;
+    const rowCount = displayRowOrder(doc).length;
+    const colCount = doc.columnOrder.length;
+    const active = editor.session.getActiveCell();
+    if (active.row < rowCount && active.col < colCount) {
+      return; // 範囲内 → active cell は触らない（周期リフレッシュでカーソルを飛ばさない）
+    }
+    if (rowCount === 0 || colCount === 0) {
+      editor.pointerdownCell(null); // 空文書 → 選択解除
+      return;
+    }
+    editor.pointerdownCell({ row: Math.min(active.row, rowCount - 1), col: Math.min(active.col, colCount - 1) });
   }
 
   // ---- 公開ハンドル ----
@@ -795,6 +891,10 @@ export function createGridController(target: GridMountTarget, options: GridMount
       return resolvedDocumentId ?? options.documentId ?? '';
     },
     connectionState(): GridConnectionState {
+      // 単独モードは恒常的に非接続（DD-024・contract §4）。'offline'（一時切断）と区別する専用値。
+      if (isStandalone) {
+        return 'standalone';
+      }
       if (sync === undefined) {
         return 'offline';
       }
@@ -813,6 +913,20 @@ export function createGridController(target: GridMountTarget, options: GridMount
       } else {
         focusRequested = true;
       }
+    },
+    setData(data: GridStandaloneData) {
+      // 単独モード専用（DD-024・決定③）。
+      if (standalone !== undefined) {
+        applyStandaloneData(data);
+        return;
+      }
+      // 単独モードだが boot（microtask）未完了 → 保留し構築後に適用する（Codex[P1]・mount 直後注入を捨てない）。
+      if (isStandalone && !destroyed) {
+        pendingStandaloneData = data; // 複数回呼ばれたら最後の 1 回を採用（最新状態）
+        return;
+      }
+      // 共同編集モードでは no-op（診断のみ）。
+      diag.emit('warn', 'setData', 'setData は単独モード専用（共同編集モードでは無視）');
     },
     destroy() {
       if (destroyed) {
@@ -837,7 +951,15 @@ export function createGridController(target: GridMountTarget, options: GridMount
     ready: () => sync !== undefined && firstDataDrawn && sync.view.rowAxis.count() > 1,
     online: () => sync?.session.isOnline ?? false,
     connectionState: () =>
-      sync === undefined ? 'offline' : sync.session.isStopped ? 'stopped' : sync.session.isOnline ? 'online' : 'offline',
+      isStandalone
+        ? 'standalone'
+        : sync === undefined
+          ? 'offline'
+          : sync.session.isStopped
+            ? 'stopped'
+            : sync.session.isOnline
+              ? 'online'
+              : 'offline',
     lastEventType: () => lastSessionEvent?.type ?? '',
     rowCount: () => sync?.view.rowAxis.count() ?? 0,
     committedRevision: () => sync?.session.committedDocument.revision ?? 0,
@@ -925,17 +1047,30 @@ export function createGridController(target: GridMountTarget, options: GridMount
   // ---- 起動（rAF ループ・tick interval・boot）----
   syncLayout();
   rafId = requestAnimationFrame(masterLoop);
-  intervalId = window.setInterval(() => {
-    // tick=再送/catch-up ポーリング、heartbeat=サーバー TTL（15秒）失効を防ぐ生存通知。offline 時は transport が drop。
-    sync?.session.tick();
-    sync?.session.sendHeartbeat();
-  }, TICK_INTERVAL_MS);
-  // boot は自前で config 失敗を error イベント化するが、config 以降の配線例外は runtime error として通知する
-  // （旧 main.ts の `void boot().catch(...)` と等価・unhandled rejection を出さない）。
-  void boot().catch((error) => {
-    diag.emit('error', 'runtime-error', errorMessage(error));
-    emit({ type: 'error', phase: 'runtime', code: 'runtime-fault', message: errorMessage(error) });
-  });
+  if (isStandalone) {
+    // 単独モード（DD-024）: WS/tick interval は不要（transport 無し）。backend 構築は microtask で行い、
+    // mount() の同期 return 契約（イベントは return 後に届く）を共同編集経路と揃える。destroy 済みなら配線しない。
+    queueMicrotask(() => {
+      try {
+        bootStandalone();
+      } catch (error) {
+        diag.emit('error', 'runtime-error', errorMessage(error));
+        emit({ type: 'error', phase: 'runtime', code: 'runtime-fault', message: errorMessage(error) });
+      }
+    });
+  } else {
+    intervalId = window.setInterval(() => {
+      // tick=再送/catch-up ポーリング、heartbeat=サーバー TTL（15秒）失効を防ぐ生存通知。offline 時は transport が drop。
+      sync?.session.tick();
+      sync?.session.sendHeartbeat();
+    }, TICK_INTERVAL_MS);
+    // boot は自前で config 失敗を error イベント化するが、config 以降の配線例外は runtime error として通知する
+    // （旧 main.ts の `void boot().catch(...)` と等価・unhandled rejection を出さない）。
+    void boot().catch((error) => {
+      diag.emit('error', 'runtime-error', errorMessage(error));
+      emit({ type: 'error', phase: 'runtime', code: 'runtime-fault', message: errorMessage(error) });
+    });
+  }
 
   return instance;
 }
