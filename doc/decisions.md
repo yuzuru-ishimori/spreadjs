@@ -37,7 +37,7 @@
 - **日付**: 2026-07-11
 - **背景**: DD-001 では npm スコープを `@spreadjs/*` で暫定採用していたが、商用スプレッドシート製品「SpreadJS」（GrapeCity/MESCIUS）と名称が衝突し、依存・検索・公開時に混同を招くリスクがあった。
 - **決定**: 全ワークスペースの npm スコープを `@nanairo-sheet/*` に統一する（`@nanairo-sheet/sheet-types`・`@nanairo-sheet/playground`、以降 `@nanairo-sheet/sheet-core` 等も同様）。
-- **帰結**: 新規パッケージは `@nanairo-sheet/*` で作成する。リポジトリ名 `spreadjs` とプロジェクト通称は現状据え置き（必要になれば別途判断）。DD-001（`@spreadjs/*`）は覆され、本決定が正。
+- **帰結**: 新規パッケージは `@nanairo-sheet/*` で作成する。リポジトリ名 `spreadjs` とプロジェクト通称は現状据え置き（必要になれば別途判断 → **D-005 で `nanairo-sheet` へ変更決定**）。DD-001（`@spreadjs/*`）は覆され、本決定が正。
   - **DD-011-1（2026-07-13）による更新**: 上記の例示名（`@nanairo-sheet/sheet-types`・`@nanairo-sheet/sheet-core` 等）は DD-011-1 で DD-009 論理名（`@nanairo-sheet/{types,core,collab,server,formula}`）へ rename 済み（冗長な `sheet-` プレフィックス除去＋ディレクトリ名 `packages/{types,core,…}` も統一）。**スコープ `@nanairo-sheet/*` に統一するという D-003 の決定自体は有効**（suffix のみ変更）。
 - **元DD**: DD-001（暫定採用）→ ユーザー指摘により D-003 で変更（2026-07-11）／DD-011-1 で suffix を論理名へ rename（2026-07-13）
 
@@ -46,7 +46,15 @@
 - **日付**: 2026-07-12
 - **背景**: 開発計画書は「正典」、DDロードマップは「最上位」を自称しており、新規配置された製品憲章との階層関係が未定義だった。「最上位」の多重定義を放置すると文書間矛盾の解決先が曖昧になる。
 - **決定**: 文書体系を3層に分離する。①製品戦略層＝`doc/product/nanairo_sheet_product_charter_v1.md`（製品の目的・利用者・提供形態・非目標の正。矛盾時の最終解決先）／②技術層＝`doc/plan/nanairo_realtime_spreadsheet_development_plan_v1.md`＋ADR・仕様書（技術方式の正典）／③作業管理層＝`doc/plan/phase0-dd-roadmap.md`＋DD-INDEX（DD作業管理上の最上位）。
-- **帰結**: 製品戦略に関わる判断は憲章を正とする（ステータス Accepted。ただし正式製品名・一般公開・商用化等は未決のまま）。分析・レビュー資料は `doc/reviews/`（非正典）へ置き、正典と混同させない。公開クラス名は仮称 `NanairoSheet`（正式名は未決定・別途判断）。
+- **帰結**: 製品戦略に関わる判断は憲章を正とする（ステータス Accepted。ただし正式製品名・一般公開・商用化等は未決のまま）。分析・レビュー資料は `doc/reviews/`（非正典）へ置き、正典と混同させない。公開クラス名は仮称 `NanairoSheet`（正式名は未決定・別途判断 → **D-005 で Nanairo Sheet 正式確定**）。
 - **元DD**: DD-008
 
-<!-- 以降、D-005, D-006... と追記していく -->
+## D-005: 製品名は Nanairo Sheet で正式確定・リポジトリ名は nanairo-sheet へ変更
+
+- **日付**: 2026-07-16
+- **背景**: P-01（正式製品名）・P-14（リポジトリ名）は憲章 §27 で「Stage 1 リリース前」期限のまま超過していた。phase2-dd-roadmap §2 は Codex レビュー指摘（命名を DD-031 まで遅らせると consumer 2件の import 再移行が発生）を受け、DD-025（React Facade）起票前の「命名ゲート」として前倒しした。
+- **決定**: 仮称 Nanairo Sheet を**正式製品名として確定**（P-01）。npm スコープ `@nanairo-sheet/*`（D-003）・公開クラス名 `NanairoSheet` は変更なし。リポジトリ名は `spreadjs` から **`nanairo-sheet` へ変更する**（P-14）。ユーザー決定（2026-07-16・命名ゲート通過）。
+- **帰結**: DD-025 以降の公開パッケージ名・サンプル・ドキュメントは Nanairo Sheet 正式名称で作成してよい（後からの改名リスク消滅）。リポジトリの**リネーム実施は DD-031（配布昇格）**で行う（ローカルパス・スクリプト・並行セッションへの波及があるため配布整備と同時に一括反映）。D-003 の「リポジトリ名は据え置き」・D-004 の「正式名は未決定」は本決定で解消。
+- **元DD**: DD-023（phase2-dd-roadmap §2 命名ゲート）／反映先=DD-031
+
+<!-- 以降、D-006, D-007... と追記していく -->

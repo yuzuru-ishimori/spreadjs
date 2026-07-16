@@ -4,7 +4,7 @@
 - 版：v1.0
 - 作成日：2026-07-11
 - ステータス：Accepted（DD-008の仕様確認ゲートでユーザー承認。ただし製品名・一般公開・OSS化・商用化等の未決定事項は §27 のとおり未決のまま保持）
-- 製品仮称：Nanairo Sheet
+- 製品名：Nanairo Sheet（2026-07-16 正式確定・§27 P-01／決定記録 `doc/decisions.md` D-005）
 - npmスコープ：`@nanairo-sheet/*`
 - 公開クラス候補：`NanairoSheet`
 - 想定利用者：株式会社ナナイロの企画・開発・営業・運用担当者、将来のSDK利用者
@@ -851,7 +851,7 @@ Phase 0 Go後、ユーザー操作単位の縦切りDDに加えて、各DDで製
 
 | ID | 未決定事項 | 初期候補 | 決定期限 |
 |---|---|---|---|
-| P-01 | 正式製品名 | Nanairo Sheet（仮称） | Stage 1リリース前 |
+| P-01 | 正式製品名 → **決定済（2026-07-16）: Nanairo Sheet で正式確定**（D-005・命名ゲート） | Nanairo Sheet（仮称） | Stage 1リリース前 |
 | P-02 | 公開クラス名 | `NanairoSheet` | Phase 1最初のFacade DD |
 | P-03 | 標準UI境界 | 命令型API＋Custom Element | Stage 1 Alpha前 |
 | P-04 | 利用者向けパッケージ構成 | grid／element／react／server-hono | Phase 1パッケージ設計DD |
@@ -864,7 +864,7 @@ Phase 0 Go後、ユーザー操作単位の縦切りDDに加えて、各DDで製
 | P-11 | Hono以外のserver adapter | 必要性発生時 | Goal 3検討時 |
 | P-12 | Telemetry標準 | opt-in Adapter候補 | Stage 2前 |
 | P-13 | サポートSLA | 未定 | Stage 4前 |
-| P-14 | Repository名称変更 | `spreadjs`からの変更候補 | Stage 1 Alpha前 |
+| P-14 | Repository名称変更 → **決定済（2026-07-16）: `nanairo-sheet` へ変更**（D-005・リネーム実施は DD-031） | `spreadjs`からの変更候補 | Stage 1 Alpha前 |
 | P-15 | OSS化判断 | 未定 | Goal 2達成後 |
 
 ---
