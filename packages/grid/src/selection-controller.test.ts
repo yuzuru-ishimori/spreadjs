@@ -209,4 +209,31 @@ describe('decideNavigationIntercept: keydown 前段裁定（案X）', () => {
     ).toEqual({ action: 'none' });
   });
 
+  it('Delete はレンジがあるとき delete-range（範囲クリアとして消費・状態機械の単一セル Delete にしない）', () => {
+    expect(
+      decideNavigationIntercept({ ...base, key: 'Delete', shiftKey: false, hasRange: true }),
+    ).toEqual({ action: 'delete-range' });
+    // Shift+Delete も同じ（状態機械の S-A4 が shift を見ないのと整合）。
+    expect(decideNavigationIntercept({ ...base, key: 'Delete', shiftKey: true, hasRange: true })).toEqual({
+      action: 'delete-range',
+    });
+  });
+
+  it('レンジが無い Delete は none（既存の単一セル Delete=S-A4 経路を保存）', () => {
+    expect(
+      decideNavigationIntercept({ ...base, key: 'Delete', shiftKey: false, hasRange: false }),
+    ).toEqual({ action: 'none' });
+  });
+
+  it('composition 中・編集中の Delete は none（textarea 内のテキスト編集を奪わない・AC7）', () => {
+    expect(
+      decideNavigationIntercept({ ...base, key: 'Delete', shiftKey: false, hasRange: true, eventComposing: true }),
+    ).toEqual({ action: 'none' });
+    expect(
+      decideNavigationIntercept({ ...base, key: 'Delete', shiftKey: false, hasRange: true, sessionComposing: true }),
+    ).toEqual({ action: 'none' });
+    expect(
+      decideNavigationIntercept({ ...base, key: 'Delete', shiftKey: false, hasRange: true, phase: 'EditingExisting' }),
+    ).toEqual({ action: 'none' });
+  });
 });

@@ -19,6 +19,15 @@
 
 ### Added
 
+- **grid 矩形範囲選択・範囲クリア（Experimental・DD-020-1）**: ドラッグ／Shift+クリック／Shift+矢印による矩形範囲選択と、
+  範囲 Delete（範囲内の非空セルを 1 つの原子的 SetCells で blank 化・セル単位 beforeRevision 付き＝OCC で全成功/全失敗）を追加した。
+  - 上限: 範囲セル数が **100,000** を超える範囲クリアは実行前拒否し、`rejected` イベント（下記 `range-too-large`）で通知する
+    （選択は維持され縮めて再実行できる）。範囲クリアの Undo は DD-020-3 まで提供されない（既知制約）。
+  - **公開語彙追加**: `GRID_CONFLICT_CODES` に `'range-too-large'` を追加（クライアントが submit 前に拒否する実行前検査。
+    `GridConflict.operationId` は空文字＝未 submit）。既存コードの意味変更なし（union 追加のみ・未知コードは従来どおり
+    `'unknown'` フォールバック契約）。公開 .d.ts snapshot 更新済み（破壊的変更なし）。
+  - IME 不変（I-3/CG-1）維持: 選択操作・範囲 Delete は editor-state-machine の前段（純関数裁定）で消費し、
+    composition 中・編集中は一切消費しない（状態機械・textarea の value/selection/DOM 親は無変更）。
 - **grid Excel風テキスト表示（Experimental・DD-012-5）**: セル文字の Excel 風表示を追加した。
   - **オーバーフロー（描画のみ・データ不変）**: 左寄せ描画の文字列セルは、右隣の連続空セルへはみ出して全文表示される。
     右隣に非空セルが来る手前・pane（固定行列）境界・viewport clip で止まり、収まらなければ末尾を `…` で省略する。数値（右寄せ）は対象外。

@@ -36,6 +36,7 @@ import { createLoadMetrics } from './initial-load-metrics';
 import { toPresenceUsers } from './presence-adapter';
 import { createSessionSync } from './session-sync';
 import { buildScaffold } from './dom-scaffold';
+import { buildRangeClear } from './range-ops';
 import { computeResizeSize, resizeHitTest } from './resize-interaction';
 import type { ResizeTarget } from './resize-interaction';
 import { createSelectionController, decideNavigationIntercept } from './selection-controller';
@@ -858,6 +859,38 @@ export function createGridController(target: GridMountTarget, options: GridMount
       rowIndexOf: (rowId) => backend.view.rowIndexOf(rowId),
       colIndexOf: (columnId) => backend.view.colIndexOf(columnId),
     };
+
+    /**
+     * 範囲クリア（DD-020-1 AC5/AC6）: 明示レンジを 1 つの原子的 SetCells（非空セルのみ・beforeRevision 付き）
+     * で blank 化する。生成・上限検査は range-ops（純粋関数）・submit は IME 確定と同じ共有経路（submitSetCells）。
+     * 上限超過は submit せず rejected イベント（公開 code=range-too-large・operationId は空＝未 submit）で通知する。
+     * レンジは維持する（AC5: Delete は解除トリガーではない／AC6: 縮めて再実行できる）。
+     * （arrow 式: 上の backend undefined ガード後の narrowing を閉包へ効かせる＝hoist される function 宣言にしない）
+     */
+    const performRangeClear = (): void => {
+      const range = selectionCtrl.getRange();
+      if (range === null) {
+        return; // 裁定（delete-range）と実行の間に状態が変わった場合の防御（何もしない）
+      }
+      const outcome = buildRangeClear(docPort, range);
+      switch (outcome.kind) {
+        case 'noop':
+          return; // 範囲内が全て空 → 変更なし（submit しない）
+        case 'too-large':
+          diag.emit('warn', 'range-clear-too-large', `範囲 ${outcome.cellCount} セル > 上限 ${outcome.limit}（拒否）`);
+          emit({
+            type: 'rejected',
+            pendingCount: backend.session.pendingCount,
+            conflict: { operationId: '', reason: 'rejected', code: 'range-too-large' },
+          });
+          return;
+        case 'submit':
+          submitSetCells(outcome.operation);
+          // 前段消費のため editor onChange（markViewportDirty）が走らない → 楽観適用の再描画をここで要求する。
+          backend.view.markCellDirty();
+          return;
+      }
+    };
     const editorLayout: GridLayout = {
       get rowCount() {
         return backend.view.rowAxis.count();
@@ -916,6 +949,11 @@ export function createGridController(target: GridMountTarget, options: GridMount
             selectionCtrl.clear();
             backendNow.view.markViewportDirty();
             return false;
+          case 'delete-range':
+            // Delete（レンジあり）: 範囲クリア＝原子 SetCells（AC5/AC6）。消費して状態機械の単一セル
+            // Delete（S-A4）にしない。レンジ無しの Delete は 'none' で従来経路のまま。
+            performRangeClear();
+            return true;
           case 'extend': {
             const focus = selectionCtrl.extendByArrow(current.session.getActiveCell(), decision.direction, {
               rowCount: backendNow.view.rowAxis.count(),

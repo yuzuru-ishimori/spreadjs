@@ -244,8 +244,12 @@ export declare function createDiagnosticSink(hook: GridDiagnosticHook | undefine
 /** error イベント（boot/transport 失敗）の安定コード。phase と対で consumer の障害切り分けに使う。 */
 export declare const GRID_ERROR_CODES: readonly ["config-unavailable", "config-invalid", "connect-failed", "runtime-fault", "standalone-options-conflict", "standalone-options-invalid"];
 export type GridErrorCode = (typeof GRID_ERROR_CODES)[number];
-/** rejected イベント（server 競合）の安定コード。内部 RejectCode / ConflictReason を写像する。 */
-export declare const GRID_CONFLICT_CODES: readonly ["cell-conflict", "row-unavailable", "column-unavailable", "revision-stale", "sequence-violation", "duplicate-row", "revalidation-failed", "dependency", "unknown"];
+/**
+ * rejected イベントの安定コード。server 競合（内部 RejectCode / ConflictReason の写像）に加え、
+ * クライアントが submit 前に拒否する実行前検査（range-too-large 等・DD-020-1）も同じ語彙で通知する
+ * （実行前拒否は operationId が空文字＝submit されていない）。
+ */
+export declare const GRID_CONFLICT_CODES: readonly ["cell-conflict", "row-unavailable", "column-unavailable", "revision-stale", "sequence-violation", "duplicate-row", "revalidation-failed", "dependency", "range-too-large", "unknown"];
 export type GridConflictCode = (typeof GRID_CONFLICT_CODES)[number];
 /**
  * boot 失敗を error phase の公開 code 付きで伝える内部エラー。mount-controller の boot が throw し、

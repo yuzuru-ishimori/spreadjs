@@ -187,7 +187,9 @@ export type NavigationInterceptDecision =
   /** Shift+矢印: レンジ拡張（消費＝状態機械の Move にしない）。 */
   | { readonly action: 'extend'; readonly direction: NavigationDirection }
   /** Escape: レンジ解除のみ（キー自体は状態機械へも流す＝既存の抑止窓処理を保存）。 */
-  | { readonly action: 'clear-range' };
+  | { readonly action: 'clear-range' }
+  /** Delete（レンジあり）: 範囲クリア＝原子 SetCells（消費＝状態機械の単一セル Delete=S-A4 にしない）。 */
+  | { readonly action: 'delete-range' };
 
 function arrowDirection(key: string): NavigationDirection | null {
   switch (key) {
@@ -220,6 +222,11 @@ export function decideNavigationIntercept(input: NavigationInterceptInput): Navi
   }
   if (input.key === 'Escape' && input.hasRange) {
     return { action: 'clear-range' };
+  }
+  // レンジがあるときの Delete は範囲クリア（AC5）。shift 有無は見ない（状態機械の S-A4 と整合）。
+  // レンジが無ければ従来どおり状態機械の単一セル Delete（S-A4）へ流す。
+  if (input.key === 'Delete' && input.hasRange) {
+    return { action: 'delete-range' };
   }
   return { action: 'none' };
 }

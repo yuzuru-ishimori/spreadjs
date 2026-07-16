@@ -61,8 +61,11 @@
   3. A（offline のまま）が Delete → ローカル楽観適用（pending=1・A の見た目はクリア）。
   4. A を simulateReconnect で再接続。
 - 期待:
-  - サーバーが A の SetCells を stale-cell-revision で **全体 reject**（部分適用なし）。
-  - A に rejected イベント（公開 code=cell-conflict）が届き、#int-status に競合表示。
+  - A の SetCells は stale-cell-revision（範囲内 1 セルの先行変更）で **全体 reject**（部分適用なし）。
+  - A に rejected イベントが届く（Conflict Queue +1）。公開 code は reject 経路により
+    `revalidation-failed`（再接続 catch-up 後のローカル再検証＝本シナリオの主経路）または
+    `cell-conflict`（server 判定 stale-cell-revision）。通知の観測は `GridInstance.subscribe`（公開契約）で行う
+    （#int-status は後続の connection/pending イベントで上書きされるため断定観測に使わない）。
   - 文書は無変更のまま収束: (20,2)=B の値・(20,3)=A の元の値（A/B の committedHash 一致）。
 
 ## S8: 上限超過の実行前拒否（AC6）

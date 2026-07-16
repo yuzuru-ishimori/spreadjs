@@ -15,7 +15,11 @@ export const GRID_ERROR_CODES = [
 ] as const;
 export type GridErrorCode = (typeof GRID_ERROR_CODES)[number];
 
-/** rejected イベント（server 競合）の安定コード。内部 RejectCode / ConflictReason を写像する。 */
+/**
+ * rejected イベントの安定コード。server 競合（内部 RejectCode / ConflictReason の写像）に加え、
+ * クライアントが submit 前に拒否する実行前検査（range-too-large 等・DD-020-1）も同じ語彙で通知する
+ * （実行前拒否は operationId が空文字＝submit されていない）。
+ */
 export const GRID_CONFLICT_CODES = [
   'cell-conflict', // 同一セルの同時編集競合（stale-cell-revision）
   'row-unavailable', // 対象行が存在しない/削除済み（target-row-deleted / unknown-row / unknown-anchor）
@@ -25,6 +29,7 @@ export const GRID_CONFLICT_CODES = [
   'duplicate-row', // 行 ID 重複（duplicate-row）
   'revalidation-failed', // ローカル再検証に失敗（reason=revalidation-failed）
   'dependency', // 依存 Op の失敗に連鎖して不成立（reason=dependency）
+  'range-too-large', // 範囲操作（範囲クリア等）のセル数が SetCells 上限（100,000）超過→実行前拒否（DD-020-1・submit なし）
   'unknown', // 未知/未写像（前方互換フォールバック）
 ] as const;
 export type GridConflictCode = (typeof GRID_CONFLICT_CODES)[number];
