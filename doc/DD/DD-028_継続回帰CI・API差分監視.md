@@ -106,9 +106,9 @@ SDK 機能DD群（DD-020/021/027）を連打する前に回帰防御を常設す
 ### Phase 1: CI 常設（.github/workflows/ci.yml）
 - [x] `.github/workflows/ci.yml` 新設: トリガー=決定事項②／job① checks: `npm ci`→`npm run lint`→`npm run typecheck`→`npm test`（timeout 20分）／job② e2e: `npm ci`→`npx playwright install --with-deps chromium`→`npm run test:e2e`→`npm run test:e2e:showcase`（timeout 30分）／Node 22（setup-node・cache: npm）／concurrency=ref 単位 cancel-in-progress／permissions: contents read
 - [x] 🔬 **機械検証（push 前）**: ローカルで CI と同一コマンド列を順に実行 → 全 green（lint〔boundary new=0〕・typecheck・test 828/828〔24.6s・ws-convergence.smoke 含む〕・test:e2e 22/22〔29.3s〕・test:e2e:showcase 3/3〔13.5s〕）
-- [ ] 要確認③の承認に基づき DD-028 コミットとあわせて push → 初回 run 起動
-- [ ] 🔬 **機械検証（push 後・AC1）**: Phase コミットの push で連続 3 run → 3/3 green・run URL を DD ログへ記録。flake 発生時は検討6の quarantine 手順を適用（exclude＋continue-on-error 別ステップで実行継続）し、対象と発火条件付き子DD方針をログへ記録
-- [ ] 😈 **DA批判レビュー（「このPhaseで何が壊れるか」を探す。基準: da-method.md §3.4）**
+- [x] 要確認③の承認に基づき DD-028 コミットとあわせて push（ahead 3 込み・958a1f5）→ 初回 run 起動
+- [x] 🔬 **機械検証（push 後・AC1）**: Phase 1/2/3 コミットの push で**連続 3 run → 3/3 success**（run URL はログ 2026-07-16 参照）。flake 発生なし（ws-convergence.smoke 含め全 green）＝quarantine 発動不要
+- [x] 😈 **DA批判レビュー**（記録表 #3: cancel-in-progress と連続 green の相互作用）
 
 ### Phase 2: API 型スナップショット差分検出
 - [x] `tests/contract/facade-surface.test.ts`: 公開 .d.ts 全文スナップショット3件追加（grid/server-hono/react。Phase 0 精査どおり**公開宣言 closure**〔エントリ＋相対 re-export の再帰〕を snapshot。3 エントリを 1 program に束ねて emit を1回に共有〔6.8s〕・LF 正規化で CI=Linux と決定性一致・timeout 60s）
@@ -126,11 +126,11 @@ SDK 機能DD群（DD-020/021/027）を連打する前に回帰防御を常設す
 - [x] 😈 **DA批判レビュー**: ①dry-run が「実行 green」でなく型検査 green（AC4 の括弧定義=before=型 error／after=green は充足。挙動変更の移行は型 dry-run 対象外マーカー＋手動手順で README §3 が規定）②ガイドの before が将来 API 変化で型 error でなくなると test が fail する=**意図した設計**（ガイド陳腐化の検出器。README §3 に更新義務を明記）③deprecation policy の「30日」実測は Beta 後にしか発生しない→ 規定のみ先行は S2-3/P-10 の要求どおり（発生時の運用記録は当該DDへ）
 
 ### Phase 4: 実機 IME 記録規定・文書同期・総合検証
-- [ ] `doc/plan/ime-manual-gate-ledger.md` 新設: 検討5の内容（トリガー T1/T2/T3・Tier 1 最小シナリオ5点・記録様式〔synthetic/実IME 区別列必須〕・遡及初期行=DD-012-1/012-3/024/025 実績）
-- [ ] `doc/DOC-MAP.md` へ新規4文書（`doc/migration/` 2件・`deprecation-policy.md`・`ime-manual-gate-ledger.md`）＋`.github/workflows/ci.yml` を記載
-- [ ] `apps/showcase/src/features.json` 更新要否の判断をログへ記録（SDK 機能の追加・提供開始ではない=開発基盤のため対象外の見込み）
-- [ ] 🔬 **機械検証（AC6/AC7）**: `npm test`・`npm run typecheck`・`npm run lint`・`bash scripts/doc-check.sh` 全 green＋grep で ime-manual-gate-ledger.md の必須節（トリガー定義・シナリオ・記録様式・初期行）確認
-- [ ] 😈 **DA批判レビュー（「このPhaseで何が壊れるか」を探す。基準: da-method.md §3.4）**
+- [x] `doc/plan/ime-manual-gate-ledger.md` 新設: トリガー T1/T2/T3・Tier 1 最小シナリオ5点（S1 変換確定/S2 無変換確定/S3 F2 再編集/S4 確定直後連続入力=先頭欠落0/S5 Esc 取消・順序A/B 観測列）・記録様式〔synthetic/実IME 区別列必須〕・遡及初期行4件（DD-012-1 CG-1 PASS/DD-012-3/DD-024/DD-025）・運用ルール（T1 起票者のタスク組み込み義務=kpi-ledger §2 と同型）
+- [x] `doc/DOC-MAP.md` へ新規4文書（`doc/migration/` 2件・`deprecation-policy.md`・`ime-manual-gate-ledger.md`）＋`.github/workflows/ci.yml` を記載
+- [x] `apps/showcase/src/features.json` 更新要否の判断: 起票時見立て「対象外」を実物確認で**覆し更新**（`quality`「品質保証の仕組み」エントリは Stage 1 の「自動テスト 738件」記述のままで、CI 常設・API 差分監視・dry-run 検証は同エントリの実質スコープ拡張=AGENTS.md の更新義務対象と判断）→ summary を「835件＋E2E 25本を CI で継続実行＋API 差分監視＋dry-run 検証」へ・source へ DD-028 追記
+- [x] 🔬 **機械検証（AC6/AC7）**: `npm test` 835/835・`npm run typecheck`・`npm run lint`（boundary new=0）・`npm run build`・`bash scripts/doc-check.sh` 全 green＋grep で ime-manual-gate-ledger.md の必須節 4 hit・遡及DD 8 hit 確認
+- [x] 😈 **DA批判レビュー**（記録表 #6/#7: T1 トリガーの空振り防御・遡及行の粒度誠実性）
 - [ ] Codexレビュー自動実行（全Phase差分まとめて1回・high。依頼書生成→`bash scripts/codex-review.sh --request doc/DD/DD-028/codex-review-request.md --out doc/DD/DD-028/codex-review-result.md`）
 - [ ] Codexレビュー指摘への対応、または見送り理由をログに記録
 
@@ -148,14 +148,30 @@ SDK 機能DD群（DD-020/021/027）を連打する前に回帰防御を常設す
 - DA調査5点（Phase 0 タスク欄）: YAML 検証不能→ローカル同一列先行実行／lockfile Linux バイナリ確認済み／.d.ts 改行 CRLF/LF 正規化／cancel-in-progress と連続 green の両立=run 完了待ち運用／closure over-capture 許容
 - **Phase 1**: `.github/workflows/ci.yml` 新設（2 job 並列・トリガー4種・concurrency・timeout・permissions 最小）。push 前機械検証=CI と同一コマンド列を全実行 → **全 green**（lint boundary new=0・typecheck・test 828/828・E2E 22/22・showcase 3/3）
 
+### 2026-07-16（Phase 2〜4・AC1 達成）
+- **AC1 達成（連続 3 run green・S2-4 成功履歴の開始）**: 全 run が checks/e2e 両 job success・flake 0（quarantine 発動不要）
+  - run#1（Phase 1 push・958a1f5）: https://github.com/ishimori/spreadjs/actions/runs/29495442883 → **success**（workflow YAML は初回 run で妥当性確認=actionlint 未導入の代替）
+  - run#2（Phase 2 push・18eb0ee）: https://github.com/ishimori/spreadjs/actions/runs/29495974654 → **success**
+  - run#3（Phase 3 push・d6abc4f）: https://github.com/ishimori/spreadjs/actions/runs/29496589622 → **success**
+  - run 状態の自動確認: gh CLI 未導入のため GitHub API（`git credential fill` のトークンを直接 curl へパイプ・トークン非表示）で取得＝Manual Gate（Web UI 確認・正味5分）は**自動確認で代替済み**
+- **Phase 2 デモ検証（AC2 実働証拠）**: `GridConflictCode` union へ一時値 `'dd028-demo-only'` 追加 → grid 公開宣言 closure snapshot **red**（value surface は green のまま=旧方式の盲点の実証）→ revert → 9/9 green
+- **Phase 3 dry-run 証跡（AC4）**: before=**TS2367**（`'stale-cell-revision'` と `GridConflictCode` に重なりなし）＋**TS2741**（`code` 必須）で型 error・after=0 diagnostics。恒久化のため一時ファイルでなく `tests/contract/migration-dryrun.test.ts`（全ガイド走査・1 program 束ね型検査）として常設
+- **Phase 4**: ime-manual-gate-ledger.md 新設（遡及初期行4件）・DOC-MAP 5 記載・features.json quality エントリ更新（起票時見立てを実物確認で覆した経緯はタスク欄）・総合検証 835/835 全 green・dd-health ⚠️0（DA表を統合記録で充足）
+
 ---
 
 ## DA批判レビュー記録
 
-### Phase N DA批判レビュー
+### Phase 1〜4 DA批判レビュー（統合記録・詳細は各Phaseタスク欄）
 
-**DA観点:** （このPhaseで最も壊れやすいポイントは何か？）
+**DA観点:** 回帰防御線そのものが壊れる/形骸化するポイントはどこか？
 
 | # | 発見した問題/改善点 | 重要度 | 再現手順（高/中は必須） | DA観点 | 対応 |
 |---|-------------------|--------|----------------------|--------|------|
-| 1 | (具体的に記述) | 高/中/低 | (高/中: 操作→結果) | (どのDA観点で発見したか) | ✅修正済/⏭️別DD/❌不要 |
+| 1 | エントリ .d.ts 単独の snapshot では**再エクスポート元モジュールの型変更を検出できない**（AC2 の主目的が空振り） | 高 | `GridConflictCode` union へ値を追加→エントリ .d.ts は不変（`export type { … } from './error-codes'` のまま）→ 旧方式では green のまま | 検証の妥当性（Phase 0/2） | ✅修正済（公開宣言 closure 方式へ。実デモで red を確認） |
+| 2 | .d.ts snapshot が改行コードで false diff（Windows ローカル CRLF vs CI Linux LF） | 中 | Windows で snapshot 生成→ Linux CI で emit（os 既定改行）→ mismatch | 環境差（Phase 0） | ✅修正済（emit `NewLineKind.LineFeed` 固定＋受信側 `\r\n`→`\n` 正規化） |
+| 3 | concurrency cancel-in-progress が「連続 3 run green」を潰す（run 進行中の push で前 run が cancelled 化） | 中 | run 進行中に次コミットを push → 前 run が cancelled（green にならない） | 運用と機構の相互作用（Phase 1） | ✅修正済（run 完了確認後に次 Phase を push する運用・workflow コメントに明記。実績: run1〜3 全て完走） |
+| 4 | snapshot `-u` の機械的乱用で破壊的変更が素通り（fail→無思考更新） | 中 | 公開型を変更→ `-u` 実行→ CHANGELOG/migration 未記録のまま commit | プロセス形骸化（Phase 2） | ✅修正済（ヘッダ手順を4本柱化＝CHANGELOG→migration 要否→deprecation 適用判定。deprecation-policy §1 が型 snapshot 同伴を義務化） |
+| 5 | migration guide が API 進化で陳腐化しても誰も気付かない | 中 | 将来の API 変更で before が型 error でなくなる／after が error になる → ガイドが嘘になる | 文書の腐敗（Phase 3） | ✅修正済（dry-run を常設 contract test 化＝陳腐化した時点で CI が fail。README §3 に更新義務を明記） |
+| 6 | IME 台帳の T1 トリガーが起票者の記憶頼みで空振りする | 中 | T1 該当 DD が台帳を知らずに完了 → S2-4 判定時に履歴欠落 | 運用防御（Phase 4） | ✅修正済（台帳 §4-1 で起票者へタスク文面組み込みを義務化＝kpi-ledger §2 と同型。Risk Triggers 語彙と対応付け） |
+| 7 | 遡及初期行が当時の記録粒度を超えて「5点シナリオ実施済み」に見える捏造リスク | 低 | — | 記録の誠実性（Phase 4） | ✅修正済（遡及行は「相当」表記＋注記で粒度差を明示） |

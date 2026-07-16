@@ -40,6 +40,7 @@
 | `doc/plan/phase2-dd-roadmap.md` | Stage 2 社内SDK Beta DDロードマップ（**正式版**・DD-023 策定・2026-07-16。S2-1〜6 ハードゲート・DD-023〜032 採番・consumer 要件起点の順序・命名/P-07 判断ゲート・Stage 3 準備条件・P-xx 期限到来分の処理） |
 | `doc/plan/kpi-ledger.md` | KPI 計測台帳（Stage 2 正式KPI の計測契約＋実測データ。憲章 §16.1 全 8 候補を正式 6＋記録のみ 2 へ分類・DD-026/030/028 が追記・DD-032 が S2-5 判定と Stage 3 棚卸しで一括参照する常設台帳。起票: DD-029-1） |
 | `doc/plan/stage3-outlook.md` | Stage 3 展望（薄い前方視界・ロードマップではない。Stage 3 移行条件の逆算＝Stage 2 の exit をブレさせないための準備項目可視化。Stage 3 ロードマップ化は DD-032 のバックログ確定後。起票: DD-023） |
+| `doc/plan/ime-manual-gate-ledger.md` | 実機 IME 実行記録台帳（Tier 1 Manual Gate 常設。トリガー T1/T2/T3・最小シナリオ5点・synthetic/実IME 区別列必須・遡及初期行=DD-012-1/012-3/024/025。S2-4 後半の担保・DD-032 が一括参照。起票: DD-028） |
 | `doc/plan/dd-risk-class-header.md` | DD Risk Class ヘッダ雛形＋製品化6観点チェック（Delivery Phase A の各DDが参照する運用コピー元。dd-update 非管理の場所へ新設。定義本体は phase1-dd-roadmap.md §2／phase0-dd-roadmap.md。起票: DD-011） |
 
 ## レビュー・分析資料（非正典）
@@ -68,6 +69,7 @@
 | `doc/engineering-patterns.md` | エンジニアリングパターン集（gotcha・定石。DAの同根パターンの昇格先） |
 | `doc/decisions.md` | 意思決定記録（長寿命のアーキテクチャ決定。「なぜこうなってる？」の逆引き） |
 | `doc/templates/coding-standards.md` | コーディング基準書（P規約・採点基準・Lint対応表） |
+| `.github/workflows/ci.yml`（ルート） | 継続回帰CI（GitHub Actions。push(main)/PR/週1/手動で lint・typecheck・test・E2E×2 を 2 job 並列実行。E2E=chromium/synthetic・実IME は ime-manual-gate-ledger.md が別建て。S2-4・DD-028） |
 
 ## 仕様書（現在形の正典）
 
