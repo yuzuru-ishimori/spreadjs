@@ -7,9 +7,9 @@
 // （再mountで leak しない・AC2）④E2E 用 introspection は debugRegistry 経由（test-support）で露出する。
 
 import { documentHash, displayRowOrder, getCell } from '@nanairo-sheet/core';
-import type { DeleteRowsOperation, InsertRowsOperation } from '@nanairo-sheet/core';
+import type { DeleteRowsOperation, InsertRowsOperation, SetCellsOperation } from '@nanairo-sheet/core';
 import { createColumnId, createDocumentId, createRowId } from '@nanairo-sheet/types';
-import type { ColumnId, RowId } from '@nanairo-sheet/types';
+import type { ColumnId, OperationId, RowId } from '@nanairo-sheet/types';
 import type { Clock, IdGenerator, PresenceUpdate, SessionEvent } from '@nanairo-sheet/collab';
 import {
   CELL_TEXT_LINE_HEIGHT,
@@ -24,7 +24,7 @@ import {
 import type { FrameViewport, OverlayFrame, TextMetricsCache, ViewportTransform } from '@nanairo-sheet/render';
 import { singleCell } from '@nanairo-sheet/selection';
 import type { CellRange } from '@nanairo-sheet/selection';
-import type { GridLayout } from '@nanairo-sheet/ime';
+import type { CellPosition, GridLayout } from '@nanairo-sheet/ime';
 
 import { BrowserWebSocketTransport } from './browser-transport';
 import { cellScalarToDisplay } from './document-view';
@@ -38,6 +38,7 @@ import { createSessionSync } from './session-sync';
 import { buildScaffold } from './dom-scaffold';
 import { computeResizeSize, resizeHitTest } from './resize-interaction';
 import type { ResizeTarget } from './resize-interaction';
+import { createSelectionController, decideNavigationIntercept } from './selection-controller';
 import { GridBootError, toGridConflictCode } from './error-codes';
 import { createDiagnosticSink } from './diagnostics';
 import { debugRegistry } from './internal';
@@ -113,6 +114,8 @@ export function createGridController(target: GridMountTarget, options: GridMount
   let viewportWidth = 0;
   let viewportHeight = 0;
   let selection: CellRange | null = null;
+  // 矩形範囲選択の所有者（DD-020-1 案X）。activeCell の所有は editor-state-machine のまま・レンジのみここが持つ。
+  const selectionCtrl = createSelectionController();
   let firstDataDrawn = false;
   let lastSessionEvent: SessionEvent | undefined;
   let resolvedDocumentId = options.documentId;
@@ -220,8 +223,9 @@ export function createGridController(target: GridMountTarget, options: GridMount
       viewportWidth,
       viewportHeight,
       dpr,
-      selection,
-      dragRange: null,
+      // 明示レンジ（DD-020-1）があればそれを、無ければ activeCell の単一セル（onChange が更新する shadow）を描く。
+      selection: selectionCtrl.getRange() ?? selection,
+      dragRange: selectionCtrl.getDragRange(),
       presences: sync !== undefined ? toPresenceUsers(sync.session.knownPresences(), sync.view) : [],
     };
   }
@@ -237,37 +241,41 @@ export function createGridController(target: GridMountTarget, options: GridMount
   }
 
   /**
-   * アクティブセルが body viewport の外にあれば最小スクロールで可視域へ入れる（Excel 準拠の scroll-follow）。
-   * キーボード/クリックでアクティブセルが変わったとき onChange から呼ぶ。可視セルなら何もしない（クリックで勝手に
-   * スクロールしない）。scroller.scrollTop/Left への代入は同期反映され、scroll イベント→再描画で追従する。
+   * 指定セルが body viewport の外にあれば最小スクロールで可視域へ入れる（Excel 準拠の scroll-follow）。
+   * activeCell 移動（onChange）と Shift+矢印の focus 端拡張（DD-020-1）で呼ぶ。可視セルなら何もしない
+   * （クリックで勝手にスクロールしない）。scroller.scrollTop/Left への代入は同期反映され、scroll イベント→
+   * 再描画で追従する。
    */
-  function ensureActiveCellVisible(): void {
-    if (editor === undefined) {
-      return;
-    }
+  function ensureCellVisible(cell: CellPosition): void {
     const transform = currentTransform();
     if (transform === undefined) {
       return;
     }
-    const active = editor.session.getActiveCell();
-    const rect = transform.cellRect(active.row, active.col);
+    const rect = transform.cellRect(cell.row, cell.col);
     const bodyOriginX = HEADER_WIDTH + transform.frozenWidth();
     const bodyOriginY = HEADER_HEIGHT + transform.frozenHeight();
     // 固定行/列のセルはスクロール非依存ゆえ追従不要（body セルのみ）。
-    if (active.row >= frozenRowCount) {
+    if (cell.row >= frozenRowCount) {
       if (rect.y < bodyOriginY) {
         scroller.scrollTop += rect.y - bodyOriginY; // 上へはみ出し → スクロールアップ（負）
       } else if (rect.y + rect.height > viewportHeight) {
         scroller.scrollTop += rect.y + rect.height - viewportHeight; // 下へはみ出し → スクロールダウン
       }
     }
-    if (active.col >= frozenColCount) {
+    if (cell.col >= frozenColCount) {
       if (rect.x < bodyOriginX) {
         scroller.scrollLeft += rect.x - bodyOriginX;
       } else if (rect.x + rect.width > viewportWidth) {
         scroller.scrollLeft += rect.x + rect.width - viewportWidth;
       }
     }
+  }
+
+  function ensureActiveCellVisible(): void {
+    if (editor === undefined) {
+      return;
+    }
+    ensureCellVisible(editor.session.getActiveCell());
   }
 
   function provisionCanvas(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D): void {
@@ -391,6 +399,30 @@ export function createGridController(target: GridMountTarget, options: GridMount
       };
   let resizeDrag: ResizeDrag | null = null;
 
+  // 範囲選択ドラッグの追跡（DD-020-1）。null=非ドラッグ。矩形自体は selectionCtrl が持ち、ここは
+  // 「どの pointer のドラッグか」だけを持つ（マルチタッチの誤更新防止・resizeDrag と同型）。
+  let selectionDrag: { readonly pointerId: number } | null = null;
+
+  /**
+   * 範囲選択ドラッグ終了。confirm=true（pointerup）は矩形を明示レンジへ確定する（同一セルなら単一選択のまま）。
+   * confirm=false（pointercancel/capture 喪失）はドラッグを破棄する（確定済みレンジは変更しない）。
+   */
+  function finishSelectionDrag(pointerId: number, confirm: boolean): void {
+    if (selectionDrag === null || selectionDrag.pointerId !== pointerId) {
+      return;
+    }
+    selectionDrag = null; // release より先に null 化（release が誘発する lostpointercapture の二重処理を無効化）
+    if (scroller.hasPointerCapture(pointerId)) {
+      scroller.releasePointerCapture(pointerId);
+    }
+    if (confirm) {
+      selectionCtrl.endDrag();
+    } else {
+      selectionCtrl.cancelDrag();
+    }
+    sync?.view.markViewportDirty();
+  }
+
   function resizeHit(transform: ViewportTransform, x: number, y: number): ResizeTarget | null {
     if (sync === undefined) {
       return null;
@@ -479,6 +511,22 @@ export function createGridController(target: GridMountTarget, options: GridMount
         syncSpacer(); // 総サイズが変わる → spacer を同期（末尾までスクロール可能に・Codex[P1]）
         return;
       }
+      if (selectionDrag !== null) {
+        if (event.pointerId !== selectionDrag.pointerId) {
+          return; // active pointer 以外の move は無視（マルチタッチでの誤更新防止）
+        }
+        const transform = currentTransform();
+        if (transform === undefined) {
+          return;
+        }
+        // セル領域のみ focus を更新する（ヘッダー上/viewport 外は直近セルを保持。autoscroll は対象外=既定案）。
+        const hit = transform.hitTest(x, y);
+        if (hit.area === 'cell') {
+          selectionCtrl.updateDrag({ row: hit.rowIndex, col: hit.colIndex });
+          sync.view.markViewportDirty();
+        }
+        return;
+      }
       // 非ドラッグ: ヘッダー境界上でのみ resize カーソルへ切替（セル領域は cheap に既定へ戻す）。
       if (x >= HEADER_WIDTH && y >= HEADER_HEIGHT) {
         if (scroller.style.cursor !== '') {
@@ -500,6 +548,7 @@ export function createGridController(target: GridMountTarget, options: GridMount
     'pointerup',
     (event) => {
       finishResize(event.pointerId, true);
+      finishSelectionDrag(event.pointerId, true);
     },
     { signal },
   );
@@ -507,6 +556,7 @@ export function createGridController(target: GridMountTarget, options: GridMount
     'pointercancel',
     (event) => {
       finishResize(event.pointerId, false);
+      finishSelectionDrag(event.pointerId, false);
     },
     { signal },
   );
@@ -514,6 +564,7 @@ export function createGridController(target: GridMountTarget, options: GridMount
     'lostpointercapture',
     (event) => {
       finishResize(event.pointerId, false);
+      finishSelectionDrag(event.pointerId, false);
     },
     { signal },
   );
@@ -524,7 +575,7 @@ export function createGridController(target: GridMountTarget, options: GridMount
       if (event.button !== 0 || sync === undefined || editor === undefined) {
         return;
       }
-      if (resizeDrag !== null) {
+      if (resizeDrag !== null || selectionDrag !== null) {
         return; // ドラッグ中の追加 pointerdown は無視（capture 漏れ・状態上書き防止・Codex[P2]）
       }
       const transform = currentTransform();
@@ -569,7 +620,26 @@ export function createGridController(target: GridMountTarget, options: GridMount
       // mousedown 既定挙動が focus を body へ奪い、直後の pointerdownCell の textarea.focus() を打ち消す。
       // これを止めないとクリック後の矢印キーが scroller のネイティブスクロールへ流れ、カレントセルが動かない。
       event.preventDefault();
-      editor.pointerdownCell({ row: hit.rowIndex, col: hit.colIndex });
+      const cell = { row: hit.rowIndex, col: hit.colIndex };
+      // Shift+クリック（Navigation・非 composition 限定）: anchor=activeCell 固定でレンジ拡張（DD-020-1 AC2）。
+      // activeCell は動かさない（editor.pointerdownCell を呼ばない）。編集中/変換中は前段消費せず従来経路
+      // （確定して移動 / pendingNavigation）のまま＝IME・編集の挙動保存（案X）。
+      if (event.shiftKey && !editor.session.isComposing() && editor.session.getPhase() === 'Navigation') {
+        selectionCtrl.extendTo(editor.session.getActiveCell(), cell);
+        editor.focus(); // 入力受け口（常駐 textarea）を保持（以降の Shift+矢印を受けられるように）
+        sync.view.markViewportDirty();
+        return;
+      }
+      // 通常クリック: 明示レンジを解除（同一セル再クリックでも単一選択へ戻す・AC4）→ activeCell 移動。
+      selectionCtrl.clear();
+      editor.pointerdownCell(cell);
+      // pointerdownCell 処理後に Navigation なら（元から Navigation / 編集は確定済み）ドラッグ選択を開始する。
+      // composition 中は開始しない（クリックは pendingNavigation 経路のまま・composition を乱さない・AC7）。
+      if (!editor.session.isComposing() && editor.session.getPhase() === 'Navigation') {
+        selectionDrag = { pointerId: event.pointerId };
+        selectionCtrl.beginDrag(cell);
+        scroller.setPointerCapture(event.pointerId);
+      }
       sync.view.markViewportDirty();
     },
     { signal },
@@ -734,6 +804,23 @@ export function createGridController(target: GridMountTarget, options: GridMount
   }
 
   /**
+   * SetCells を backend へ submit する共有経路（IME 確定と DD-020-1 範囲クリアが共用する）。
+   * 単独モードは submitLocalOperation 内で cell-commit を通知する（onCellCommit→emit・DD-024 決定②）。
+   * ローカル楽観適用の直後に、変更行の自動行高を再計算する（D5 トリガー②＝ローカル・SetCells のみ）。
+   */
+  function submitSetCells(op: SetCellsOperation): OperationId | void {
+    const backend = sync;
+    if (backend === undefined) {
+      return;
+    }
+    const id = backend.session.submitLocalOperation(op);
+    if (wrapEnabled) {
+      backend.view.recomputeAutoRowHeightsForRows(op.changes.map((c) => c.rowId));
+    }
+    return id;
+  }
+
+  /**
    * backend（共同編集 SessionSync / 単独 StandaloneSession）を描画層・IME へ結線する（DD-024 で boot から抽出）。
    * `sync` が設定済みであることを前提に、base-layer・docPort・editor を構築し syncLayout → backend.start() する。
    * 共同編集/単独で共有し、両者の差分は「どの backend を作るか」だけに閉じる（案B・contract §5）。
@@ -786,15 +873,7 @@ export function createGridController(target: GridMountTarget, options: GridMount
     editor = createIntegrationEditor({
       host: stage,
       document: docPort,
-      submit: (op) => {
-        // 単独モードは submitLocalOperation 内で cell-commit を通知する（onCellCommit→emit・決定②）。
-        const id = backend.session.submitLocalOperation(op);
-        // ローカル楽観適用の直後に、編集した行の自動行高を再計算する（D5 トリガー②＝ローカル・SetCells のみ）。
-        if (wrapEnabled) {
-          backend.view.recomputeAutoRowHeightsForRows(op.changes.map((c) => c.rowId));
-        }
-        return id;
-      },
+      submit: (op) => submitSetCells(op),
       layout: editorLayout,
       onPresenceChange: (update: PresenceUpdate) => {
         backend.session.sendPresence(update);
@@ -804,12 +883,49 @@ export function createGridController(target: GridMountTarget, options: GridMount
           return;
         }
         ensureActiveCellVisible(); // アクティブセルを可視域へ（scrollTop/Left を同期更新しうる）
+        // DD-020-1 AC4: activeCell 移動・編集開始で明示レンジを単一選択へ戻す（不変条件は controller が判定）。
+        selectionCtrl.syncWithEditor(editor.session.getActiveCell(), editor.session.getPhase());
         selection = singleCell(editor.session.getActiveCell());
         const transform = currentTransform(); // 上の scroll 反映後の transform で配置する
         if (transform !== undefined) {
           editor.refreshPlacement(transform, placementConfig());
         }
         backend.view.markViewportDirty();
+      },
+      // keydown 前段裁定（DD-020-1 案X）: Navigation 位相の Shift+矢印をレンジ拡張として消費する。
+      // composition 中・編集中は decideNavigationIntercept が必ず 'none' を返し従来経路のまま（CG-1 資産無変更）。
+      interceptKeydown: (input) => {
+        const current = editor;
+        const backendNow = sync;
+        if (current === undefined || backendNow === undefined) {
+          return false;
+        }
+        const decision = decideNavigationIntercept({
+          key: input.key,
+          shiftKey: input.shiftKey,
+          eventComposing: input.isComposing,
+          sessionComposing: current.session.isComposing(),
+          phase: current.session.getPhase(),
+          hasRange: selectionCtrl.getRange() !== null,
+        });
+        switch (decision.action) {
+          case 'none':
+            return false;
+          case 'clear-range':
+            // Escape: レンジ解除のみ。キー自体は状態機械へも流す（Navigation の Escape は no-op＝挙動保存）。
+            selectionCtrl.clear();
+            backendNow.view.markViewportDirty();
+            return false;
+          case 'extend': {
+            const focus = selectionCtrl.extendByArrow(current.session.getActiveCell(), decision.direction, {
+              rowCount: backendNow.view.rowAxis.count(),
+              colCount: backendNow.view.colAxis.count(),
+            });
+            ensureCellVisible(focus); // focus 端を可視域へ（Excel 準拠の scroll-follow）
+            backendNow.view.markViewportDirty();
+            return true; // 消費（状態機械の Move にしない）
+          }
+        }
       },
     });
 
@@ -986,6 +1102,8 @@ export function createGridController(target: GridMountTarget, options: GridMount
     isComposing: () => editor?.session.isComposing() ?? false,
     draft: () => editor?.session.getDraft() ?? '',
     activeCell: () => editor?.session.getActiveCell() ?? { row: 0, col: 0 },
+    selectionRange: () => selectionCtrl.getRange(),
+    dragRange: () => selectionCtrl.getDragRange(),
     editingTarget: () => {
       const t = editor?.session.getEditingTarget() ?? null;
       return t === null ? null : { rowId: String(t.rowId), columnId: String(t.columnId) };

@@ -150,6 +150,56 @@ export async function selectCell(page: Page, row: number, col: number): Promise<
     .click({ position: { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 } });
 }
 
+/** 表示 index の矩形範囲（半開区間・DD-020-1）。 */
+export interface CellRangeView {
+  rowStart: number;
+  rowEnd: number;
+  colStart: number;
+  colEnd: number;
+}
+
+/** DD-020-1: 明示的な矩形選択レンジ（null=単一セル選択のみ）。 */
+export async function selectionRange(page: Page): Promise<CellRangeView | null> {
+  return callApi<CellRangeView | null>(page, 'selectionRange', []);
+}
+
+/** DD-020-1: ドラッグ中のライブ矩形（null=非ドラッグ）。 */
+export async function dragRange(page: Page): Promise<CellRangeView | null> {
+  return callApi<CellRangeView | null>(page, 'dragRange', []);
+}
+
+/** 表示 (row,col) セル中心の page 座標（scroller boundingBox + 本番 transform 矩形から算出）。 */
+export async function cellCenter(page: Page, row: number, col: number): Promise<{ x: number; y: number }> {
+  const box = await page.locator('.nsheet-scroller').boundingBox();
+  const rect = await callApi<CellRect | null>(page, 'cellRectAt', [row, col]);
+  if (box === null || rect === null) {
+    throw new Error(`セル (${row},${col}) が可視範囲にない`);
+  }
+  return { x: box.x + rect.x + rect.width / 2, y: box.y + rect.y + rect.height / 2 };
+}
+
+/** DD-020-1: セル (fromRow,fromCol) から (toRow,toCol) まで実マウスでドラッグ選択する。 */
+export async function dragSelect(
+  page: Page,
+  from: { row: number; col: number },
+  to: { row: number; col: number },
+): Promise<void> {
+  const start = await cellCenter(page, from.row, from.col);
+  const end = await cellCenter(page, to.row, to.col);
+  await page.mouse.move(start.x, start.y);
+  await page.mouse.down();
+  await page.mouse.move(end.x, end.y, { steps: 5 });
+  await page.mouse.up();
+}
+
+/** DD-020-1: Shift を押しながらセルをクリックする（レンジ拡張）。 */
+export async function shiftClickCell(page: Page, row: number, col: number): Promise<void> {
+  const center = await cellCenter(page, row, col);
+  await page.keyboard.down('Shift');
+  await page.mouse.click(center.x, center.y);
+  await page.keyboard.up('Shift');
+}
+
 /**
  * synthetic composition を開始し変換中のまま留める（isComposing:true）。steps は変換途中→確定候補文字列。
  * ブラウザーが変換中に textarea.value を更新する挙動を再現する（状態機械は I-3 で value を触らない）。

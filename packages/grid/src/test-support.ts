@@ -11,6 +11,7 @@ export type {
   GridDebugApi,
   GridDebugCellRect,
   GridDebugCellAddress,
+  GridDebugCellRange,
   GridDebugSelectionRange,
   GridDebugPresenceView,
 } from './internal';

@@ -33,6 +33,13 @@ const CONFLICT_COLOR = '#d93025';
 const EDITOR_Z = '10';
 const BADGE_Z = '12'; // textarea より上（#9: 競合表示を隠さない）
 
+/** keydown 前段裁定へ渡す素の値（DOM 非依存・DD-020-1 案X）。 */
+export interface KeydownInterceptInput {
+  readonly key: string;
+  readonly shiftKey: boolean;
+  readonly isComposing: boolean;
+}
+
 export interface IntegrationEditorConfig {
   /** textarea/badge を配置するコンテナ（position:relative の stage）。 */
   readonly host: HTMLElement;
@@ -41,6 +48,12 @@ export interface IntegrationEditorConfig {
   readonly layout: GridLayout;
   readonly onPresenceChange?: (update: PresenceUpdate) => void;
   readonly onChange?: () => void;
+  /**
+   * keydown の前段裁定（DD-020-1 案X・範囲選択）。true=消費（preventDefault し状態機械へ流さない）。
+   * mount-controller が Navigation 位相の Shift+矢印（レンジ拡張）等をここで消費する。composition 中は
+   * 裁定側（decideNavigationIntercept）が必ず false を返す契約＝IME 経路（CG-1 資産）は変わらない（I-3）。
+   */
+  readonly interceptKeydown?: (input: KeydownInterceptInput) => boolean;
 }
 
 export interface IntegrationEditor {
@@ -206,6 +219,14 @@ export function createIntegrationEditor(config: IntegrationEditorConfig): Integr
     }
   });
   on('keydown', (event) => {
+    // DD-020-1 前段裁定（案X）: Navigation 位相の Shift+矢印（範囲拡張）等を状態機械の前で消費する。
+    // 消費された keydown は状態機械へ届かない（通常 Move にしない）。それ以外は従来どおり全量を流す。
+    if (
+      config.interceptKeydown?.({ key: event.key, shiftKey: event.shiftKey, isComposing: event.isComposing }) === true
+    ) {
+      event.preventDefault();
+      return;
+    }
     const consumed = session.handleEvent({
       type: 'keydown',
       key: event.key,

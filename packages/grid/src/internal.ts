@@ -31,6 +31,14 @@ export interface GridDebugPresenceView {
   selectionRanges: GridDebugSelectionRange[];
 }
 
+/** 表示 index の矩形範囲（半開区間・DD-020-1 範囲選択の観測用）。 */
+export interface GridDebugCellRange {
+  rowStart: number;
+  rowEnd: number;
+  colStart: number;
+  colEnd: number;
+}
+
 /** grid Facade の深い introspection API（test-support 経由・E2E 専用）。 */
 export interface GridDebugApi {
   ready(): boolean;
@@ -51,6 +59,10 @@ export interface GridDebugApi {
   isComposing(): boolean;
   draft(): string;
   activeCell(): { row: number; col: number };
+  /** 明示的な矩形選択レンジ（DD-020-1。null=単一セル選択のみ）。 */
+  selectionRange(): GridDebugCellRange | null;
+  /** ドラッグ中のライブ矩形（DD-020-1。null=非ドラッグ）。 */
+  dragRange(): GridDebugCellRange | null;
   editingTarget(): GridDebugCellAddress | null;
   rowIdAt(index: number): string | undefined;
   colIdAt(index: number): string | undefined;
