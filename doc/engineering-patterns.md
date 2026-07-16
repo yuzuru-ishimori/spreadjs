@@ -54,4 +54,17 @@
 - **正しいやり方**: vite.config の build input を **`realpathSync.native` でディスク上の正準 casing に揃えた絶対パス**に固定する（全区間 casing＋symlink を正規化・POSIX では no-op）。「実行経路によって挙動が変わる build 失敗」を見たら乱数 flake と決めつけず、**cwd/env（特に Windows のドライブレター casing）の差分**を先に疑う。
 - **元DD**: DD-017-1（probe プラグインで `config.root` とエラーパスの casing 食い違いを実測して確定・ルート build 連続 8/8 green で是正確認）
 
+## 6. 命令的ライブラリを React でラップする「latest-ref」は render 中ではなく `useLayoutEffect` で更新する（Concurrent React で未 commit render が漏れる）
+
+- **症状**: React Facade（`<NanairoSheetView>` 等）が最新 callback/props を `ref` に保持して非 remount で差し替える設計で、`startTransition`/Suspense を使う consumer だと、破棄された（未 commit の）render の callback が現行の命令的インスタンス（grid 等）に呼ばれる。例: 文書 B への遷移が保留中に、画面に残る文書 A の `cell-commit` が **B 用の onCellCommit** を呼び、A の編集を B へ保存し得る。
+- **原因**: 「最新 ref」を **render 本体で `ref.current = props` 代入**すると、Concurrent React が投機的に準備して**commit しない**render でも共有 ref を上書きする。commit 済みの現行ツリーが持つ命令的リソースは、その汚れた ref を読む。
+- **正しいやり方**: latest-ref の更新は **`useLayoutEffect`（commit 後に同期実行）** で行い、render では代入しない。commit された render の値だけが ref に載る。同様に、初期値系の「変更検知」は大きなデータの毎 render 直列化（`JSON.stringify`）を避け **参照比較（`Object.is`）** にする。命令的リソースへ渡す購読/診断 hook は「安定ラッパーが最新 ref を読む」形にし、購読は mount 時 1 本＋cleanup で解除（StrictMode の mount→cleanup→mount に耐える）。
+  ```tsx
+  // ❌ render 中に代入（未 commit render が漏れる）
+  callbacksRef.current = { onCellCommit: props.onCellCommit };
+  // ✅ commit 後に反映
+  useLayoutEffect(() => { callbacksRef.current = { onCellCommit: props.onCellCommit }; });
+  ```
+- **元DD**: DD-025（React Facade。Codex[high] P1a/P1b で発見 → useLayoutEffect＋参照比較へ。将来の `@nanairo-sheet/element`・他フレームワークラッパーでも同型）
+
 <!-- 以降、パターンを追記していく。番号は通し番号 -->

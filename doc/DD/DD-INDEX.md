@@ -6,7 +6,6 @@
 
 | DD | 件名 | ステータス | 補足 |
 |----|------|-----------|------|
-| DD-025 | ReactFacade | 検討中 |  |
 
 ## 保留・見送り
 
@@ -17,6 +16,7 @@
 
 | DD | 件名 | 主な成果 |
 |----|------|---------|
+| DD-025 | ReactFacade | 全Phase完了・Manual Gate実機OK（IME確定→onCellCommit・再注入・再mount正常・console clean） |
 | DD-024 | 単独グリッドモード | 単独グリッドモード成立（判別union・cell-commit通知のみ・mount時＋setData再注入・案B backend）。814 test/E2E 18 green・Codex high 3件全反映・見送り0・**実機確認OK（ユーザー 2026-07-16）＝AC1〜8 充足** |
 | DD-023 | Stage2ロードマップ策定 | phase2-dd-roadmap 正式版昇格（S2-1〜6 ゲート・DD-024〜032 採番・命名/P-07 ゲート）＋stage3-outlook 新設。突合3点全OK・Codex high 10件全反映・見送り0・ユーザー承認2回 |
 | DD-018 | Stage1移行判定 | **総合判定=Stage 1 移行 可（Alpha 宣言可・ユーザー承認済 2026-07-15）**。S1-1〜6 全合格・CG-1〜6 全終端・cg-ledger 全CG終端化・stage2-backlog.md 新設。K7 は子DD DD-018-1（非ブロッカー=ユーザー承認・着手は別途判断）。Codex 証拠監査 high 4件全反映 |
