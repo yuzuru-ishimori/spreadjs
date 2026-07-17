@@ -126,8 +126,16 @@ function assertConverged(h: Harness): void {
     expect(c.pendingCount, `client c${i} pending 0`).toBe(0);
     expect(c.nextExpectedRevision, `client c${i} revision seq`).toBe(serverRev + 1);
   }
-  // 二重適用0（server ログ・sequencer は operationId 重複を受理しない＝revision 連番で構造的に証明）。
-  expect(serverRev).toBeGreaterThanOrEqual(1);
+  // 二重適用0を server ログで直接 assert する（Fable P3: 「revision 連番で構造的に証明」だけでは
+  // 冪等 delete の二重受理が hash に現れず素通りする）: operationId 重複0＋revision が 1..N の連番。
+  const log = h.sequencer.operationsSince(0);
+  expect(log.length, 'operationLog は非空').toBeGreaterThanOrEqual(1);
+  expect(new Set(log.map((e) => String(e.operationId))).size, 'operationId 重複0（二重適用0）').toBe(log.length);
+  expect(
+    log.map((e) => e.revision),
+    'revision は 1..N の連番',
+  ).toEqual(log.map((_, i) => i + 1));
+  expect(serverRev, 'currentRevision == ログ末尾').toBe(log.length);
 }
 
 function liveRowIds(doc: SheetDocument): string[] {

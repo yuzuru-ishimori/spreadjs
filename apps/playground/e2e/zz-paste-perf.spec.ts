@@ -13,6 +13,10 @@
 // 再現コマンド:
 //   npx playwright test --config apps/playground/playwright.config.ts paste-perf --headed
 // （webServer は playwright.config.ts が自動起動＝playground:5885 相当ポート＋server-hono 50,000行×200列シード）
+//
+// ⚠️ ファイル名の zz- は実行順制御（workers:1・ファイル名昇順）。本 spec は共有文書の行 2〜1010 × 列 1〜10 へ
+// 5 万セルを書き込むため、他 spec（同領域のセル初期値を前提にする undo-redo-collab 等）より**必ず後**に実行する
+// （Fable レビュー後の全スイート検証で UE-8 が paste データを拾って fail した実績あり＝テスト分離）。
 
 import { expect, test } from '@playwright/test';
 

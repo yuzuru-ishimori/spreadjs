@@ -211,9 +211,10 @@ export interface GridInstance {
   /**
    * 行を挿入する（Experimental 0.x・DD-021-1・両モード）。`afterRowId` の直後へ `count` 行（既定 1）を挿入する
    * （`afterRowId=null` で先頭へ）。新 RowId は `crypto.randomUUID` で採番し `row-structure-change`（kind=insert）で
-   * 返す。**同期 throw しない**（既存 API 流儀）: `count≦0`/非整数・未知アンカーは実行前拒否として `rejected`
-   * イベント（共同編集モード・`operationId` は空文字）＋診断で通知し、文書は無変更（単独モードは診断のみ）。
-   * boot 未完了時は無視する（`setData` と同型）。
+   * 返す。**同期 throw しない**（既存 API 流儀）: `count` が 1〜100,000 の整数でない・未知アンカーは実行前拒否として
+   * `rejected` イベント（共同編集モード・`operationId` は空文字）＋診断で通知し、文書は無変更（単独モードは診断のみ）。
+   * boot 未完了時は黙って無視する（`setData` と異なり保留適用しない）。接続終端（`connectionState()==='stopped'`）後は
+   * no-op（診断のみ）。
    */
   insertRows(options: { readonly afterRowId: string | null; readonly count?: number }): void;
   /**

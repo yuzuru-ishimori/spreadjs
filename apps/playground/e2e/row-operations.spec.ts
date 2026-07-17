@@ -236,6 +236,8 @@ test.describe('DD-021-1 行操作 Command・公開 API', () => {
       await apiInsertRows(page, 'ghost-anchor', 1); // 未知アンカー
       await apiInsertRows(page, null, 0); // count≦0
       await apiInsertRows(page, null, -3); // count≦0
+      await apiInsertRows(page, null, 1.5); // 非整数
+      await apiInsertRows(page, null, 100_001); // 上限超過（Fable P2: 巨大 count の実行前拒否・RangeError/フリーズなし）
       await apiDeleteRows(page, ['ghost-row']); // 削除対象なし
       await apiDeleteRows(page, []); // 空
       await page.waitForTimeout(150);

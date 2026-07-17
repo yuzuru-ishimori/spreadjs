@@ -88,6 +88,11 @@ export interface ImeEditingSessionConfig {
   readonly onPresenceChange?: (update: PresenceUpdate) => void;
   /** 描画/配置の再要求（selection・編集状態・競合が変わったとき）。 */
   readonly onChange?: () => void;
+  /**
+   * K4（DD-021-2）: commit 時に対象行が削除済みで draft を退避したときの通知（Fable P2: サイレント退避の可視化）。
+   * 呼び出し側（mount-controller）が公開 rejected イベント（row-unavailable）・診断へ写像する。
+   */
+  readonly onDivert?: (draft: DivertedDraft) => void;
 }
 
 export interface ImeEditingSession {
@@ -125,6 +130,9 @@ export function createImeEditingSession(config: ImeEditingSessionConfig): ImeEdi
   const diverted: DivertedDraft[] = [];
   let lastOperationId: OperationId | undefined;
   let lastPresenceKey = '';
+  // noteServerUpdate の onChange 発火ゲート（Fable P3: 編集中に無関係なリモート op が来るたび onChange →
+  // scroll-follow が走り viewport が編集セルへ引き戻される）。編集対象＋競合/行消失の観測状態が変わったときだけ発火する。
+  let lastServerNoteKey = '';
 
   function buildMachine(initialCell?: CellPosition): EditorStateMachine {
     return createEditorStateMachine({
@@ -219,7 +227,10 @@ export function createImeEditingSession(config: ImeEditingSessionConfig): ImeEdi
       lastOperationId = id ?? undefined;
     } else {
       // target-deleted: 無効 RowId へ Commit しない → draft を退避（黙って破棄しない・#4）。
-      diverted.push({ rowId: target.rowId, columnId: target.columnId, draft: draftText, reason: 'target-deleted' });
+      // 退避は onDivert で通知する（Fable P2: 内部配列だけでは利用者・利用側アプリに一切見えない）。
+      const entry: DivertedDraft = { rowId: target.rowId, columnId: target.columnId, draft: draftText, reason: 'target-deleted' };
+      diverted.push(entry);
+      config.onDivert?.(entry);
     }
     editingTarget = null;
   }
@@ -284,12 +295,21 @@ export function createImeEditingSession(config: ImeEditingSessionConfig): ImeEdi
     port.setConflict(conflicting() || targetLost());
   }
 
+  /** noteServerUpdate の onChange ゲート用キー（編集対象＋競合/行消失の観測状態）。 */
+  function serverNoteKey(): string {
+    return editingTarget === null
+      ? ''
+      : `${String(editingTarget.rowId)}|${String(editingTarget.columnId)}|${conflicting()}|${targetLost()}`;
+  }
+
   function applyEffects(effects: readonly Effect[]): void {
     for (const effect of effects) {
       applyEffect(effect);
     }
     reconcile();
     emitPresenceIfChanged();
+    // ローカル操作（編集開始/確定等）後の観測状態を基準化する（次の noteServerUpdate が「変化なし」を正しく判定できる）。
+    lastServerNoteKey = serverNoteKey();
     config.onChange?.();
   }
 
@@ -321,7 +341,14 @@ export function createImeEditingSession(config: ImeEditingSessionConfig): ImeEdi
       // conflicting()/targetLost() が committed から都度算出するため、ここでは reconcile で paint のみ更新する。
       reconcile();
       emitPresenceIfChanged();
-      config.onChange?.();
+      // onChange（scroll-follow・placement 再配置）は観測状態が変わったときだけ（Fable P3: 毎 op 発火だと
+      // 編集セルから viewport を離した利用者が、他人の編集受信のたびに編集セルへ引き戻される）。
+      // 基準は直近の applyEffects / noteServerUpdate 時点のキー（applyEffects 側で毎回基準化する）。
+      const key = serverNoteKey();
+      if (key !== lastServerNoteKey) {
+        lastServerNoteKey = key;
+        config.onChange?.();
+      }
     },
     refreshPlacement(resolveRect) {
       let rowIndex: number;

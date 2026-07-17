@@ -18,7 +18,7 @@
 | S5 | SetCells × DeleteRows（setcells 先） | ③ | AC4 | A が行へ SetCells → B が同行を後から Delete | 両方適用（値確定後に行 tombstone）・収束 | — | row-convergence.test.ts S5 |
 | S6 | 再 Delete 冪等（S-E4・公開経路） | ④ | AC5 | A/B が同一行を並行 Delete（敗者は tombstone 済みへの再 Delete） | 敗者 Delete は server noop・acked-noop を rebuildView が除去（DA D33）・収束・二重適用0 | — | row-convergence.test.ts S6 |
 | S7 | 自分の楽観 Insert が reject → rollback | — | AC8 | A が未知アンカーへ Insert（実行前は grid 層が弾くが、collab 層では revalidation-failed 経路）／server reject | 楽観適用が Conflict Queue へ・view から挿入行が消え・収束・クラッシュなし | 選択/描画の詳細再ベースは DD-021-3 | row-convergence.test.ts S7 |
-| S8 | offline 中の行操作 → reconnect catch-up | ⑤ | AC6 | A offline 中に Insert/Delete・B online で行操作 → A 再接続 | reconcile＋catch-up 後に全 client 収束・二重適用0・入力喪失0 | — | reconnect-fault.invariant（delete 比率強化）＋reconnect-headed E2E（delete 込み） |
+| S8 | offline 中の行操作 → reconnect catch-up | ⑤ | AC6 | A offline 中に Insert/Delete・B online で行操作 → A 再接続 | reconcile＋catch-up 後に全 client 収束・二重適用0・入力喪失0 | — | reconnect-fault.invariant（既存・DD-015 由来。insert/delete は genOp に既在＝**本DDでの比率強化はしていない**〔Fable P3 是正: 当初の「delete 比率強化」記載は誤り〕）＋reconnect-headed E2E（**本DDで delete 追加**） |
 | S9 | randomized ミックス（行操作比率強化） | ⑥ | AC2 | setCells/insert/delete 混合＋同一アンカー衝突バイアス・3〜5 体 | hash 一致・二重適用0・insert/delete 実適用≥1・seed 再現性 | — | collab.invariant（row-heavy seed 追加） |
 | K4 | IME 変換中に対象行がリモート削除 | K4/親④ | AC7 | (r,c) で composition 中に他 client が行 r を Delete | ドラフト・textarea・composition 非破壊・編集継続・行消失インジケータ表示・commit 時に target-deleted で divert（ドラフト保持＝reject 通知）・状態機械無変更 | 数式参照維持は DD-022 送り／実 IME は親 Phase 4 M1 | ime-editing-session.test.ts（K4）＋ime row-structure invariant＋row-operations E2E（synthetic） |
 

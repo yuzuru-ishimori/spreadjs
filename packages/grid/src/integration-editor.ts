@@ -19,6 +19,7 @@ import type { CellRect, ViewportTransform } from '@nanairo-sheet/render';
 import { computeEditorPlacement, type PlacementConfig } from './editor-placement';
 import {
   createImeEditingSession,
+  type DivertedDraft,
   type EditingDocumentPort,
   type ImeEditingSession,
 } from './ime-editing-session';
@@ -69,6 +70,8 @@ export interface IntegrationEditorConfig {
   readonly onClipboardCut?: () => string | null;
   /** paste の裁定（DD-020-2）。text/plain を受け取り消費したら true（preventDefault）。false=非消費（textarea 既定）。 */
   readonly onClipboardPaste?: (text: string) => boolean;
+  /** K4（DD-021-2）: commit 時に対象行が削除済みで draft を退避したときの通知（公開 rejected への写像用）。 */
+  readonly onDivert?: (draft: DivertedDraft) => void;
 }
 
 export interface IntegrationEditor {
@@ -147,7 +150,11 @@ export function createIntegrationEditor(config: IntegrationEditorConfig): Integr
       currentRect = rect;
       if (rect === null) {
         // 画面外/削除。composition 中は隠すと IME が壊れるため、直近位置に留める。
-        if (sessionRef.current?.isComposing() !== true) {
+        // K4 行消失中（isTargetLost）も隠すと focus 中の textarea が display:none → blur → 非 composing 編集は
+        // S-H1 で強制 Commit＝即 divert となり「ドラフトは利用者が確定/破棄するまで消さない」契約（親④/D7）が
+        // 破れるため、直近位置に留めて編集を継続させる（Fable P2）。
+        const s = sessionRef.current;
+        if (s?.isComposing() !== true && s?.isTargetLost() !== true) {
           textarea.style.display = 'none';
           badge.style.display = 'none';
         }
@@ -175,14 +182,20 @@ export function createIntegrationEditor(config: IntegrationEditorConfig): Integr
     },
   };
 
-  function updateBadge(conflict: boolean): void {
-    const target = conflict ? sessionRef.current?.getEditingTarget() : undefined;
+  function updateBadge(show: boolean): void {
+    const s = sessionRef.current;
+    const target = show ? s?.getEditingTarget() : undefined;
     if (target === undefined || target === null || currentRect === null) {
       badge.style.display = 'none';
       return;
     }
-    const serverValue = config.document.displayText(target.rowId, target.columnId);
-    badge.textContent = `⚠ 他者の確定値: ${serverValue === '' ? '(空)' : serverValue}`;
+    // K4 行消失はセル競合と文言を分ける（Fable P3: 「他者の確定値」は行削除の説明として誤り）。
+    if (s?.isTargetLost() === true) {
+      badge.textContent = '⚠ この行は削除されました（確定するとドラフトは退避されます）';
+    } else {
+      const serverValue = config.document.displayText(target.rowId, target.columnId);
+      badge.textContent = `⚠ 他者の確定値: ${serverValue === '' ? '(空)' : serverValue}`;
+    }
     // セル上端の外側（少し上）へ。textarea を覆わず、かつ画面上端でクランプ。
     badge.style.left = `${currentRect.x}px`;
     badge.style.top = `${Math.max(0, currentRect.y - 16)}px`;
@@ -196,6 +209,7 @@ export function createIntegrationEditor(config: IntegrationEditorConfig): Integr
     layout: config.layout,
     onPresenceChange: config.onPresenceChange,
     onChange: config.onChange,
+    onDivert: config.onDivert,
   });
   sessionRef.current = session;
 
@@ -321,8 +335,8 @@ export function createIntegrationEditor(config: IntegrationEditorConfig): Integr
         const p = computeEditorPlacement(transform, rowIndex, colIndex, placement);
         return p.visible ? p.rect : null;
       });
-      // badge 位置も追従（競合中のみ表示）。
-      updateBadge(session.isConflicting());
+      // badge 位置も追従（セル競合 or K4 行消失で表示。targetLost を見ないと rAF ごとに行消失 badge が消える）。
+      updateBadge(session.isConflicting() || session.isTargetLost());
     },
     focus: () => {
       textarea.focus({ preventScroll: true });

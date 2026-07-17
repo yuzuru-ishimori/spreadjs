@@ -156,16 +156,33 @@ export function createSelectionController(): SelectionController {
     },
     clear: clearAll,
     rebaseRows(resolveRow) {
+      let changed = false;
+      // ドラッグ中のライブ状態も再ベースする（Fable レビュー P2: ドラッグ中にリモート構造 Op が flush されると
+      // dragAnchor/dragFocus の index が旧 Axis のまま残り、pointerup でずれた行範囲が確定する。リサイズドラッグの
+      // Id 保持修正〔Codex P2〕と同型）。いずれかの行が消えていればドラッグを取消す（確定レンジは別途下で補正）。
+      if (dragAnchor !== null && dragFocus !== null) {
+        const da = resolveRow(dragAnchor.row);
+        const df = resolveRow(dragFocus.row);
+        if (da === null || df === null) {
+          dragAnchor = null;
+          dragFocus = null;
+          changed = true;
+        } else if (da !== dragAnchor.row || df !== dragFocus.row) {
+          dragAnchor = { row: da, col: dragAnchor.col };
+          dragFocus = { row: df, col: dragFocus.col };
+          changed = true;
+        }
+      }
       if (anchor === null || focus === null) {
-        return false; // 明示レンジ無し（単一セルは activeCell 再ベース側が担う）
+        return changed; // 明示レンジ無し（単一セルは activeCell 再ベース側が担う）
       }
       const na = resolveRow(anchor.row);
       const nf = resolveRow(focus.row);
       if (na === null || nf === null) {
-        return clearAll(); // 生存行皆無 → 単一選択へ縮退
+        return clearAll() || changed; // 生存行皆無 → 単一選択へ縮退
       }
       if (na === anchor.row && nf === focus.row) {
-        return false; // index 不変（Insert が下・Delete が下など）→ 触らない
+        return changed; // index 不変（Insert が下・Delete が下など）→ 触らない
       }
       setRange({ row: na, col: anchor.col }, { row: nf, col: focus.col }); // 同一セルは単一選択へ正規化
       return true;

@@ -6,7 +6,7 @@
 // 持たず、代わりに destroy() で全リソース（RAF/interval/listener/ResizeObserver/WS/canvas/textarea）を解放する
 // （再mountで leak しない・AC2）④E2E 用 introspection は debugRegistry 経由（test-support）で露出する。
 
-import { cloneCellScalar, documentHash, displayRowOrder, getCell, parseClipboardText, validateOperation } from '@nanairo-sheet/core';
+import { SETCELLS_MAX_CELLS, cloneCellScalar, documentHash, displayRowOrder, getCell, parseClipboardText, validateOperation } from '@nanairo-sheet/core';
 import type { DeleteRowsOperation, InsertRowsOperation, SetCellsOperation, SheetDocument } from '@nanairo-sheet/core';
 import { createColumnId, createDocumentId, createRowId } from '@nanairo-sheet/types';
 import type { ColumnId, OperationId, RowId } from '@nanairo-sheet/types';
@@ -941,10 +941,22 @@ export function createGridController(target: GridMountTarget, options: GridMount
   function performInsertRows(afterRowId: string | null, count: number): void {
     const backend = sync;
     if (backend === undefined) {
-      return; // boot 未完了 → 黙って無視（既存 API 流儀・setData と同型）
+      return; // boot 未完了 → 黙って無視（既存 API 流儀）
     }
-    if (!Number.isInteger(count) || count <= 0) {
-      notifyRowReject('row-count-invalid', 'insert-count-invalid', `insertRows: count=${count}（1 以上の整数が必要）`);
+    // stopped（再接続窓超過で終端）セッションへの submit は throw する（collab session 契約）。公開 API・
+    // ショートカットは「同期 throw しない」契約のため no-op＋診断にする（performUndo/Redo と同型・Fable P2）。
+    if (backend.session.isStopped) {
+      diag.emit('warn', 'insert-session-stopped', 'insertRows: セッション停止中（stopped）のため無視');
+      return;
+    }
+    // 上限は SetCells のセル数上限と同値を流用（1 op の実行前ガード・R-08 と同型）。上限なしだと
+    // count=2^32 で Array.from が同期 RangeError・1e8 程度でも UI フリーズ/巨大 envelope 送信になる（Fable P2）。
+    if (!Number.isInteger(count) || count <= 0 || count > SETCELLS_MAX_CELLS) {
+      notifyRowReject(
+        'row-count-invalid',
+        'insert-count-invalid',
+        `insertRows: count=${count}（1〜${SETCELLS_MAX_CELLS} の整数が必要）`,
+      );
       return;
     }
     const anchor = afterRowId === null ? null : createRowId(afterRowId);
@@ -973,6 +985,10 @@ export function createGridController(target: GridMountTarget, options: GridMount
   function performDeleteRows(requested: readonly string[]): void {
     const backend = sync;
     if (backend === undefined) {
+      return;
+    }
+    if (backend.session.isStopped) {
+      diag.emit('warn', 'delete-session-stopped', 'deleteRows: セッション停止中（stopped）のため無視');
       return;
     }
     const oldOrder = displayRowOrder(backend.session.viewDocument).map(String);
@@ -1315,6 +1331,19 @@ export function createGridController(target: GridMountTarget, options: GridMount
       layout: editorLayout,
       onPresenceChange: (update: PresenceUpdate) => {
         backend.session.sendPresence(update);
+      },
+      // K4（DD-021-2・Fable P2）: 削除行への commit で draft を退避したことを利用側へ可視化する。
+      // 公開語彙は既存 row-unavailable（=target-row-deleted の写像・error-codes.md）を使い、未 submit ゆえ
+      // operationId は空文字（DD-020 実行前拒否と同規約）。standalone は診断のみ（DD-024 契約＝実行前拒否と同型）。
+      onDivert: (draft) => {
+        diag.emit('warn', 'draft-diverted', `commit 対象行が削除済みのため draft を退避: row=${draft.rowId} col=${draft.columnId}`);
+        if (!isStandalone) {
+          emit({
+            type: 'rejected',
+            pendingCount: backend.session.pendingCount,
+            conflict: { operationId: '', reason: 'rejected', code: 'row-unavailable' },
+          });
+        }
       },
       onChange: () => {
         if (editor === undefined) {

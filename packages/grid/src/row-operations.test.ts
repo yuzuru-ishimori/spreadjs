@@ -1,7 +1,7 @@
 // row-operations 純関数の単体テスト（DD-021-1 Phase 1・TDD）。
 import { describe, expect, it } from 'vitest';
 
-import { decideRowStructureKey, rebaseRowIndex, reduceActiveRowTarget, resolveDeleteTargets } from './row-operations';
+import { decideRowStructureKey, rebaseRowIndex, resolveDeleteTargets } from './row-operations';
 import type { RowStructureKeyInput } from './row-operations';
 
 function key(overrides: Partial<RowStructureKeyInput>): RowStructureKeyInput {
@@ -77,36 +77,7 @@ describe('resolveDeleteTargets', () => {
   });
 });
 
-describe('reduceActiveRowTarget', () => {
-  const order = ['r0', 'r1', 'r2', 'r3', 'r4'];
-
-  it('active 行が生存なら unchanged', () => {
-    expect(reduceActiveRowTarget(order, 1, new Set(['r3']))).toBe('unchanged');
-  });
-
-  it('active 行削除 → 下優先で直下の生存行へ', () => {
-    expect(reduceActiveRowTarget(order, 2, new Set(['r2']))).toEqual({ rowId: 'r3' });
-  });
-
-  it('active 行と直下がまとめて削除 → さらに下の生存行へ', () => {
-    expect(reduceActiveRowTarget(order, 2, new Set(['r2', 'r3']))).toEqual({ rowId: 'r4' });
-  });
-
-  it('下に生存行が無い → 上の生存行へ（上フォールバック）', () => {
-    expect(reduceActiveRowTarget(order, 4, new Set(['r4']))).toEqual({ rowId: 'r3' });
-    expect(reduceActiveRowTarget(order, 3, new Set(['r3', 'r4']))).toEqual({ rowId: 'r2' });
-  });
-
-  it('全行削除 → null（選択解除）', () => {
-    expect(reduceActiveRowTarget(order, 2, new Set(order))).toBeNull();
-  });
-
-  it('active index が範囲外なら unchanged（防御）', () => {
-    expect(reduceActiveRowTarget(order, 99, new Set(['r0']))).toBe('unchanged');
-  });
-});
-
-describe('rebaseRowIndex（K3 選択再ベース・DD-021-3）', () => {
+describe('rebaseRowIndex（K3 選択再ベース・DD-021-3。DD-021-1 の削除限定縮退を一般化＝旧 reduceActiveRowTarget は削除済み）', () => {
   it('生存かつ順不変 → 同一 index', () => {
     const order = ['r0', 'r1', 'r2', 'r3'];
     expect(rebaseRowIndex(order, order, 2)).toBe(2);

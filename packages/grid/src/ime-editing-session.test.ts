@@ -422,6 +422,60 @@ describe('createImeEditingSession — K4 編集対象行のリモート削除（
     expect(submitted).toHaveLength(0);
     expect(session.divertedDrafts().map((d) => d.draft)).toContain('手動');
   });
+
+  it('K4: 退避は onDivert で通知される（Fable P2: サイレント退避の可視化・公開 rejected への写像材料）', () => {
+    const state = createDocState([insertRows(null, ['r0', 'r1'])]);
+    const fake = createFakePort();
+    const diverted: string[] = [];
+    const session = createImeEditingSession({
+      document: state.port,
+      port: fake.port,
+      submit: () => {},
+      layout: LAYOUT,
+      onDivert: (d) => {
+        diverted.push(`${String(d.rowId)}:${d.draft}:${d.reason}`);
+      },
+    });
+    session.handleEvent({ type: 'pointerdown', target: 'cell', cell: { row: 1, col: 0 } });
+    session.handleEvent({ type: 'input', value: '通知', isComposing: false });
+    state.apply({ type: 'deleteRows', rowIds: [row('r1')] });
+    session.handleEvent({ type: 'keydown', key: 'Enter', isComposing: false });
+
+    expect(diverted).toEqual(['r1:通知:target-deleted']);
+  });
+
+  it('K4: noteServerUpdate の onChange は観測状態（競合/行消失）が変わったときだけ発火する（Fable P3: 毎 op の scroll-follow 引き戻し防止）', () => {
+    const state = createDocState([insertRows(null, ['r0', 'r1'])]);
+    const fake = createFakePort();
+    let onChangeCalls = 0;
+    const session = createImeEditingSession({
+      document: state.port,
+      port: fake.port,
+      submit: () => {},
+      layout: LAYOUT,
+      onChange: () => {
+        onChangeCalls += 1;
+      },
+    });
+    session.handleEvent({ type: 'pointerdown', target: 'cell', cell: { row: 1, col: 0 } });
+    session.handleEvent({ type: 'input', value: 'x', isComposing: false });
+    const base = onChangeCalls;
+
+    // 無関係セル（r0）へのリモート SetCells が編集中に連続で届く → 観測状態は不変 → onChange は発火しない。
+    state.apply(setCells([{ rowId: row('r0'), columnId: col('col-0'), value: str('a') }]));
+    session.noteServerUpdate();
+    state.apply(setCells([{ rowId: row('r0'), columnId: col('col-0'), value: str('b') }]));
+    session.noteServerUpdate();
+    expect(onChangeCalls).toBe(base);
+
+    // 対象行の削除（targetLost false→true）で 1 回だけ発火し、以後の無関係 op では再発火しない。
+    state.apply({ type: 'deleteRows', rowIds: [row('r1')] });
+    session.noteServerUpdate();
+    expect(onChangeCalls).toBe(base + 1);
+    state.apply(setCells([{ rowId: row('r0'), columnId: col('col-0'), value: str('c') }]));
+    session.noteServerUpdate();
+    expect(onChangeCalls).toBe(base + 1);
+  });
 });
 
 describe('createImeEditingSession — #8 実 ClientSession の rollback/replay 前後で不変', () => {

@@ -164,6 +164,10 @@ export function createSessionSync(config: SessionSyncConfig): SessionSync {
           // reject で楽観 pending がロールバックされ viewDocument が committed へ戻る（描画値が変わりうる）。
           // セル dirty を立てて可視範囲を描き直す。さもないと自分の rejected draft が Canvas に残る（Codex P1）。
           view.markCellDirty();
+          // 楽観 insertRows/deleteRows の reject では行 Axis も committed へ戻す必要がある（Fable P3: 立てないと
+          // rejected 行の RowId が次の構造 Op まで rowAxis に残り空行として表示され続け、K3 再ベースもずれた
+          // Axis を oldOrder に使う）。reject は稀ゆえ op 種別を持たない本ハンドラでは一括で構造 dirty を立てる。
+          view.markStructureDirty();
           // rollback で描画値が縮む/伸びるため自動行高も追従する（D5 トリガー②＝rollback 後）。reject は稀ゆえ一括で正す。
           view.recomputeAllAutoRowHeights();
           break;
