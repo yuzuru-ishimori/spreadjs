@@ -56,6 +56,8 @@ export interface GridDebugApi {
   appliedServerOpCount(): number;
   presences(): GridDebugPresenceView[];
   isConflicting(): boolean;
+  /** K4（DD-021-2）: 編集対象行がリモート削除されたか（draft は破壊せず継続・行消失インジケーター）。 */
+  isTargetLost(): boolean;
   isComposing(): boolean;
   draft(): string;
   activeCell(): { row: number; col: number };

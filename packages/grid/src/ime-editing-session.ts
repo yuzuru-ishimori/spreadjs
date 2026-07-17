@@ -100,6 +100,12 @@ export interface ImeEditingSession {
   getDraft(): string;
   /** #9: 編集中に committed 側で対象セルが更新されたか（インジケーター表示条件）。IME には触れない。 */
   isConflicting(): boolean;
+  /**
+   * K4（DD-021-2・親④/D7）: 編集対象行がリモート削除された（committed で tombstone/未知）か。
+   * true でもドラフト/textarea/composition は破壊しない（編集継続）。UI は行消失インジケーターを出し、
+   * commit 時に target-deleted で退避（ドラフト保持＝reject 通知）する。IME 状態機械には触れない。
+   */
+  isTargetLost(): boolean;
   /** AC4 で退避された draft（非破棄の証跡）。 */
   divertedDrafts(): readonly DivertedDraft[];
   /** 直近 submit の OperationId（reject を Conflict Queue と突き合わせる・#9）。 */
@@ -114,7 +120,7 @@ export function createImeEditingSession(config: ImeEditingSessionConfig): ImeEdi
   const doc = config.document;
   const port = config.port;
 
-  let machine: EditorStateMachine = buildMachine();
+  const machine: EditorStateMachine = buildMachine();
   let editingTarget: EditTarget | null = null;
   const diverted: DivertedDraft[] = [];
   let lastOperationId: OperationId | undefined;
@@ -180,6 +186,14 @@ export function createImeEditingSession(config: ImeEditingSessionConfig): ImeEdi
     return editingTarget !== null && isEditTargetStale(doc.getCommittedDocument(), editingTarget);
   }
 
+  /**
+   * K4: 編集対象行がリモート削除されたか（committed で非生存）。純算出（IME 状態は持たない）。
+   * true でも draft/textarea/composition を破壊しない（編集継続・親④/D7）。
+   */
+  function targetLost(): boolean {
+    return editingTarget !== null && !isRowLive(doc.getCommittedDocument(), editingTarget.rowId);
+  }
+
   /** 表示 index のセルから EditTarget を作る（BeginEdit を経ない Commit 用・beforeRevision は現行を凍結）。 */
   function resolveTargetFromCell(cell: CellPosition): EditTarget | null {
     const rowId = doc.rowIdAt(cell.row);
@@ -208,20 +222,6 @@ export function createImeEditingSession(config: ImeEditingSessionConfig): ImeEdi
       diverted.push({ rowId: target.rowId, columnId: target.columnId, draft: draftText, reason: 'target-deleted' });
     }
     editingTarget = null;
-  }
-
-  /** AC4: 編集対象行が削除された → draft を退避し状態機械を安全なセルで作り直す（composition は破棄）。 */
-  function abortToDiverted(target: EditTarget): void {
-    diverted.push({ rowId: target.rowId, columnId: target.columnId, draft: machine.getDraft(), reason: 'target-deleted' });
-    editingTarget = null;
-    const active = machine.getActiveCell();
-    machine = buildMachine({ row: active.row, col: active.col });
-    port.setValue('');
-    port.setEditingVisual(false);
-    port.setConflict(false);
-    port.place(null); // 削除セルは表示できない → 次 refreshPlacement で navigation セルへ
-    emitPresenceIfChanged();
-    config.onChange?.();
   }
 
   function applyEffect(effect: Effect): void {
@@ -280,7 +280,8 @@ export function createImeEditingSession(config: ImeEditingSessionConfig): ImeEdi
         port.setEditingVisual(true);
       }
     }
-    port.setConflict(conflicting());
+    // 競合枠は #9 セル競合 または K4 行消失（どちらも「この編集は要注意」を示す paint のみ・composition 中も可）。
+    port.setConflict(conflicting() || targetLost());
   }
 
   function applyEffects(effects: readonly Effect[]): void {
@@ -304,6 +305,7 @@ export function createImeEditingSession(config: ImeEditingSessionConfig): ImeEdi
     getPhase: () => machine.getPhase(),
     getDraft: () => machine.getDraft(),
     isConflicting: () => conflicting(),
+    isTargetLost: () => targetLost(),
     divertedDrafts: () => diverted,
     lastSubmittedOperationId: () => lastOperationId,
     noteServerUpdate() {
@@ -311,13 +313,15 @@ export function createImeEditingSession(config: ImeEditingSessionConfig): ImeEdi
       if (target === null) {
         return;
       }
-      if (!isRowLive(doc.getCommittedDocument(), target.rowId)) {
-        // AC4: 編集対象行が削除された → 退避（#4）。
-        abortToDiverted(target);
-        return;
-      }
-      // 生存セルへのサーバー SetCells（AC2）・rollback/replay: IME 状態には一切触れない（#8）。
-      // #9 の競合表示は isConflicting() が committed から都度算出するため、ここでは状態を持たない。
+      // K4（DD-021-2・親④/D7）: 編集対象行がリモート削除された場合でも **draft/textarea/composition は破壊しない**
+      // （編集継続）。行消失インジケーター（port.setConflict）を更新するだけで、editingTarget も状態機械も保持する。
+      // 退避（divertedDrafts への保存）は利用者が **commit** した時点（performCommit → resolveCommit の target-deleted）で
+      // 行う＝ドラフトは利用者が明示的に確定/破棄するまで消さない。IME 状態機械には一切触れない（#8・状態機械無変更）。
+      // 生存セルへのサーバー SetCells（AC2）・rollback/replay も IME 状態には触れない（#8）。#9/K4 の表示は
+      // conflicting()/targetLost() が committed から都度算出するため、ここでは reconcile で paint のみ更新する。
+      reconcile();
+      emitPresenceIfChanged();
+      config.onChange?.();
     },
     refreshPlacement(resolveRect) {
       let rowIndex: number;

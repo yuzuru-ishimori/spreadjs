@@ -9,7 +9,16 @@ import { fileURLToPath } from 'node:url';
 
 import { expect, test, type Page } from '@playwright/test';
 
-import { openClient, snapshot } from './integration-helpers';
+import {
+  composeFinalizeAndCommit,
+  composeOpen as collabComposeOpen,
+  editorProbe,
+  openClient,
+  rowIdAt as collabRowIdAt,
+  rowIndexOf,
+  selectCell as collabSelectCell,
+  snapshot,
+} from './integration-helpers';
 import {
   activeCell,
   composeOpen,
@@ -258,6 +267,96 @@ test.describe('DD-021-1 行操作 Command・公開 API', () => {
       await expect
         .poll(async () => (await snapshot(b.page)).rowCount, { message: 'B へ行挿入が伝播する' })
         .toBe(beforeB + 1);
+    } finally {
+      await a.context.close();
+      await b.context.close();
+    }
+  });
+});
+
+// DD-021-2: collab 2 クライアントの行操作競合・K4（IME 変換中の対象行削除）。
+// 共有文書（50,000 行シード）を壊さないため、A が **新規行を先頭へ挿入**してからその行だけを対象にする
+// （insert→delete で net 中立・base 行数は非減少）。view 読みは expect.poll でゲート（DD-021-1 教訓）。
+test.describe('DD-021-2 collab 行操作 競合・K4', () => {
+  /** A が先頭へ 1 行挿入し、B へ伝播した新 rowId を返す（view 軸 settle を待つ）。 */
+  async function insertFreshTopRow(a: Page, b: Page): Promise<string> {
+    const beforeTop = await collabRowIdAt(a, 0);
+    await apiInsertRows(a, null, 1);
+    await expect
+      .poll(async () => collabRowIdAt(a, 0), { message: 'A の先頭に新規行が反映' })
+      .not.toBe(beforeTop);
+    const newRowId = await collabRowIdAt(a, 0);
+    expect(newRowId).toBeDefined();
+    await expect
+      .poll(async () => rowIndexOf(b, newRowId!), { message: 'B へ新規行が伝播' })
+      .not.toBe(-1);
+    return newRowId!;
+  }
+
+  test('AC7 K4: A が IME 変換中の行を B が削除 → A の draft/composition 非破壊・行消失インジケーター', async ({
+    browser,
+  }) => {
+    const a = await openClient(browser, 'k4-a');
+    const b = await openClient(browser, 'k4-b');
+    try {
+      const newRowId = await insertFreshTopRow(a.page, b.page);
+
+      // A が新規行（表示 index 0）の col-0 で日本語変換を開始する。
+      await collabSelectCell(a.page, 0, 0);
+      await collabComposeOpen(a.page, ['にほん']);
+      await expect.poll(async () => (await snapshot(a.page)).isComposing, { message: 'A が変換中' }).toBe(true);
+      expect((await editorProbe(a.page)).value).toBe('にほん');
+
+      // B がその行を削除（公開 API）。
+      await apiDeleteRows(b.page, [newRowId]);
+
+      // A の committed が削除を取り込む（行が表示から消える）。
+      await expect
+        .poll(async () => rowIndexOf(a.page, newRowId), { timeout: 15_000, message: 'A が B の削除を catch-up' })
+        .toBe(-1);
+
+      // K4: A は変換継続・draft/textarea 非破壊・行消失インジケーターが立つ（強制破棄なし）。
+      await expect
+        .poll(async () => (await snapshot(a.page)).isTargetLost, { timeout: 15_000, message: 'A に行消失インジケーター' })
+        .toBe(true);
+      const snapA = await snapshot(a.page);
+      expect(snapA.isComposing, 'A は変換継続').toBe(true);
+      expect(snapA.draft, 'A の draft 保持').toBe('にほん');
+      expect((await editorProbe(a.page)).value, 'A の textarea 値 非破壊').toBe('にほん');
+    } finally {
+      await a.context.close();
+      await b.context.close();
+    }
+  });
+
+  test('AC3 K4: 行消失後に A が commit → target-deleted で退避（ドラフト保持＝reject 通知）・サイレント喪失なし', async ({
+    browser,
+  }) => {
+    const a = await openClient(browser, 'ac3-a');
+    const b = await openClient(browser, 'ac3-b');
+    try {
+      const newRowId = await insertFreshTopRow(a.page, b.page);
+      await collabSelectCell(a.page, 0, 0);
+      await collabComposeOpen(a.page, ['めも']);
+      await expect.poll(async () => (await snapshot(a.page)).isComposing).toBe(true);
+
+      const divertedBefore = (await snapshot(a.page)).divertedCount;
+      await apiDeleteRows(b.page, [newRowId]);
+      await expect
+        .poll(async () => rowIndexOf(a.page, newRowId), { timeout: 15_000, message: 'A が削除を catch-up' })
+        .toBe(-1);
+      await expect.poll(async () => (await snapshot(a.page)).isTargetLost, { timeout: 15_000 }).toBe(true);
+
+      // A が変換を確定 → commit。削除済み行へは submit せず退避（divertedDrafts が増える＝ドラフト保持・reject 通知）。
+      await composeFinalizeAndCommit(a.page, 'めも');
+      await expect
+        .poll(async () => (await snapshot(a.page)).divertedCount, {
+          timeout: 15_000,
+          message: 'commit で target-deleted 退避（ドラフト保持）',
+        })
+        .toBe(divertedBefore + 1);
+      // 削除は保持され行は復活しない（サイレントな行復活なし）。
+      expect(await rowIndexOf(a.page, newRowId)).toBe(-1);
     } finally {
       await a.context.close();
       await b.context.close();

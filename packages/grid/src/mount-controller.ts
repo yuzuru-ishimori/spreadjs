@@ -1567,6 +1567,7 @@ export function createGridController(target: GridMountTarget, options: GridMount
         })),
       })),
     isConflicting: () => editor?.session.isConflicting() ?? false,
+    isTargetLost: () => editor?.session.isTargetLost() ?? false,
     isComposing: () => editor?.session.isComposing() ?? false,
     draft: () => editor?.session.getDraft() ?? '',
     activeCell: () => editor?.session.getActiveCell() ?? { row: 0, col: 0 },

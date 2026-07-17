@@ -157,3 +157,78 @@ describe('invariant/ime row-structure: composition 中は行操作裁定が none
     expect(decideInsert()).toBe('insert');
   });
 });
+
+// ---- 3. K4（DD-021-2・親④/D7）: composition 中の対象行リモート削除で draft 非破壊・編集継続 ----------
+
+/** 可変 committed 文書に対する EditingDocumentPort（リモート削除を後から適用できる）。 */
+function createMutableDocPort(ops: DocumentOperation[]): {
+  port: EditingDocumentPort;
+  apply: (op: DocumentOperation) => void;
+} {
+  let doc = createDocument(DOC_COLS);
+  let revision = 0;
+  const apply = (op: DocumentOperation): void => {
+    revision += 1;
+    doc = applyOperation(doc, op, { revision }).document;
+  };
+  for (const op of ops) {
+    apply(op);
+  }
+  const port: EditingDocumentPort = {
+    getCommittedDocument: () => doc,
+    displayText: (rowId, columnId) => cellScalarToDisplay(getCell(doc, rowId, columnId)?.value ?? { kind: 'blank' }),
+    rowIdAt: (i) => displayRowOrder(doc)[i],
+    colIdAt: (i) => doc.columnOrder[i],
+    rowIndexOf: (rowId) => displayRowOrder(doc).indexOf(rowId),
+    colIndexOf: (columnId) => doc.columnOrder.indexOf(columnId),
+  };
+  return { port, apply };
+}
+
+describe('invariant/ime row-structure（K4）: composition 中の対象行リモート削除で draft 非破壊・編集継続', () => {
+  it('編集対象行が削除されても draft/composition は保持され、行消失インジケーターが立つ（状態機械無変更）', () => {
+    const state = createMutableDocPort([
+      { type: 'insertRows', afterRowId: null, rows: [{ rowId: createRowId('r0') }, { rowId: createRowId('r1') }] },
+    ]);
+    const fake = createFakePort();
+    const session = createImeEditingSession({
+      document: state.port,
+      port: fake.port,
+      submit: () => {},
+      layout: SESSION_LAYOUT,
+    });
+
+    // (r1,col-0) で変換中にする。
+    session.handleEvent({ type: 'pointerdown', target: 'cell', cell: { row: 1, col: 0 } });
+    session.handleEvent({ type: 'compositionstart' });
+    fake.browserSetValue('へんかん');
+    session.handleEvent({ type: 'compositionupdate', data: 'へんかん' });
+    expect(session.isComposing()).toBe(true);
+    expect(session.getDraft()).toBe('へんかん');
+    const targetBefore = session.getEditingTarget();
+
+    // 他 client が r1 を削除（リモート DeleteRows が committed へ入る）→ noteServerUpdate。
+    state.apply({ type: 'deleteRows', rowIds: [createRowId('r1')] });
+    session.noteServerUpdate();
+
+    // K4 不変: composition・draft・editingTarget は破壊されず編集継続。行消失インジケーターだけ立つ。
+    expect(session.isComposing()).toBe(true);
+    expect(session.getDraft()).toBe('へんかん');
+    expect(session.getEditingTarget()).toEqual(targetBefore);
+    expect(session.getPhase()).toBe('Composing');
+    expect(session.isTargetLost()).toBe(true);
+    // 行操作裁定は composition 中ゆえ none のまま（IME 不変条件・削除で状態機械を触っていない証拠）。
+    expect(
+      decideRowStructureKey({
+        key: '+',
+        ctrlKey: true,
+        metaKey: false,
+        shiftKey: true,
+        altKey: false,
+        eventComposing: session.isComposing(),
+        sessionComposing: session.isComposing(),
+        phase: session.getPhase(),
+      }),
+    ).toBe('none');
+  });
+});

@@ -327,8 +327,8 @@ describe('createImeEditingSession — #8 IME 不変（サーバー更新は Docu
   });
 });
 
-describe('createImeEditingSession — AC4 編集対象行の削除退避（#4）', () => {
-  it('編集中に対象行が削除されると draft を退避し無効 RowId へ Commit しない', () => {
+describe('createImeEditingSession — K4 編集対象行のリモート削除（DD-021-2・親④/D7）', () => {
+  it('変換中に対象行が削除されても draft/textarea/composition を破壊せず編集継続・行消失インジケーターを出す', () => {
     const state = createDocState([insertRows(null, ['r0', 'r1'])]);
     const submitted: SetCellsOperation[] = [];
     const fake = createFakePort();
@@ -344,21 +344,64 @@ describe('createImeEditingSession — AC4 編集対象行の削除退避（#4）
     session.handleEvent({ type: 'pointerdown', target: 'cell', cell: { row: 1, col: 0 } });
     session.handleEvent({ type: 'compositionstart' });
     session.handleEvent({ type: 'input', value: 'メモ', isComposing: true });
+    fake.browserSetValue('メモ');
     expect(session.getEditingTarget()).not.toBeNull();
+    const before = {
+      target: session.getEditingTarget(),
+      setValueCalls: fake.calls.setValue,
+    };
 
-    // B が編集対象行 r1 を削除。
+    // B が編集対象行 r1 を削除（リモート DeleteRows が committed へ入る）。
     state.apply({ type: 'deleteRows', rowIds: [row('r1')] });
     session.noteServerUpdate();
 
-    expect(session.divertedDrafts()).toEqual([
-      { rowId: row('r1'), columnId: col('col-0'), draft: 'メモ', reason: 'target-deleted' },
-    ]);
-    expect(session.getEditingTarget()).toBeNull();
-    expect(submitted).toHaveLength(0); // 無効 RowId へは submit しない
-    expect(fake.snap().place).toBeNull(); // 削除セルは隠す
+    // K4: 編集は継続（editingTarget 保持）・draft/composition/textarea 非破壊・退避はまだ発生しない。
+    expect(session.getEditingTarget()).toEqual(before.target);
+    expect(session.getDraft()).toBe('メモ');
+    expect(session.isComposing()).toBe(true);
+    expect(session.getPhase()).toBe('Composing');
+    expect(fake.snap().value).toBe('メモ'); // textarea 値はサーバー削除で変えない
+    expect(fake.calls.setValue).toBe(before.setValueCalls); // noteServerUpdate は setValue を呼ばない
+    expect(session.divertedDrafts()).toHaveLength(0); // commit までは退避しない
+    // 行消失インジケーター（K4）が立ち、#9 セル競合とは独立。
+    expect(session.isTargetLost()).toBe(true);
+    expect(fake.snap().conflict).toBe(true); // 行消失も competing 枠として paint
   });
 
-  it('削除後に Enter で Commit しても無効 RowId へは submit せず退避（防御）', () => {
+  it('K4: 行消失後に commit すると target-deleted で退避（ドラフト保持＝reject 通知）・無効 RowId へは submit しない', () => {
+    const state = createDocState([insertRows(null, ['r0', 'r1'])]);
+    const submitted: SetCellsOperation[] = [];
+    const fake = createFakePort();
+    const session = createImeEditingSession({
+      document: state.port,
+      port: fake.port,
+      submit: (op) => {
+        submitted.push(op);
+      },
+      layout: LAYOUT,
+    });
+    session.handleEvent({ type: 'pointerdown', target: 'cell', cell: { row: 1, col: 0 } });
+    session.handleEvent({ type: 'compositionstart' });
+    session.handleEvent({ type: 'input', value: 'メモ', isComposing: true });
+
+    // リモート削除 → 編集継続。
+    state.apply({ type: 'deleteRows', rowIds: [row('r1')] });
+    session.noteServerUpdate();
+    expect(session.getEditingTarget()).not.toBeNull();
+
+    // 利用者が commit（変換確定 → Enter）。compositionend の Enter と commit の Enter を区別するため keyup を挟む。
+    // ここで初めて退避（ドラフト保持）・submit はしない。
+    session.handleEvent({ type: 'compositionend', data: 'メモ' });
+    session.handleEvent({ type: 'input', value: 'メモ', isComposing: false });
+    session.handleEvent({ type: 'keyup', key: 'Enter', isComposing: false });
+    session.handleEvent({ type: 'keydown', key: 'Enter', isComposing: false });
+
+    expect(submitted).toHaveLength(0); // 無効 RowId へは submit しない
+    expect(session.divertedDrafts().map((d) => d.draft)).toContain('メモ');
+    expect(session.divertedDrafts().every((d) => d.reason === 'target-deleted')).toBe(true);
+  });
+
+  it('削除後に Enter で Commit しても無効 RowId へは submit せず退避（防御・非 IME）', () => {
     const state = createDocState([insertRows(null, ['r0', 'r1'])]);
     const submitted: SetCellsOperation[] = [];
     const fake = createFakePort();

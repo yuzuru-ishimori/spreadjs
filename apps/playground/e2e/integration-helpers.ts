@@ -56,6 +56,7 @@ export interface Snapshot {
   divertedCount: number;
   knownPresenceCount: number;
   isConflicting: boolean;
+  isTargetLost: boolean;
   isComposing: boolean;
   draft: string;
   activeCell: { row: number; col: number };
@@ -102,6 +103,7 @@ export async function snapshot(page: Page): Promise<Snapshot> {
       divertedCount: call<number>('divertedCount'),
       knownPresenceCount: call<number>('knownPresenceCount'),
       isConflicting: call<boolean>('isConflicting'),
+      isTargetLost: call<boolean>('isTargetLost'),
       isComposing: call<boolean>('isComposing'),
       draft: call<string>('draft'),
       activeCell: call<{ row: number; col: number }>('activeCell'),
