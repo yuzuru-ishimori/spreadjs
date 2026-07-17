@@ -1,6 +1,6 @@
 {
   "_doc": "機能カタログの単一データ源（DD-017-2 D2）。正本は doc/plan/phase1-dd-roadmap.md §4／stage2-backlog.md／roadmap §6。DD完了時に本ファイルを更新する（AGENTS.md ドキュメント更新義務）。status: available=提供中 / planned=開発予定 / out-of-scope=対象外。",
-  "updated": "2026-07-16",
+  "updated": "2026-07-17",
   "stage": {
     "current": "Stage 1「社内SDK Alpha」到達",
     "date": "2026-07-15"
@@ -128,11 +128,12 @@
     },
     {
       "id": "clipboard",
-      "title": "コピー&ペースト",
-      "status": "planned",
-      "summary": "範囲選択してコピー・貼り付け。型変換・複数セルの一括貼り付け・競合検出・元に戻す（Undo）まで一貫して扱います。",
-      "source": "DD-020（stage2-backlog §1）",
-      "meta": "Stage 2 先頭"
+      "title": "コピー&ペースト・元に戻す",
+      "status": "available",
+      "summary": "範囲選択してコピー・切り取り・貼り付け。型変換（数値/日付/文字列）・1セルの敷き詰め貼り付け・Excel との相互貼り付け（TSV）・競合検出（他ユーザーの先行変更は全体拒否で通知）・元に戻す/やり直す（Undo/Redo）まで一貫して扱います。貼り付けは全成功か全失敗で、黙って部分適用しません。",
+      "source": "DD-020・DD-020-1・DD-020-2・DD-020-3",
+      "meta": "10,000セル貼り付け ローカル適用 中央値50ms（目標250〜500ms）／実 Clipboard API E2E・OCC 2クライアント検証済み",
+      "demo": "./demo.html?scenario=clipboard"
     },
     {
       "id": "row-ops",

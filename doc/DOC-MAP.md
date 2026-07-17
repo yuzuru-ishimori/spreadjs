@@ -60,6 +60,7 @@
 | `doc/adr/0022-zero-runtime-dependency-core.md` | コアはゼロランタイム依存を原則（DD-005/006で実証・Status: Draft・Accepted化はDD-007） |
 | `doc/adr/0023-durable-persistence-and-versioned-snapshot.md` | Durable 永続化契約（fsync後ACK・log正本/snapshot最適化物）とversioned persisted snapshot format v1（checksum封筒・atomic save・fail-fast）（DD-014・Status: Proposed・Codex xhigh P1 findings反映後にAccepted・CG-3進行中） |
 | `doc/adr/0024-client-driven-undo-compensating-setcells.md` | クライアント主導 Undo（補償 SetCells・undoRequest プロトコル不採用の根拠・protocol無変更）とownedRevisionによるR-07対策（DD-020-3・Status: Proposed） |
+| `doc/adr/0020-large-operation-inline-transport.md` | 大量Operation transport（Stage 2=inline＋セル数上限100,000・payload参照方式は不採用の根拠。R-08対策・§14）（DD-020・Status: Accepted） |
 
 ## プロセス・開発規約
 
@@ -79,7 +80,7 @@
 
 | パス | 説明 |
 |------|------|
-| `doc/spec/` | 画面・機能仕様書（テンプレート: `doc/templates/screen-spec-template.md`） |
+| `doc/spec/` | 画面・機能仕様書（テンプレート: `doc/templates/screen-spec-template.md`）。**未作成**（SDK フェーズで対象画面が無いため。画面を持つ consumer 統合＝DD-026 以降で作成する） |
 
 ## DD 設計文書
 
