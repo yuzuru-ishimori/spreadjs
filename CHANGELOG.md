@@ -19,6 +19,20 @@
 
 ### Added
 
+- **grid 行操作の収束・UI 状態整合・性能（Experimental・DD-021-2/DD-021-3）**: 行 Insert/Delete を共同編集で安全にする層を追加した。
+  - **収束保証（DD-021-2）**: 同一アンカーへの同時 Insert はサーバー受付順で**両方の行を保持**して全クライアント収束（意図順は非保証・reject しない）。
+    削除済み行への SetCells は既存 `rejected`（`row-unavailable`/`cell-conflict` 系）経路で通知（サイレント上書きなし）。再 Delete は冪等。
+    reconnect（offline 中の行操作を含む）後も catch-up で収束・二重適用なし。protocol・server・IME 状態機械は無変更。
+  - **K4=IME 編集中の対象行削除（DD-021-2・挙動変更）**: 従来（Alpha/DD-005）は削除受信で**編集を即時中断しドラフトを内部退避**していたが、
+    **編集継続**（draft/textarea/composition 非破壊・行消失インジケーター表示）へ変更した。退避は利用者が**確定（commit）した時点**で行い、
+    公開 `rejected` イベント（`code: 'row-unavailable'`・`operationId` 空文字）＋診断 `draft-diverted` で通知する（単独モードは診断のみ）。
+  - **K3=選択・activeCell の再ベース（DD-021-3）**: リモート/ローカルの行 Insert/Delete 後、activeCell・選択レンジ（ドラッグ中含む）・
+    Enter/Tab 移動先が**行実体（RowId）を追従**する（削除行は最近傍生存行〔下優先→上〕へ縮退・生存行皆無で選択解除）。編集/変換中は
+    editingTarget が追従（I-3 維持）。
+  - **P2-1 性能是正（DD-021-3）**: 単一行 Insert 連発の Θ(N²)（slot 採番の全走査）を O(1) 採番へ是正。実測: 50,000 行文書＋Insert×1,000=
+    合計 128ms（目標 2s）・per-op p95 0.186ms（目標 5ms）・bulk 10,000 行 2.6ms・replay 決定性維持。回帰ガードを CI 常設。
+  - Undo との整合: 削除行に触れる Undo/Redo エントリは実行前に生存検査で拒否・スタックから除去＋既存 `undo-blocked`/`redo-blocked` 通知
+    （行操作自体の Undo は対象外＝計画書 §15.3 MVP後）。
 - **grid 行操作 公開 API（Experimental・DD-021-1）**: 行 Insert/Delete を利用者機能として公開した。
   - **公開 API**: `GridInstance.insertRows({ afterRowId: string | null; count?: number })`（`afterRowId` 直後へ `count` 行〔既定 1〕挿入・
     `afterRowId=null` で先頭）／`GridInstance.deleteRows(rowIds: readonly string[])`（実在行のみ tombstone 化・重複/非現存は無視）。
@@ -30,9 +44,12 @@
   - **Excel 準拠ショートカット**: `Ctrl+Shift+'+'`=アクティブ行の**上**へ 1 行挿入・`Ctrl+'-'`=選択範囲（無選択時は activeCell）の行削除。
     **Navigation 位相かつ非 composing のときだけ**グリッド化し、Editing/Composing 中はブラウザ既定へ委譲する（IME 非干渉・I-3・状態機械へ遷移追加なし）。
   - **削除時の activeCell 縮退**: 自分の削除でアクティブ行が消えたら最近傍生存行（下優先→上）へ移動・選択は生存行へ縮退（生存行皆無なら選択解除）。
-  - **公開語彙追加**: `GRID_CONFLICT_CODES` に `'row-anchor-unknown'`（insert の未知アンカー）・`'row-count-invalid'`（count≦0/非整数）・
-    `'row-delete-empty'`（delete 対象が空/全て非現存）を追加（いずれも submit 前拒否＝`GridConflict.operationId` は空文字・共同編集モードのみ
-    `rejected` 発火／単独モードは診断のみ）。既存コードの意味変更なし（union 追加のみ）。公開 .d.ts snapshot 更新済み（破壊的変更なし）。
+  - **公開語彙追加**: `GRID_CONFLICT_CODES` に `'row-anchor-unknown'`（insert の未知アンカー）・`'row-count-invalid'`（count が **1〜100,000**
+    の整数でない＝上限は SetCells セル数上限と同値の実行前ガード）・`'row-delete-empty'`（delete 対象が空/全て非現存）を追加（いずれも
+    submit 前拒否＝`GridConflict.operationId` は空文字・共同編集モードのみ `rejected` 発火／単独モードは診断のみ）。既存コードの意味変更なし
+    （union 追加のみ）。公開 .d.ts snapshot 更新済み（破壊的変更なし）。
+  - **境界**: boot 未完了時は黙って無視（`setData` と異なり保留適用しない）。接続終端（`connectionState()==='stopped'`）後は no-op（診断のみ・
+    同期 throw しない）。
 - **grid Undo/Redo（Experimental・DD-020-3）**: 確定単位（1 利用者操作＝1 SetCells＝セル確定/貼り付け/cut/範囲クリア）の Undo/Redo を
   **クライアント主導・補償 SetCells**（ADR-0024・protocol 変更なし）で提供した。単独・共同の両モードで同一機構（`submitLocalOperation` 経由）。
   - **キーバインド**: `Ctrl/Cmd+Z`=Undo・`Ctrl+Y`/`Ctrl+Shift+Z`/`Cmd+Shift+Z`=Redo。**Navigation 位相かつ非 composing のときだけ**グリッド

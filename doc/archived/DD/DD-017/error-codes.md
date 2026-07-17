@@ -29,7 +29,7 @@
 | code | 由来（内部） | 意味 |
 |------|------------|------|
 | `cell-conflict` | `stale-cell-revision` | 同一セルの同時編集競合 |
-| `row-unavailable` | `target-row-deleted` / `unknown-row` / `unknown-anchor` | 対象行が存在しない/削除済み |
+| `row-unavailable` | `target-row-deleted` / `unknown-row` / `unknown-anchor`／K4 draft 退避（DD-021-2・クライアント判定） | 対象行が存在しない/削除済み。**K4**: IME/編集中に対象行が削除され利用者が確定した場合の draft 退避通知にも使う（submit なし＝`operationId` 空文字・診断 `draft-diverted` 併発・単独モードは診断のみ） |
 | `column-unavailable` | `unknown-column` | 対象列が存在しない |
 | `revision-stale` | `invalid-base-revision` | ベースリビジョン不整合 |
 | `sequence-violation` | `client-sequence-violation` | クライアント送信連番違反 |
@@ -42,7 +42,7 @@
 | `undo-blocked` | `stale-cell-revision`（補償 op・DD-020-3） | Undo の補償 SetCells が OCC で全体 reject（対象セルが他者に後続変更された）。強制 Undo せず通知（`operationId` は補償 op の ID） |
 | `redo-blocked` | `stale-cell-revision`（補償 op・DD-020-3） | Redo の補償 SetCells が OCC で全体 reject（対象セルがさらに変更された）。通知のみ |
 | `row-anchor-unknown` | クライアント実行前検査（DD-021-1） | `insertRows` の `afterRowId` が未知アンカー。submit 前に拒否され `operationId` は空文字。単独モードは診断のみ |
-| `row-count-invalid` | クライアント実行前検査（DD-021-1） | `insertRows` の `count` が 1 未満/非整数。submit 前に拒否され `operationId` は空文字。単独モードは診断のみ |
+| `row-count-invalid` | クライアント実行前検査（DD-021-1・上限は Fable レビュー反映） | `insertRows` の `count` が **1〜100,000 の整数でない**（上限=SetCells セル数上限と同値の実行前ガード）。submit 前に拒否され `operationId` は空文字。単独モードは診断のみ |
 | `row-delete-empty` | クライアント実行前検査（DD-021-1） | `deleteRows` の対象が空/全て非現存（削除対象なし）。submit 前に拒否され `operationId` は空文字。単独モードは診断のみ |
 | `unknown` | 未写像/未知 | 上記いずれにも該当しない（前方互換フォールバック） |
 

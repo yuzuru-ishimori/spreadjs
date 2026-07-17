@@ -138,10 +138,11 @@
     {
       "id": "row-ops",
       "title": "行の挿入・削除",
-      "status": "planned",
-      "summary": "共同編集中でも整合が崩れない行操作。複数人が同時に行を挿入・削除してもデータは正しく収束します。",
-      "source": "DD-021（stage2-backlog §1・3分割予定）",
-      "meta": "Stage 2"
+      "status": "available",
+      "summary": "共同編集中でも整合が崩れない行操作。複数人が同時に行を挿入・削除してもデータは正しく収束し（同時挿入は両方保持）、削除された行を編集中でも入力中の文字は失われません。挿入・削除後もカーソル・選択範囲は同じ行を指し続けます。API（insertRows/deleteRows）とショートカット（Ctrl+Shift+「+」/Ctrl+「-」）の両方で操作できます。",
+      "source": "DD-021・DD-021-1・DD-021-2・DD-021-3（K3/K4/P2-1 回収）",
+      "meta": "5万行文書で行挿入1,000連発 合計128ms（目標2s）実測／収束・reconnect・randomized 検証済み",
+      "demo": "./demo.html?scenario=row-ops"
     },
     {
       "id": "formula",
