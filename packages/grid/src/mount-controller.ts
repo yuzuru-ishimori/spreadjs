@@ -46,6 +46,7 @@ import type { ClipboardDocumentPort } from './clipboard-controller';
 import { computeResizeSize, resizeHitTest } from './resize-interaction';
 import type { ResizeTarget } from './resize-interaction';
 import { createSelectionController, decideNavigationIntercept } from './selection-controller';
+import { decideRowStructureKey, reduceActiveRowTarget, resolveDeleteTargets } from './row-operations';
 import { createUndoController, decideUndoRedoKey } from './undo-stack';
 import type { UndoPatch } from './undo-stack';
 import { GridBootError, toGridConflictCode } from './error-codes';
@@ -64,6 +65,7 @@ import type {
   GridInstance,
   GridMountOptions,
   GridMountTarget,
+  GridRowStructureChange,
   GridStandaloneData,
   GridStandaloneMountOptions,
 } from './index';
@@ -905,6 +907,120 @@ export function createGridController(target: GridMountTarget, options: GridMount
     }
   }
 
+  // ---- 行操作（Insert/Delete）公開層（DD-021-1）----
+  /** 行構造変更を利用側へ通知する（両モード共通・standalone の保存材料。cell-commit はセル値専用のまま）。 */
+  function emitRowStructureChange(change: GridRowStructureChange): void {
+    emit({ type: 'row-structure-change', change });
+  }
+
+  /**
+   * 行操作の実行前拒否の通知（DD-020 の notifyPreExecutionReject と同型）。診断は常に出す。公開 rejected は
+   * **共同編集モードのみ**発火する（standalone は client 実行前拒否を server 競合経路へ混ぜない＝DD-024 契約・
+   * consumer が collab 競合と誤認しないため）。operationId は空＝未 submit。
+   */
+  function notifyRowReject(code: GridConflictCode, diagCode: string, detail: string): void {
+    diag.emit('warn', diagCode, detail);
+    if (isStandalone) {
+      return;
+    }
+    emit({
+      type: 'rejected',
+      pendingCount: sync?.session.pendingCount ?? 0,
+      conflict: { operationId: '', reason: 'rejected', code },
+    });
+  }
+
+  /**
+   * 行挿入（公開 API・ショートカット共有）。afterRowId 直後へ count 行を挿入する。新 RowId は crypto.randomUUID。
+   * count≦0/非整数・未知アンカーは submit せず実行前拒否（AC8）。楽観適用直後に row-structure-change を発火する。
+   */
+  function performInsertRows(afterRowId: string | null, count: number): void {
+    const backend = sync;
+    if (backend === undefined) {
+      return; // boot 未完了 → 黙って無視（既存 API 流儀・setData と同型）
+    }
+    if (!Number.isInteger(count) || count <= 0) {
+      notifyRowReject('row-count-invalid', 'insert-count-invalid', `insertRows: count=${count}（1 以上の整数が必要）`);
+      return;
+    }
+    const anchor = afterRowId === null ? null : createRowId(afterRowId);
+    const rowIds = Array.from({ length: count }, () => crypto.randomUUID());
+    const op: InsertRowsOperation = {
+      type: 'insertRows',
+      afterRowId: anchor,
+      rows: rowIds.map((id) => ({ rowId: createRowId(id) })),
+    };
+    // アンカー検証は view（committed＋own pending）に対して行う（own 楽観挿入直後のアンカーも有効）。
+    // UUID 採番ゆえ duplicate-row は起きず、違反は unknown-anchor のみ→公開 row-anchor-unknown へ写す。
+    if (validateOperation(backend.session.viewDocument, op).length > 0) {
+      notifyRowReject('row-anchor-unknown', 'insert-anchor-unknown', `insertRows: 未知アンカー afterRowId=${afterRowId}`);
+      return;
+    }
+    backend.session.submitLocalOperation(op);
+    // 構造 dirty を確実に立てて楽観再描画する（standalone は submit 内で既に立つ・冪等。collab は server echo を待たず即描画）。
+    backend.view.noteOperation(op);
+    emitRowStructureChange({ kind: 'insert', afterRowId, rowIds });
+  }
+
+  /**
+   * 行削除（公開 API・ショートカット共有）。実在（非 tombstone）行のみ tombstone 化し row-structure-change を発火する。
+   * 対象皆無は実行前拒否（AC8）。削除後、アクティブ行が消えていれば最近傍生存行（下優先→上）へ縮退する（親④・AC5）。
+   */
+  function performDeleteRows(requested: readonly string[]): void {
+    const backend = sync;
+    if (backend === undefined) {
+      return;
+    }
+    const oldOrder = displayRowOrder(backend.session.viewDocument).map(String);
+    const targets = resolveDeleteTargets(oldOrder, requested);
+    if (targets.length === 0) {
+      notifyRowReject('row-delete-empty', 'delete-empty', `deleteRows: 削除対象なし（要求 ${requested.length} 件）`);
+      return;
+    }
+    const op: DeleteRowsOperation = { type: 'deleteRows', rowIds: targets.map((id) => createRowId(id)) };
+    // activeCell 縮退の判定材料を submit 前に採取する（削除前の表示行順・active index）。
+    const activeBefore = editor?.session.getActiveCell();
+    backend.session.submitLocalOperation(op);
+    backend.view.noteOperation(op);
+    emitRowStructureChange({ kind: 'delete', rowIds: targets });
+    reduceActiveCellAfterDelete(backend, oldOrder, targets, activeBefore);
+  }
+
+  /**
+   * ローカル削除後の activeCell 縮退（親④・AC5）。active 行が消えたら最近傍生存行（下→上）へ、生存行皆無なら
+   * 選択解除。active 行が生存でも index シフトすれば同一 RowId の新 index へ再シートする（削除で index がずれるため）。
+   * composition 中は触らない（I-3）。選択レンジは pointerdownCell→onChange の syncWithEditor が単一選択へ縮退する。
+   */
+  function reduceActiveCellAfterDelete(
+    backend: GridBackend,
+    oldOrder: readonly string[],
+    deletedIds: readonly string[],
+    activeBefore: CellPosition | undefined,
+  ): void {
+    if (editor === undefined || activeBefore === undefined || editor.session.isComposing()) {
+      return;
+    }
+    const target = reduceActiveRowTarget(oldOrder, activeBefore.row, new Set(deletedIds));
+    const newOrder = displayRowOrder(backend.session.viewDocument).map(String);
+    if (target === null) {
+      editor.pointerdownCell(null); // 生存行なし → 選択解除
+      return;
+    }
+    const targetRowId = target === 'unchanged' ? oldOrder[activeBefore.row] : target.rowId;
+    if (targetRowId === undefined) {
+      return;
+    }
+    const newIndex = newOrder.indexOf(targetRowId);
+    if (newIndex < 0) {
+      editor.pointerdownCell(null); // 追従先が消えた（防御）→ 選択解除
+      return;
+    }
+    if (target === 'unchanged' && newIndex === activeBefore.row) {
+      return; // 生存かつ index 不変 → activeCell は触らない（周期リフレッシュでカーソルを飛ばさない）
+    }
+    editor.pointerdownCell({ row: newIndex, col: activeBefore.col });
+  }
+
   /**
    * backend（共同編集 SessionSync / 単独 StandaloneSession）を描画層・IME へ結線する（DD-024 で boot から抽出）。
    * `sync` が設定済みであることを前提に、base-layer・docPort・editor を構築し syncLayout → backend.start() する。
@@ -1202,6 +1318,38 @@ export function createGridController(target: GridMountTarget, options: GridMount
           performRedo();
           return true;
         }
+        // DD-021-1: Ctrl+Shift+'+'=アクティブ行の上へ挿入・Ctrl+'-'=選択行削除（Navigation 位相かつ非 composing のみ・親⑦）。
+        // Editing/Composing 中は decideRowStructureKey が 'none' を返しブラウザ既定へ委譲する（IME 不変条件・I-3）。
+        const rowKey = decideRowStructureKey({
+          key: input.key,
+          ctrlKey: input.ctrlKey,
+          metaKey: input.metaKey,
+          shiftKey: input.shiftKey,
+          altKey: input.altKey,
+          eventComposing: input.isComposing,
+          sessionComposing: current.session.isComposing(),
+          phase: current.session.getPhase(),
+        });
+        if (rowKey === 'insert') {
+          // アクティブ行の**上**へ挿入 → afterRowId=直上行（先頭行なら null）。消費（ブラウザのズームを止める）。
+          const active = current.session.getActiveCell();
+          const prevId = active.row <= 0 ? undefined : backendNow.view.rowIdAt(active.row - 1);
+          performInsertRows(prevId === undefined ? null : String(prevId), 1);
+          return true;
+        }
+        if (rowKey === 'delete') {
+          // 選択範囲（無ければ activeCell）の行帯 [rowStart,rowEnd) を RowId 列へ解決して削除。消費。
+          const range = selectionCtrl.selectedRange(current.session.getActiveCell());
+          const rowIds: string[] = [];
+          for (let r = range.rowStart; r < range.rowEnd; r += 1) {
+            const id = backendNow.view.rowIdAt(r);
+            if (id !== undefined) {
+              rowIds.push(String(id));
+            }
+          }
+          performDeleteRows(rowIds);
+          return true;
+        }
         const decision = decideNavigationIntercept({
           key: input.key,
           shiftKey: input.shiftKey,
@@ -1357,6 +1505,12 @@ export function createGridController(target: GridMountTarget, options: GridMount
       }
       // 共同編集モードでは no-op（診断のみ）。
       diag.emit('warn', 'setData', 'setData は単独モード専用（共同編集モードでは無視）');
+    },
+    insertRows(options: { readonly afterRowId: string | null; readonly count?: number }) {
+      performInsertRows(options.afterRowId, options.count ?? 1);
+    },
+    deleteRows(rowIds: readonly string[]) {
+      performDeleteRows(rowIds);
     },
     destroy() {
       if (destroyed) {

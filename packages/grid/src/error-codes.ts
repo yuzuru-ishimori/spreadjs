@@ -34,6 +34,9 @@ export const GRID_CONFLICT_CODES = [
   'paste-out-of-bounds', // 貼り付け矩形が行/列端を越える→全体拒否（切り捨てず・DD-020-2・submit なし）
   'undo-blocked', // Undo の補償 SetCells が OCC（対象セルが他者に後続変更された）で全体 reject（DD-020-3・強制 Undo なし）
   'redo-blocked', // Redo の補償 SetCells が OCC で全体 reject（DD-020-3・対象セルがさらに変更された）
+  'row-anchor-unknown', // insertRows の afterRowId が未知アンカー→実行前拒否（DD-021-1・submit なし）
+  'row-count-invalid', // insertRows の count が 1 未満/非整数→実行前拒否（DD-021-1・submit なし）
+  'row-delete-empty', // deleteRows の対象が空/全て非現存→実行前拒否（DD-021-1・submit なし）
   'unknown', // 未知/未写像（前方互換フォールバック）
 ] as const;
 export type GridConflictCode = (typeof GRID_CONFLICT_CODES)[number];

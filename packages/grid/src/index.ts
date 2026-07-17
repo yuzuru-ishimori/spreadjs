@@ -77,7 +77,24 @@ export type GridEvent =
    * 決定②）。利用側がこれを受けて認証・保存を行い（責務境界＝roadmap §6）、保存失敗時は `setData` 再注入で
    * 見た目を戻す。共同編集モードでは発火しない（確定は既存の pending/connection 経路）。
    */
-  | { readonly type: 'cell-commit'; readonly changes: readonly GridCellCommitChange[] };
+  | { readonly type: 'cell-commit'; readonly changes: readonly GridCellCommitChange[] }
+  /**
+   * 行構造変更（Insert/Delete）の確定通知（Experimental 0.x・DD-021-1・**両モード共通**）。利用側が行う
+   * ローカル行操作（`insertRows`/`deleteRows`・Excel 準拠ショートカット）の楽観適用時に発火する。
+   * **単独グリッドモードでは本イベントが行構造の保存材料**（cell-commit がセル値専用なのに対し、本イベントは
+   * 行の増減を伝える）。共同編集モードでも発火するが行構造の永続化はサーバー責務（本イベントは通知のみ・
+   * grid は書き戻さない）。他クライアント起因の行構造変更の通知・選択再ベースは後続（DD-021-2/3）。
+   */
+  | { readonly type: 'row-structure-change'; readonly change: GridRowStructureChange };
+
+/**
+ * 行構造変更の内容（DD-021-1）。insert は挿入アンカー（`afterRowId`・null=先頭）と新規 RowId 列（表示順・
+ * `crypto.randomUUID` 採番）、delete は削除された RowId 列（実在・重複除去済み）。利用側はこれで行の増減を
+ * 再構成できる（RowId は文字列・内部 RowId 型は露出しない・R7）。
+ */
+export type GridRowStructureChange =
+  | { readonly kind: 'insert'; readonly afterRowId: string | null; readonly rowIds: readonly string[] }
+  | { readonly kind: 'delete'; readonly rowIds: readonly string[] };
 
 /** cell-commit の 1 セル変更（DD-024）。value/previousValue は表示文字列（内部 CellScalar は露出しない・R7）。 */
 export interface GridCellCommitChange {
@@ -191,6 +208,20 @@ export interface GridInstance {
    * 差し替わりうる（利用側は編集完了後の再注入を推奨）。
    */
   setData(data: GridStandaloneData): void;
+  /**
+   * 行を挿入する（Experimental 0.x・DD-021-1・両モード）。`afterRowId` の直後へ `count` 行（既定 1）を挿入する
+   * （`afterRowId=null` で先頭へ）。新 RowId は `crypto.randomUUID` で採番し `row-structure-change`（kind=insert）で
+   * 返す。**同期 throw しない**（既存 API 流儀）: `count≦0`/非整数・未知アンカーは実行前拒否として `rejected`
+   * イベント（共同編集モード・`operationId` は空文字）＋診断で通知し、文書は無変更（単独モードは診断のみ）。
+   * boot 未完了時は無視する（`setData` と同型）。
+   */
+  insertRows(options: { readonly afterRowId: string | null; readonly count?: number }): void;
+  /**
+   * 行を削除する（Experimental 0.x・DD-021-1・両モード）。`rowIds` のうち実在（非 tombstone）の行を tombstone 化し
+   * `row-structure-change`（kind=delete）で通知する（重複・非現存は無視）。削除でアクティブ行が消えたら
+   * 最近傍生存行（下優先→上）へ activeCell を縮退する。実在対象が皆無なら実行前拒否（`rejected`/診断・文書無変更）。
+   */
+  deleteRows(rowIds: readonly string[]): void;
   /** グリッドを破棄し DOM/listener/RAF/WS/canvas/textarea を解放する（再mountで leak しない）。 */
   destroy(): void;
 }

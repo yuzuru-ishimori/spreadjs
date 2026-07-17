@@ -41,6 +41,9 @@
 | `paste-out-of-bounds` | クライアント実行前検査（DD-020-2） | 貼り付け矩形が行/列端を越える（切り捨てず全体拒否）。submit 前に拒否され `operationId` は空文字 |
 | `undo-blocked` | `stale-cell-revision`（補償 op・DD-020-3） | Undo の補償 SetCells が OCC で全体 reject（対象セルが他者に後続変更された）。強制 Undo せず通知（`operationId` は補償 op の ID） |
 | `redo-blocked` | `stale-cell-revision`（補償 op・DD-020-3） | Redo の補償 SetCells が OCC で全体 reject（対象セルがさらに変更された）。通知のみ |
+| `row-anchor-unknown` | クライアント実行前検査（DD-021-1） | `insertRows` の `afterRowId` が未知アンカー。submit 前に拒否され `operationId` は空文字。単独モードは診断のみ |
+| `row-count-invalid` | クライアント実行前検査（DD-021-1） | `insertRows` の `count` が 1 未満/非整数。submit 前に拒否され `operationId` は空文字。単独モードは診断のみ |
+| `row-delete-empty` | クライアント実行前検査（DD-021-1） | `deleteRows` の対象が空/全て非現存（削除対象なし）。submit 前に拒否され `operationId` は空文字。単独モードは診断のみ |
 | `unknown` | 未写像/未知 | 上記いずれにも該当しない（前方互換フォールバック） |
 
 ## debug logging hook（`GridMountOptions.onDiagnostic`）

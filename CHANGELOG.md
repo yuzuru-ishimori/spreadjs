@@ -19,6 +19,20 @@
 
 ### Added
 
+- **grid 行操作 公開 API（Experimental・DD-021-1）**: 行 Insert/Delete を利用者機能として公開した。
+  - **公開 API**: `GridInstance.insertRows({ afterRowId: string | null; count?: number })`（`afterRowId` 直後へ `count` 行〔既定 1〕挿入・
+    `afterRowId=null` で先頭）／`GridInstance.deleteRows(rowIds: readonly string[])`（実在行のみ tombstone 化・重複/非現存は無視）。
+    いずれも**同期 throw しない**（既存 API 流儀）。新 RowId は `crypto.randomUUID` で採番する。
+  - **新イベント `row-structure-change`（両モード共通）**: `{ type: 'row-structure-change'; change: GridRowStructureChange }`。
+    `GridRowStructureChange = { kind: 'insert'; afterRowId: string | null; rowIds: readonly string[] } | { kind: 'delete'; rowIds: readonly string[] }`。
+    ローカル行操作の楽観適用時に発火する。**単独グリッドモードではこれが行構造の保存材料**（`cell-commit` はセル値専用のまま）。
+    共同編集モードでも発火するが行構造の永続化はサーバー責務（通知のみ・grid は書き戻さない）。他クライアント起因の通知・選択再ベースは後続（DD-021-2/3）。
+  - **Excel 準拠ショートカット**: `Ctrl+Shift+'+'`=アクティブ行の**上**へ 1 行挿入・`Ctrl+'-'`=選択範囲（無選択時は activeCell）の行削除。
+    **Navigation 位相かつ非 composing のときだけ**グリッド化し、Editing/Composing 中はブラウザ既定へ委譲する（IME 非干渉・I-3・状態機械へ遷移追加なし）。
+  - **削除時の activeCell 縮退**: 自分の削除でアクティブ行が消えたら最近傍生存行（下優先→上）へ移動・選択は生存行へ縮退（生存行皆無なら選択解除）。
+  - **公開語彙追加**: `GRID_CONFLICT_CODES` に `'row-anchor-unknown'`（insert の未知アンカー）・`'row-count-invalid'`（count≦0/非整数）・
+    `'row-delete-empty'`（delete 対象が空/全て非現存）を追加（いずれも submit 前拒否＝`GridConflict.operationId` は空文字・共同編集モードのみ
+    `rejected` 発火／単独モードは診断のみ）。既存コードの意味変更なし（union 追加のみ）。公開 .d.ts snapshot 更新済み（破壊的変更なし）。
 - **grid Undo/Redo（Experimental・DD-020-3）**: 確定単位（1 利用者操作＝1 SetCells＝セル確定/貼り付け/cut/範囲クリア）の Undo/Redo を
   **クライアント主導・補償 SetCells**（ADR-0024・protocol 変更なし）で提供した。単独・共同の両モードで同一機構（`submitLocalOperation` 経由）。
   - **キーバインド**: `Ctrl/Cmd+Z`=Undo・`Ctrl+Y`/`Ctrl+Shift+Z`/`Cmd+Shift+Z`=Redo。**Navigation 位相かつ非 composing のときだけ**グリッド
