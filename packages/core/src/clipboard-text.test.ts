@@ -174,9 +174,13 @@ describe('round-trip: serialize→parse で値が保存される（AC2・fuzz）
 
 // ---- 4. fixture ファイル経由の parse（実 Excel 方言の書き起こし＝L5 証跡） ----------------------
 
-describe('fixture 経由 parse（doc/DD/DD-020-2/fixtures/）', () => {
+describe('fixture 経由 parse（doc/archived/DD/DD-020-2/fixtures/）', () => {
   function readFixture(name: string): string {
-    return readFileSync(fileURLToPath(new URL(`../../../doc/DD/DD-020-2/fixtures/${name}`, import.meta.url)), 'utf8');
+    // DD-020-2 はアーカイブ済み（fixtures は添付フォルダごと doc/archived/ へ移設）。
+    return readFileSync(
+      fileURLToPath(new URL(`../../../doc/archived/DD/DD-020-2/fixtures/${name}`, import.meta.url)),
+      'utf8',
+    );
   }
 
   it('jagged.tsv: 列数不整合の手書きテキストが jagged matrix になる（欠けは paste で skip）', () => {

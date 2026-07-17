@@ -6,8 +6,8 @@
 // 持たず、代わりに destroy() で全リソース（RAF/interval/listener/ResizeObserver/WS/canvas/textarea）を解放する
 // （再mountで leak しない・AC2）④E2E 用 introspection は debugRegistry 経由（test-support）で露出する。
 
-import { documentHash, displayRowOrder, getCell, parseClipboardText } from '@nanairo-sheet/core';
-import type { DeleteRowsOperation, InsertRowsOperation, SetCellsOperation } from '@nanairo-sheet/core';
+import { cloneCellScalar, documentHash, displayRowOrder, getCell, parseClipboardText, validateOperation } from '@nanairo-sheet/core';
+import type { DeleteRowsOperation, InsertRowsOperation, SetCellsOperation, SheetDocument } from '@nanairo-sheet/core';
 import { createColumnId, createDocumentId, createRowId } from '@nanairo-sheet/types';
 import type { ColumnId, OperationId, RowId } from '@nanairo-sheet/types';
 import type { Clock, IdGenerator, PresenceUpdate, SessionEvent } from '@nanairo-sheet/collab';
@@ -46,6 +46,8 @@ import type { ClipboardDocumentPort } from './clipboard-controller';
 import { computeResizeSize, resizeHitTest } from './resize-interaction';
 import type { ResizeTarget } from './resize-interaction';
 import { createSelectionController, decideNavigationIntercept } from './selection-controller';
+import { createUndoController, decideUndoRedoKey } from './undo-stack';
+import type { UndoPatch } from './undo-stack';
 import { GridBootError, toGridConflictCode } from './error-codes';
 import type { GridConflictCode } from './error-codes';
 import { createDiagnosticSink } from './diagnostics';
@@ -124,6 +126,8 @@ export function createGridController(target: GridMountTarget, options: GridMount
   let selection: CellRange | null = null;
   // 矩形範囲選択の所有者（DD-020-1 案X）。activeCell の所有は editor-state-machine のまま・レンジのみここが持つ。
   const selectionCtrl = createSelectionController();
+  // Undo/Redo スタックの所有者（DD-020-3）。確定単位（1 op）ごとに逆値を保持し補償 SetCells を生成する。
+  const undoCtrl = createUndoController();
   let firstDataDrawn = false;
   let lastSessionEvent: SessionEvent | undefined;
   let resolvedDocumentId = options.documentId;
@@ -786,6 +790,21 @@ export function createGridController(target: GridMountTarget, options: GridMount
           if (event.type === 'connection' && event.state === 'online') {
             hasEverConnected = true; // 以降の transport エラーは connect error にしない（reconnect＝offline で表現）
           }
+          if (event.type === 'rejected') {
+            // DD-020-3: 補償 op（undo/redo）の reject は undo-blocked/redo-blocked へ写像して通知する
+            // （エントリは onRejected 内で除去＝既定案 a）。元 op（未 ACK）の reject は onRejected が除去し undefined を返す
+            // → 従来どおり cell-conflict 等へ写像して emit する（consumer は競合を従来語彙で受ける）。
+            const block = undoCtrl.onRejected(event.entry.operationId);
+            if (block !== undefined) {
+              diag.emit('warn', 'rejected', `code=${block} op=${String(event.entry.operationId)}`);
+              emit({
+                type: 'rejected',
+                pendingCount: event.pendingCount,
+                conflict: { operationId: String(event.entry.operationId), reason: 'rejected', code: block },
+              });
+              return;
+            }
+          }
           const gridEvent = toGridEvent(event);
           if (gridEvent.type === 'connection') {
             diag.emit('info', 'connection', `state=${gridEvent.state} pending=${gridEvent.pendingCount}`);
@@ -813,6 +832,10 @@ export function createGridController(target: GridMountTarget, options: GridMount
         metrics.mark('firstSync');
         editor?.session.noteServerUpdate();
       },
+      // DD-020-3: 自分の SetCells op が committed へ確定した（own echo）→ Undo の ownedRevision を正確な revision で更新。
+      onOwnSetCellsCommitted: (operationId, revision) => {
+        undoCtrl.onCommitted(operationId, revision);
+      },
     });
 
     attachBackendRendering();
@@ -831,11 +854,55 @@ export function createGridController(target: GridMountTarget, options: GridMount
     if (backend === undefined) {
       return;
     }
+    // DD-020-3: submit 直前に **view（committed＋own pending）** から逆値（前値）を捕捉する（単一記録点＝両モード同一経路）。
+    // committed ではなく view を使うのは、直前の未 ACK 楽観編集を飛ばさないため（Codex P1: 連続編集の逆値正しさ）。
+    const patches = captureUndoPatches(backend.session.viewDocument, op);
+    const id = submitToBackend(backend, op);
+    recordUndoEntry(backend, patches, id);
+    return id;
+  }
+
+  /** SetCells を backend へ submit し wrap 行高を再計算する低レベル経路（元操作・補償操作の両方が使う）。 */
+  function submitToBackend(backend: GridBackend, op: SetCellsOperation): OperationId | void {
     const id = backend.session.submitLocalOperation(op);
     if (wrapEnabled) {
       backend.view.recomputeAutoRowHeightsForRows(op.changes.map((c) => c.rowId));
     }
     return id;
+  }
+
+  /** op の各対象セルについて submit 直前 view の値を逆値（before）・op の設定値を順値（after）として組む（DD-020-3）。 */
+  function captureUndoPatches(source: SheetDocument, op: SetCellsOperation): UndoPatch[] {
+    return op.changes.map((change) => ({
+      rowId: change.rowId,
+      columnId: change.columnId,
+      before: cloneCellScalar(getCell(source, change.rowId, change.columnId)?.value ?? { kind: 'blank' }),
+      after: cloneCellScalar(change.value),
+    }));
+  }
+
+  /** committed のセル lastChangedRevision（未書込=0）。standalone 即時確定 revision の読取に使う（DD-020-3）。 */
+  function cellRevision(committed: SheetDocument, rowId: RowId, columnId: ColumnId): number {
+    return getCell(committed, rowId, columnId)?.lastChangedRevision ?? 0;
+  }
+
+  /**
+   * 元操作の undo エントリを記録する。standalone は即時確定 revision で ownedRevision を確定・collab は opId で後追い ACK。
+   * collab で submit が同期 reject された op（rebuildView が編集開始 revision の stale を submit 中に判定）は pending に
+   * 残らない → **undo エントリに入れない**（AC5・Codex P2: 誤記録＋redo 誤破棄を防ぐ）。
+   */
+  function recordUndoEntry(backend: GridBackend, patches: UndoPatch[], id: OperationId | void): void {
+    if (patches.length === 0) {
+      return;
+    }
+    if (isStandalone) {
+      const first = patches[0]!;
+      undoCtrl.recordUserOp(null, patches, cellRevision(backend.session.committedDocument, first.rowId, first.columnId));
+      return;
+    }
+    if (id !== undefined && backend.session.pendingOperationIds().some((p) => String(p) === String(id))) {
+      undoCtrl.recordUserOp(id, patches, null);
+    }
   }
 
   /**
@@ -1012,6 +1079,67 @@ export function createGridController(target: GridMountTarget, options: GridMount
           return true;
       }
     };
+    // ---- DD-020-3 Undo/Redo（補償 SetCells・親③）----
+    /**
+     * 補償 SetCells（undo/redo が生成した逆/順値の op）を submit する。**submitSetCells とは別経路**で、
+     * 新規 undo エントリを積まない（積むと無限記録＋redo 破壊になる）。standalone は即時確定ゆえ committed から
+     * revision を読んで即解決し、collab は operationId を紐づけて ACK/reject を待つ（onCommitted/onRejected）。
+     */
+    const submitCompensation = (op: SetCellsOperation): void => {
+      // 事前 OCC 検査（Codex P1）: undo/redo は pendingCount===0 でのみ発火＝committed が唯一の検証基底ゆえ、
+      // validateOperation(committed, op) が submitLocalOperation の同期 reject を正確に予測する。違反があれば submit せず
+      // block 確定する（opId 紐づけ前に同期 reject が observer を発火させ limbo を永久 busy にする問題を回避）。
+      // server だけが知る競合（ローカル未反映＝offline reconnect 等）は submit 後（opId 紐づけ済み）の async reject が拾う。
+      if (validateOperation(backend.session.committedDocument, op).length > 0) {
+        notifyCompensationBlocked(undoCtrl.blockInFlightCompensation(), '');
+        backend.view.markCellDirty();
+        return;
+      }
+      const id = submitToBackend(backend, op);
+      backend.view.markCellDirty(); // 前段消費で editor onChange が走らない → 楽観適用の再描画をここで要求
+      if (isStandalone) {
+        const first = op.changes[0]!;
+        undoCtrl.resolveCompensationCommitted(cellRevision(backend.session.committedDocument, first.rowId, first.columnId));
+      } else if (id !== undefined) {
+        undoCtrl.setCompensationOperationId(id);
+      } else {
+        undoCtrl.abortInFlightCompensation(); // collab で opId 取得不可（stopped 等）→ in-flight を巻き戻す
+      }
+    };
+
+    /** 補償拒否（pre-check stale）の通知。共同編集のみ公開 rejected を発火する（standalone は診断のみ＝DD-024 契約）。 */
+    const notifyCompensationBlocked = (block: 'undo-blocked' | 'redo-blocked' | undefined, operationId: string): void => {
+      if (block === undefined) {
+        return;
+      }
+      diag.emit('warn', 'undo-blocked', `${block} op=${operationId}（実行前 OCC 拒否）`);
+      if (!isStandalone) {
+        emit({ type: 'rejected', pendingCount: backend.session.pendingCount, conflict: { operationId, reason: 'rejected', code: block } });
+      }
+    };
+
+    /** Ctrl/Cmd+Z: 直前の確定操作を補償 SetCells で戻す（空/pending/in-flight/stopped は no-op）。 */
+    const performUndo = (): void => {
+      if (backend.session.isStopped) {
+        return;
+      }
+      const built = undoCtrl.beginUndo(backend.session.pendingCount);
+      if (built !== null) {
+        submitCompensation(built.operation);
+      }
+    };
+
+    /** Ctrl+Y / Ctrl+Shift+Z: Undo の逆（元値の再適用）。 */
+    const performRedo = (): void => {
+      if (backend.session.isStopped) {
+        return;
+      }
+      const built = undoCtrl.beginRedo(backend.session.pendingCount);
+      if (built !== null) {
+        submitCompensation(built.operation);
+      }
+    };
+
     const editorLayout: GridLayout = {
       get rowCount() {
         return backend.view.rowAxis.count();
@@ -1053,6 +1181,26 @@ export function createGridController(target: GridMountTarget, options: GridMount
         const backendNow = sync;
         if (current === undefined || backendNow === undefined) {
           return false;
+        }
+        // DD-020-3: Ctrl/Cmd+Z=Undo・Ctrl+Y/Ctrl+Shift+Z=Redo（Navigation 位相かつ非 composing のみ・親 (b)）。
+        // Editing/Composing 中は decideUndoRedoKey が 'none' を返しブラウザ既定（textarea 内テキスト undo）へ委譲する（I-3）。
+        const undoRedo = decideUndoRedoKey({
+          key: input.key,
+          ctrlKey: input.ctrlKey,
+          metaKey: input.metaKey,
+          shiftKey: input.shiftKey,
+          altKey: input.altKey,
+          eventComposing: input.isComposing,
+          sessionComposing: current.session.isComposing(),
+          phase: current.session.getPhase(),
+        });
+        if (undoRedo === 'undo') {
+          performUndo();
+          return true; // Navigation の Ctrl+Z は消費（空でも textarea 既定 undo にしない）
+        }
+        if (undoRedo === 'redo') {
+          performRedo();
+          return true;
         }
         const decision = decideNavigationIntercept({
           key: input.key,
@@ -1146,6 +1294,9 @@ export function createGridController(target: GridMountTarget, options: GridMount
       return;
     }
     standalone.setData(data);
+    // 文書を丸ごと差し替えた → 旧文書に対する undo/redo 履歴・ownedRevision は無効（別文書の逆値を新文書へ適用すると
+    // standalone は beforeRevision を無視するためサイレント上書き、削除 ID なら throw になる・Codex P1）。全消去する。
+    undoCtrl.clear();
     if (editor === undefined || editor.session.isComposing()) {
       return;
     }
@@ -1267,6 +1418,11 @@ export function createGridController(target: GridMountTarget, options: GridMount
     activeCell: () => editor?.session.getActiveCell() ?? { row: 0, col: 0 },
     selectionRange: () => selectionCtrl.getRange(),
     dragRange: () => selectionCtrl.getDragRange(),
+    // DD-020-3: Undo/Redo 可否・深さ（pending が読めないときは undo 不可側に倒す）。
+    canUndo: () => undoCtrl.canUndo(sync?.session.pendingCount ?? 1),
+    canRedo: () => undoCtrl.canRedo(sync?.session.pendingCount ?? 1),
+    undoDepth: () => undoCtrl.undoDepth(),
+    redoDepth: () => undoCtrl.redoDepth(),
     editingTarget: () => {
       const t = editor?.session.getEditingTarget() ?? null;
       return t === null ? null : { rowId: String(t.rowId), columnId: String(t.columnId) };

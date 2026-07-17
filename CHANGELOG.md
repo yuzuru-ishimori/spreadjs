@@ -19,6 +19,17 @@
 
 ### Added
 
+- **grid Undo/Redo（Experimental・DD-020-3）**: 確定単位（1 利用者操作＝1 SetCells＝セル確定/貼り付け/cut/範囲クリア）の Undo/Redo を
+  **クライアント主導・補償 SetCells**（ADR-0024・protocol 変更なし）で提供した。単独・共同の両モードで同一機構（`submitLocalOperation` 経由）。
+  - **キーバインド**: `Ctrl/Cmd+Z`=Undo・`Ctrl+Y`/`Ctrl+Shift+Z`/`Cmd+Shift+Z`=Redo。**Navigation 位相かつ非 composing のときだけ**グリッド
+    Undo/Redo 化し、Editing/Composing 中はブラウザ既定（textarea 内テキスト undo）へ委譲する（IME 非干渉・I-3）。
+  - **スタック仕様**: 深さ 100（超過は古い順に破棄）・**自分の操作のみ**・セッション内（reload で消える・永続化しない）・pending 中は ACK まで Undo 不可・
+    新規通常操作で Redo スタック破棄。
+  - **競合時（R-07 対策）**: 補償 SetCells は「自分の最後の確定 revision」を beforeRevision に使い、他者が対象セルを後続変更していれば OCC
+    （`stale-cell-revision`）で**全体 reject**（強制 Undo せずサイレント上書きを防ぐ）。単独モードでは OCC 競合が起きないため常に成立する。
+  - **公開語彙追加**: `GRID_CONFLICT_CODES` に `'undo-blocked'`（Undo の補償 op が OCC で全体 reject）・`'redo-blocked'`（Redo の補償 op が
+    OCC で全体 reject）を追加（いずれも `GridConflict.operationId` は補償 op の ID）。既存コードの意味変更なし（union 追加のみ）。公開 .d.ts snapshot 更新済み。
+  - 単独モードの Undo/Redo は cell-commit（SetCells batch 単位）を発火し利用側保存契約（DD-024）と整合する。
 - **grid clipboard copy/cut/paste（Experimental・DD-020-2）**: 常駐 textarea の ClipboardEvent を主経路に、Navigation 位相の
   copy/cut/paste をグリッド Command として提供した（Editing/Composing 位相はブラウザ既定＝textarea 内テキスト編集・IME 非干渉）。
   - **copy**: 選択範囲（未選択時は activeCell 単一）の表示文字列を TSV（text/plain）で書き出す（タブ/改行/`"` を含むセルのみ引用）。

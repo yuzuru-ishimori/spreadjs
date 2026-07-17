@@ -63,6 +63,14 @@ export interface GridDebugApi {
   selectionRange(): GridDebugCellRange | null;
   /** ドラッグ中のライブ矩形（DD-020-1。null=非ドラッグ）。 */
   dragRange(): GridDebugCellRange | null;
+  /** DD-020-3: 現在 Undo 可能か（スタック非空・pending 0・非 in-flight）。 */
+  canUndo(): boolean;
+  /** DD-020-3: 現在 Redo 可能か。 */
+  canRedo(): boolean;
+  /** DD-020-3: Undo スタック深さ。 */
+  undoDepth(): number;
+  /** DD-020-3: Redo スタック深さ。 */
+  redoDepth(): number;
   editingTarget(): GridDebugCellAddress | null;
   rowIdAt(index: number): string | undefined;
   colIdAt(index: number): string | undefined;

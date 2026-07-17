@@ -2,7 +2,7 @@
 
 | 作成日 | 更新日 | ステータス | 補足 |
 |--------|--------|-----------|------|
-| 2026-07-16 | 2026-07-16 | 検討中 | 親=DD-020（3分割の第3子）。前提=DD-020-1/-2 完了（確定単位 chokepoint・range-ops・語彙） |
+| 2026-07-16 | 2026-07-17 | 完了 | 親=DD-020（3分割の第3子）。全AC充足・Codex high 5件反映。ADR-0024 起票。実機統合は親 Phase 4（アーカイブは親完了時） |
 
 ```text
 Risk Class: A
@@ -61,35 +61,44 @@ Evidence Level: full（A区分=L5。Undo 条件マトリクス・再現コマン
 ## タスク一覧
 
 ### Phase 0: 事前精査
-- [ ] 📋 **各Phaseのタスク精査・詳細化**（AC⇔検証対応・対象パス・変更内容の具体性・🔬の有無）
-- [ ] 🧪 **テスト設計（Red）**: Undo 条件マトリクス（単独/共同 × 確定種別〔commit/paste/cut/clear〕× 競合有無 × pending/ACK × Undo/Redo）を `doc/DD/DD-020-3/scenarios.md` へ自然言語で作成。👀 シナリオ確認（フル委譲モード=オーケストレータ確認・結果をログへ記録）
-- [ ] 📐 **実装前詳細化トリガー判定**（判定結果: Phase 1 → 要〔新規モジュール・並行処理=ACK 追跡〕／Phase 2 → 要〔3ファイル超・公開語彙〕）
-- [ ] 🧑‍⚖️ **Codexレビュー要否判定**（判定結果: 必須・effort: high。最終Phaseで本子DD全差分に対し1回。理由=Risk Class ヘッダ）
-- [ ] 😈 **Devil's Advocate調査**（楽観適用中に他 op が挟まった場合の逆値/revision ずれ→OCC が安全側〔拒否〕に倒れることの証明／rollback/replay・reconnect 中の ACK 追跡漏れ／Undo 連打・Undo 中 Undo／cut の Undo=クリアの補償と copy 内容の関係）
+- [x] 📋 **各Phaseのタスク精査・詳細化**（AC⇔検証対応・対象パス・変更内容の具体性・🔬の有無）
+- [x] 🧪 **テスト設計（Red）**: Undo 条件マトリクスを `doc/DD/DD-020-3/scenarios.md` へ作成（U-1〜U-12・UE-1〜UE-8・IV-1/2・AC対応表）。フル委譲モード=オーケストレータ確認で合意扱い
+- [x] 📐 **実装前詳細化トリガー判定**（Phase 1/2 とも要＝設計は §検討内容＋本ログ 2026-07-17 に自己完結記録）
+- [x] 🧑‍⚖️ **Codexレビュー要否判定**（必須・effort high・最終 Phase 1 回。実施＝findings 5件反映）
+- [x] 😈 **Devil's Advocate調査**（下記ログ 2026-07-17・DA表 Phase 0/1/2）
 
 ### Phase 1: undo-stack ロジック（TDD）
-- [ ] **Red**: 合意済み scenarios から `packages/grid/src/undo-stack.test.ts` 作成 → 全件失敗確認
-- [ ] **Green**: `packages/grid/src/undo-stack.ts` 新設（エントリ記録〔transactionId・逆値・revision〕・ACK 追跡で undo-able 化・補償 SetCells 生成・redo・深さ100・新規操作で redo 破棄・拒否時除去）
-- [ ] **Refactor**: 2クライアント競合テスト（既存 collab ハーネスで AC3/AC5）
-- [ ] 🔬 **機械検証**: `npm run test` → 全 green（新規 unit 含む）
-- [ ] 😈 **DA批判レビュー（基準: da-method.md §3.4）**
+- [x] **Red**: scenarios から `packages/grid/src/undo-stack.test.ts` 作成（U-3 で filter 未実装 fail→修正で Green＝テストが実挙動を検証）
+- [x] **Green**: `packages/grid/src/undo-stack.ts` 新設（エントリ記録・ownedRevision で ACK 追跡・補償 SetCells 生成・redo・深さ100・新規操作で redo 破棄・拒否時除去・`decideUndoRedoKey`）
+- [x] **Refactor**: 2クライアント競合＝AC3 は unit U-8（validateOperation で stale 実証）＋collab E2E UE-5／AC5 は unit U-6/U-7
+- [x] 🔬 **機械検証**: `npm run test` → 全 green（undo-stack unit 20 件含む・947 tests）
+- [x] 😈 **DA批判レビュー（基準: da-method.md §3.4）**（下記 DA 表）
 
 ### Phase 2: 配線・E2E・ADR＋Codex
-- [ ] chokepoint hook 配線: DD-020-2 の確定単位記録点へ逆値捕捉を挿入（`packages/grid/src/clipboard-controller.ts`・`packages/grid/src/range-ops.ts`・`packages/grid/src/ime-editing-session.ts` の確定経路）
-- [ ] キーバインド裁定: Ctrl+Z／Ctrl+Y／Ctrl+Shift+Z を Navigation 位相のみ Undo/Redo 化（`packages/grid/src/mount-controller.ts` keydown 前段・Editing/Composing はブラウザ既定）
-- [ ] `packages/grid/src/error-codes.ts` へ undo-blocked 系語彙追加＋`doc/DD/DD-017/error-codes.md` へ登録
-- [ ] ADR ドラフト起票: `doc/adr/` へ「クライアント主導 Undo（補償 SetCells・undoRequest プロトコル不採用の根拠・将来の再検討条件）」（親③の記録・オーケストレータ指示）
-- [ ] `apps/playground/e2e/undo-redo.spec.ts` 新設（基本 undo/redo・redo 破棄・standalone cell-commit 整合・IME 干渉）
-- [ ] `tests/invariants` へ「composition 中 Ctrl+Z 非干渉」ケース追加
-- [ ] 🔬 **機械検証**: `npx playwright test`＋`npm run test:invariants`＋`npm run typecheck && npm run lint` → 全 green
-- [ ] 😈 **DA批判レビュー（基準: da-method.md §3.4）**
-- [ ] Codexレビュー自動実行（本子DD全差分・effort high。依頼書 `doc/DD/DD-020-3/codex-review-request.md`〔Undo 条件マトリクス網羅性・revision 捕捉の正しさ・サイレント上書き経路の有無を明記〕→ `bash scripts/codex-review.sh` → `doc/DD/DD-020-3/codex-review-result.md`）
-- [ ] Codexレビュー指摘への対応、または見送り理由をログに記録
+- [x] chokepoint hook 配線: `mount-controller.ts` の `submitSetCells`（単一記録点）で submit 直前に **view** から逆値捕捉→`recordUndoEntry`。全確定経路（IME commit/範囲クリア/paste/cut）が通過
+- [x] キーバインド裁定: `decideUndoRedoKey`（Ctrl/Cmd+Z=Undo・Ctrl+Y/Ctrl+Shift+Z=Redo）を Navigation 位相のみ・`mount-controller.ts` interceptKeydown 前段。Editing/Composing はブラウザ既定（`integration-editor.ts` に ctrl/meta/alt 追加）
+- [x] `packages/grid/src/error-codes.ts` へ `undo-blocked`/`redo-blocked` 追加＋`doc/archived/DD/DD-017/error-codes.md` へ登録（DD-017 はアーカイブ済み）＋CHANGELOG＋contract snapshot 更新
+- [x] ADR ドラフト起票: `doc/adr/0024-client-driven-undo-compensating-setcells.md`（DOC-MAP 同期）
+- [x] `apps/playground/e2e/undo-redo.spec.ts`（standalone UE-1〜4/7）＋`undo-redo-collab.spec.ts`（collab UE-5/6/8）新設
+- [x] `tests/invariants/ime/undo.invariant.test.ts` へ「composition 中 Ctrl+Z 非干渉」追加
+- [x] 🔬 **機械検証**: playground E2E 49／showcase 3／invariants 49／typecheck／lint（boundary new=0）→ 全 green
+- [x] 😈 **DA批判レビュー（基準: da-method.md §3.4）**（下記 DA 表）
+- [x] Codexレビュー自動実行（本子DD全差分・effort high。`doc/DD/DD-020-3/codex-review-request.md`→`codex-review-result.md`。findings 5件）
+- [x] Codexレビュー指摘への対応（5件全反映・下記ログ 2026-07-17 Codex 節）
 
 ## 引き継ぎ物（→ 親 DD-020 Phase 4）
 
-- 全対象操作（commit/paste/cut/clear）の Undo/Redo 成立＝親の既知制約「範囲クリア・貼り付けの Undo なし」を解消
-- 親 Phase 4 の統合検証（性能計測・features.json 更新・Manual Gate M1〜M3 受付）へ移行可能な状態
+- 全対象操作（commit/paste/cut/clear）の Undo/Redo 成立＝親の既知制約「範囲クリア・貼り付けの Undo なし」を解消。
+- 公開語彙 `undo-blocked`/`redo-blocked` 確立（error-codes.md・CHANGELOG・contract snapshot 更新済み）。ADR-0024 起票（方式・protocol 無変更の根拠）。
+- 親 Phase 4 の統合検証（性能計測・**features.json の clipboard/undo エントリ available 化**・Manual Gate M1〜M3 受付）へ移行可能な状態。features.json は本子DDでは触っていない（親 Phase 4 で一括・指示どおり）。
+
+## 既知の未保証境界（L5・本子DD時点）
+
+- **自分の操作のみ・セッション内**（reload で履歴消滅・計画書 §15.1 MVP）。他クライアント操作の Undo・強制 Undo・永続 Undo 履歴は対象外（ADR-0024）。
+- **再接続中に accepted された自分の op**（own echo を伴わず reconcile 経由で pending 除去）は ownedRevision を確定できず、その op の Undo は保守的に OCC 拒否されうる（サイレント上書きより安全側＝データ喪失なし）。
+- **メモリ**: 逆値は保持エントリ分（深さ 100）の CellScalar を保持。巨大 paste（最大 100,000 セル）を多数履歴に残すとメモリが総セル数に比例して増える。ownedRevision マップはセッション内 distinct 編集セル数に比例（int 1 個/セル・軽微）。
+- **同一セルの重複 pending 編集**: 同一セルを 2 回編集して 1 つ目が未確定のまま 2 つ目を submit すると、2 つ目は committed 由来 beforeRevision（IME startRevision）で先行確定に負けて全体 reject されうる（DD-020-2 既知境界と同旨＝own pending 先行確定）。この場合 2 つ目のエントリは reject で除去される。
+- **in-flight 補償中の並行編集（collab の稀 race）**: 補償 ACK 往復（〜数十 ms）中に新規編集を差し込むと、undo 方向補償は redo 復活抑止（suppressRedoResurrect）で保護するが、redo 方向補償の undo 復帰順序が厳密でない場合がある（非破壊）。standalone（同期）は無影響。
 
 ## ログ
 
@@ -98,14 +107,54 @@ Evidence Level: full（A区分=L5。Undo 条件マトリクス・再現コマン
 - 逆値捕捉の設計: InverseSeed 再利用ではなく chokepoint での submit 前 committed 読み取りへ統一（両モード同一経路・楽観適用との整合は OCC が安全側に倒す）。
 - 本子DD追加の既定案: (a) Undo 拒否エントリ=除去＋通知／(b) Editing/Composing 中 Ctrl+Z=ブラウザ既定（親へ報告済み・オーケストレータ確定対象）。
 
+### 2026-07-17（実装セッション）
+
+- **Phase 0**（ステータス→進行中）: 🧪 scenarios.md 作成（Undo 条件マトリクス U-1〜12・E2E UE-1〜8・不変 IV-1/2）。フル委譲=オーケストレータ確認で合意扱い。
+- **設計自己完結記録（📐）**:
+  - **逆値捕捉**: 確定単位 chokepoint `submitSetCells` で submit 直前に **view（committed＋own pending）** から前値を読む（InverseSeed 不採用＝両モード同一経路）。`recordUndoEntry` が standalone=即時確定 revision／collab=opId 後追い ACK で記録。
+  - **beforeRevision の正しさ（R-07 の要）**: 補償 op の beforeRevision は「元操作確定時 revision の凍結」ではなく **ownedRevision マップ（自分の最後の確定 op がそのセルへ付与した revision）**。ownedRevision は**自分の op の正確な ACK revision**で更新（collab=own echo が運ぶ `envelope.revision`＝`session-sync` の own-echo 検出。committed 事後読取を使わないのは同一 echo batch の他者 op を owned と誤認しないため）。→ 連続同一セル編集の自傷 reject を回避しつつ他者変更は OCC で弾く。
+  - **pending/直列化**: `pendingCount===0` を Undo/Redo の必要条件（「pending op は undo 対象外」＋「in-flight 補償の直列化」を同時に満たす）。
+  - **拒否経路**: 補償 reject＝スタック除去＋`undo-blocked`/`redo-blocked`（既定案 a）。元 op reject＝スタック除去（AC5）。
+- **Phase 1（TDD）**: `undo-stack.ts`（純ロジック）＋`undo-stack.test.ts`（20 件）Green。ADR-0024 起票。
+- **Phase 2（配線・E2E）**: `mount-controller.ts`（chokepoint 逆値捕捉・submitCompensation・performUndo/Redo・keydown 配線・observer の rejected→undo-blocked 写像・standalone 即時確定・debug API）／`session-sync.ts`（own echo 検出 `onOwnSetCellsCommitted`）／`integration-editor.ts`（KeydownInterceptInput 修飾キー）／`error-codes.ts`。E2E: standalone 5・collab 3・invariant 3。全 green（unit 947・playground E2E 49・showcase 3・invariants 49）。
+- **付随修正（DD-020-2 アーカイブの取り残し）**: `packages/core/src/clipboard-text.test.ts` の fixture 参照を `doc/DD/DD-020-2/` → `doc/archived/DD/DD-020-2/`（6fdf753 の移設で dangling→main が既に red だったため是正）。
+- **Codexレビュー（effort high・uncommitted 全差分）: findings 5件 → 全反映**（詳細は下記 Codex 節）。
+- **要判断/停止事由**: なし（protocol 無変更で完遂＝③前提を満たす）。実機統合・features.json available 化・Manual Gate は親 DD-020 Phase 4 へ引き継ぎ。
+
+---
+
+## Codexレビュー記録（effort high・本子DD全差分〔uncommitted〕）
+
+依頼書/結果=`doc/DD/DD-020-3/codex-review-request.md`・`codex-review-result.md`。findings 5件を到達性×実害で仕分け＝**全て妥当・全反映**（false-positive/到達不能なし）。
+
+| # | 指摘 | 判定 | 対応 |
+|---|------|------|------|
+| P1a | queued edits の逆値: 直前の own pending 楽観編集を committed が含まず、undo が 1 編集を飛ばしうる | **妥当＝反映** | 逆値捕捉を committed→**view（committed＋own pending）**へ（`GridBackendSession.viewDocument` 追加）。※同一セルの重複 pending 編集は現行 OCC が 2 つ目を reject する（DD-020-2 既知境界）ため飛ばしの主経路は境界化されるが、逆値は「利用者が見た値=view」が正＝防御的に正す |
+| P1b | 補償 opId 紐づけ前に `submitLocalOperation` が同期 reject → observer が limbo を拾えず永久 busy＋誤コード | **妥当＝反映** | `submitCompensation` に**実行前 OCC 検査**（`validateOperation(committed, op)`。undo は pendingCount===0 でのみ発火＝committed が唯一の検証基底ゆえ同期 reject を正確に予測）。違反なら submit せず `blockInFlightCompensation()`→undo-blocked。E2E UE-8 で busy 未残留を実証 |
+| P1c | standalone `setData` 差し替え後、旧文書の逆値を新文書へ適用しサイレント上書き/削除 ID で throw | **妥当＝反映** | `applyStandaloneData` で `undoCtrl.clear()`（履歴・ownedRevision・in-flight 全消去）。E2E UE-7 で実証 |
+| P2a | user op が submit 中に同期 reject されると未記録のまま `onRejected` が空振り→直後に既 reject op を記録＋redo 誤破棄（AC5 違反） | **妥当＝反映** | `recordUndoEntry`（collab）は submit 後に opId が `pendingOperationIds()` に残った op のみ記録（同期 reject 済みは記録せず redo も破棄しない） |
+| P2b | `cellKey` の区切りにリテラル U+0000 が混入しファイルが binary 判定→差分が隠れる | **妥当＝反映** | 区切りをソース上は escape ` `（実行時は同一の NUL 区切り）へ。file は text 判定に復帰 |
+
 ---
 
 ## DA批判レビュー記録
 
-### Phase N DA批判レビュー
+### Phase 0/1 DA批判レビュー（undo-stack ロジック）
 
-**DA観点:** （このPhaseで最も壊れやすいポイントは何か？）
+**DA観点:** 補償の beforeRevision がサイレント上書き（R-07）を許す revision ずれは無いか。連続編集・連打・pending 中で状態機械が壊れないか。
 
 | # | 発見した問題/改善点 | 重要度 | 再現手順（高/中は必須） | DA観点 | 対応 |
 |---|-------------------|--------|----------------------|--------|------|
-| 1 | (具体的に記述) | 高/中/低 | (高/中: 操作→結果) | (どのDA観点で発見したか) | ✅修正済/⏭️別DD/❌不要 |
+| 1 | 「元操作確定時 revision の凍結」だと同一セル 2 回編集→2 回 Undo で自分の補償が revision を bump し 2 回目が自傷 reject | 中 | A を編集→編集→Undo→Undo（2 回目 reject） | 暗黙の前提（凍結） | ✅修正済（ownedRevision を自分の補償 ACK で追従＝U-9。他者変更は依然 OCC で弾く） |
+| 2 | committed 事後読取で ownedRevision を取ると、同一 echo batch の他者 op の revision を owned と誤認しサイレント上書き | 高 | 追いつき中に own op@R と他者@R+1 が同一 batch | 並行処理・R-07 | ✅回避（own echo が運ぶ `envelope.revision` を使う＝session-sync の clientId 一致検出。committed 事後読取をしない） |
+| 3 | noop 補償（before===after のみ）が collab で echo されず in-flight が永久 busy | 中 | 変化なしセルのみの op | エッジケース | ✅対応（recordUserOp で before===after を filter・空なら記録しない＝U-3） |
+
+### Phase 2 DA批判レビュー（配線・E2E）
+
+**DA観点:** 同期 reject・文書差し替え・IME 位相分岐で undo が壊れる/データを失う経路は無いか。
+
+| # | 発見した問題/改善点 | 重要度 | 再現手順（高/中は必須） | DA観点 | 対応 |
+|---|-------------------|--------|----------------------|--------|------|
+| 1 | 補償の同期 reject で limbo 永久 busy（Undo/Redo が以後不能） | 高 | 他者変更受信済みで Ctrl+Z | 依存関係（ClientSession 同期発火） | ✅修正済（実行前 OCC 検査で submit 前に block・Codex P1b・UE-8） |
+| 2 | standalone setData 後の Undo が新文書をサイレント上書き/throw | 高 | 確定→setData→Ctrl+Z | データ整合性 | ✅修正済（setData で clear・Codex P1c・UE-7） |
+| 3 | Composing 中の Ctrl+Z が draft を巻き戻す（IME 破壊） | 高 | 変換中に Ctrl+Z | 依存関係（CG-1） | ✅確認済（decideUndoRedoKey が Navigation×非 composing のみ・UE-4＋invariant 掃引で固定） |

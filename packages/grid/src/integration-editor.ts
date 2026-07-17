@@ -33,10 +33,16 @@ const CONFLICT_COLOR = '#d93025';
 const EDITOR_Z = '10';
 const BADGE_Z = '12'; // textarea より上（#9: 競合表示を隠さない）
 
-/** keydown 前段裁定へ渡す素の値（DOM 非依存・DD-020-1 案X）。 */
+/** keydown 前段裁定へ渡す素の値（DOM 非依存・DD-020-1 案X＋DD-020-3 Undo/Redo 修飾キー）。 */
 export interface KeydownInterceptInput {
   readonly key: string;
   readonly shiftKey: boolean;
+  /** Ctrl（Windows/Linux の Undo/Redo・DD-020-3）。 */
+  readonly ctrlKey: boolean;
+  /** Meta=Cmd（macOS の Undo/Redo・DD-020-3）。 */
+  readonly metaKey: boolean;
+  /** Alt（Undo/Redo 裁定の除外条件・DD-020-3）。 */
+  readonly altKey: boolean;
   readonly isComposing: boolean;
 }
 
@@ -231,7 +237,14 @@ export function createIntegrationEditor(config: IntegrationEditorConfig): Integr
     // DD-020-1 前段裁定（案X）: Navigation 位相の Shift+矢印（範囲拡張）等を状態機械の前で消費する。
     // 消費された keydown は状態機械へ届かない（通常 Move にしない）。それ以外は従来どおり全量を流す。
     if (
-      config.interceptKeydown?.({ key: event.key, shiftKey: event.shiftKey, isComposing: event.isComposing }) === true
+      config.interceptKeydown?.({
+        key: event.key,
+        shiftKey: event.shiftKey,
+        ctrlKey: event.ctrlKey,
+        metaKey: event.metaKey,
+        altKey: event.altKey,
+        isComposing: event.isComposing,
+      }) === true
     ) {
       event.preventDefault();
       return;

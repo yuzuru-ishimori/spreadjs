@@ -39,6 +39,8 @@
 | `range-too-large` | クライアント実行前検査（DD-020-1） | 範囲操作（範囲クリア・cut のクリア等）のセル数が SetCells 上限（100,000）超過。submit 前に拒否され `operationId` は空文字 |
 | `paste-too-large` | クライアント実行前検査（DD-020-2） | 貼り付け矩形のセル数が SetCells 上限（100,000）超過。submit 前に拒否され `operationId` は空文字 |
 | `paste-out-of-bounds` | クライアント実行前検査（DD-020-2） | 貼り付け矩形が行/列端を越える（切り捨てず全体拒否）。submit 前に拒否され `operationId` は空文字 |
+| `undo-blocked` | `stale-cell-revision`（補償 op・DD-020-3） | Undo の補償 SetCells が OCC で全体 reject（対象セルが他者に後続変更された）。強制 Undo せず通知（`operationId` は補償 op の ID） |
+| `redo-blocked` | `stale-cell-revision`（補償 op・DD-020-3） | Redo の補償 SetCells が OCC で全体 reject（対象セルがさらに変更された）。通知のみ |
 | `unknown` | 未写像/未知 | 上記いずれにも該当しない（前方互換フォールバック） |
 
 ## debug logging hook（`GridMountOptions.onDiagnostic`）

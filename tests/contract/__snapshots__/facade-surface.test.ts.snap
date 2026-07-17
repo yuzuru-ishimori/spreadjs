@@ -249,7 +249,7 @@ export type GridErrorCode = (typeof GRID_ERROR_CODES)[number];
  * クライアントが submit 前に拒否する実行前検査（range-too-large 等・DD-020-1）も同じ語彙で通知する
  * （実行前拒否は operationId が空文字＝submit されていない）。
  */
-export declare const GRID_CONFLICT_CODES: readonly ["cell-conflict", "row-unavailable", "column-unavailable", "revision-stale", "sequence-violation", "duplicate-row", "revalidation-failed", "dependency", "range-too-large", "paste-too-large", "paste-out-of-bounds", "unknown"];
+export declare const GRID_CONFLICT_CODES: readonly ["cell-conflict", "row-unavailable", "column-unavailable", "revision-stale", "sequence-violation", "duplicate-row", "revalidation-failed", "dependency", "range-too-large", "paste-too-large", "paste-out-of-bounds", "undo-blocked", "redo-blocked", "unknown"];
 export type GridConflictCode = (typeof GRID_CONFLICT_CODES)[number];
 /**
  * boot 失敗を error phase の公開 code 付きで伝える内部エラー。mount-controller の boot が throw し、

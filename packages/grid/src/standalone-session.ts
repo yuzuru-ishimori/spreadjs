@@ -136,6 +136,12 @@ export function createStandaloneSession(config: StandaloneSessionConfig): Standa
     get committedDocument(): SheetDocument {
       return doc;
     },
+    // 単独モードは楽観 pending が無く、committed が唯一の文書＝view と同一（DD-020-3 Undo の逆値捕捉元）。
+    get viewDocument(): SheetDocument {
+      return doc;
+    },
+    // 単独モードは pending を持たない（即時確定）＝常に空（DD-020-3 Undo の同期 reject 検出は collab のみ意味を持つ）。
+    pendingOperationIds: () => [],
     knownPresences: () => [],
     sendPresence: () => {
       // 単独モードは presence 無し（no-op）。

@@ -168,6 +168,19 @@ export async function dragRange(page: Page): Promise<CellRangeView | null> {
   return callApi<CellRangeView | null>(page, 'dragRange', []);
 }
 
+/** DD-020-3: Undo スタック深さ。 */
+export async function undoDepth(page: Page): Promise<number> {
+  return callApi<number>(page, 'undoDepth', []);
+}
+/** DD-020-3: Redo スタック深さ。 */
+export async function redoDepth(page: Page): Promise<number> {
+  return callApi<number>(page, 'redoDepth', []);
+}
+/** DD-020-3: 現在 Undo 可能か。 */
+export async function canUndo(page: Page): Promise<boolean> {
+  return callApi<boolean>(page, 'canUndo', []);
+}
+
 /** 表示 (row,col) セル中心の page 座標（scroller boundingBox + 本番 transform 矩形から算出）。 */
 export async function cellCenter(page: Page, row: number, col: number): Promise<{ x: number; y: number }> {
   const box = await page.locator('.nsheet-scroller').boundingBox();

@@ -22,6 +22,16 @@ export interface GridBackendSession {
   submitLocalOperation(operation: DocumentOperation): OperationId | void;
   /** 権威文書（IME の startRevision/生存/staleness 判定に使う）。 */
   readonly committedDocument: SheetDocument;
+  /**
+   * 表示文書（committed＋own pending の楽観適用結果・単独=committed と同一）。DD-020-3 Undo は逆値（前値）を
+   * ここから捕捉する（未 ACK の先行編集を飛ばさないため＝committed だけだと直前の楽観編集値を失う）。
+   */
+  readonly viewDocument: SheetDocument;
+  /**
+   * 未 ACK の pending operationId 一覧（単独=空）。DD-020-3 Undo は submit が同期 reject された op を
+   * undo エントリへ誤記録しないため、submit 後に返り値 opId が pending に残ったか確認する。
+   */
+  pendingOperationIds(): readonly OperationId[];
   /** 既知の他者 Presence（単独モードは空配列）。 */
   knownPresences(): readonly UserPresence[];
   /** 自分の Presence を送る（単独モードは no-op）。 */

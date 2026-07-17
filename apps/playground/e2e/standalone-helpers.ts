@@ -82,6 +82,37 @@ export async function activeCell(page: Page): Promise<{ row: number; col: number
   return callApi<{ row: number; col: number }>(page, 'activeCell');
 }
 
+// ---- DD-020-3 Undo/Redo introspection ----
+export async function undoDepth(page: Page): Promise<number> {
+  return callApi<number>(page, 'undoDepth');
+}
+export async function redoDepth(page: Page): Promise<number> {
+  return callApi<number>(page, 'redoDepth');
+}
+export async function canUndo(page: Page): Promise<boolean> {
+  return callApi<boolean>(page, 'canUndo');
+}
+export async function isComposing(page: Page): Promise<boolean> {
+  return callApi<boolean>(page, 'isComposing');
+}
+export async function draft(page: Page): Promise<string> {
+  return callApi<string>(page, 'draft');
+}
+
+/** 常駐 textarea で synthetic composition を開始し変換中のまま留める（isComposing:true・確定しない）。 */
+export async function composeOpen(page: Page, value: string): Promise<void> {
+  await page.evaluate((v: string) => {
+    const ta = document.querySelector('textarea.int-cell-editor');
+    if (!(ta instanceof HTMLTextAreaElement)) {
+      throw new Error('int-cell-editor が見つからない');
+    }
+    ta.focus();
+    ta.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }));
+    ta.value = v;
+    ta.dispatchEvent(new CompositionEvent('compositionupdate', { data: v, bubbles: true }));
+  }, value);
+}
+
 export async function events(page: Page): Promise<StandaloneEvent[]> {
   return page.evaluate(() => (window.__standalone?.events ?? []) as StandaloneEvent[]);
 }

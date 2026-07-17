@@ -12,7 +12,7 @@ import { ClientSession } from '@nanairo-sheet/collab';
 import type { ClientTransport, SessionConfig, TransportListener } from '@nanairo-sheet/collab';
 import type { ServerMessage } from '@nanairo-sheet/core';
 import type { TextMetricsCache } from '@nanairo-sheet/render';
-import type { RowId } from '@nanairo-sheet/types';
+import type { OperationId, RowId } from '@nanairo-sheet/types';
 
 import { DocumentView } from './document-view';
 
@@ -91,6 +91,13 @@ export interface SessionSyncConfig {
   onConnected?: () => void;
   /** operations 受信時（#6 計測 firstSync＝Document State 初回反映）。 */
   onOperations?: () => void;
+  /**
+   * 自分の SetCells op が committed へ確定した（own echo 検出・DD-020-3 Undo）。operationId と**サーバー付与 revision**を
+   * 渡す。Undo スタックの ownedRevision（補償 op の beforeRevision）を「元操作が付与した正確な revision」で更新する。
+   * committed の事後読取ではなく own envelope が運ぶ revision を使うため、同一 echo batch に他者 op が混ざっても
+   * foreign revision を owned と誤認しない（R-07 対策の要）。
+   */
+  onOwnSetCellsCommitted?: (operationId: OperationId, revision: number) => void;
 }
 
 export interface SessionSync {
@@ -107,6 +114,7 @@ export interface SessionSync {
 export function createSessionSync(config: SessionSyncConfig): SessionSync {
   const observing = createObservingTransport(config.innerTransport);
   const session = new ClientSession({ ...config.sessionConfig, transport: observing });
+  const ownClientId = config.sessionConfig.clientId; // own echo 判定（DD-020-3）
   const view = new DocumentView({
     getDocument: () => session.viewDocument, // 唯一の正本を読む派生 Adapter
     rowHeight: config.rowHeight,
@@ -139,6 +147,10 @@ export function createSessionSync(config: SessionSyncConfig): SessionSync {
             if (op.type === 'setCells') {
               for (const change of op.changes) {
                 changedRows.push(change.rowId);
+              }
+              // 自分の SetCells の echo（own commit）→ Undo の ownedRevision を正確な revision で更新する（DD-020-3）。
+              if (envelope.clientId === ownClientId) {
+                config.onOwnSetCellsCommitted?.(envelope.operationId, envelope.revision);
               }
             }
           }
