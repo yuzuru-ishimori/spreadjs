@@ -1,8 +1,8 @@
 // clipboard-text（DD-020-2 Phase 1）: TSV parser / serializer の unit＋fuzz＋round-trip property。
 //
 // EOL 依存の厳密検証は**明示エスケープ定数**（'\r\n' 等）で決定化する（git core.autocrlf=true の影響を受けない）。
-// fixture ファイル（doc/DD/DD-020-2/fixtures/）経由の parse も 1 ケース実証する（実 Excel 方言の書き起こし＝L5 証跡）。
-// シナリオ正本: doc/DD/DD-020-2/scenarios.md §1（P-1〜P-15）・§2（serializer/round-trip）。
+// fixture ファイル（packages/core/src/__fixtures__/clipboard-tsv/）経由の parse も 1 ケース実証する（実 Excel 方言の書き起こし＝L5 証跡）。
+// シナリオ正本: doc/archived/DD/DD-020-2/scenarios.md §1（P-1〜P-15）・§2（serializer/round-trip）。
 
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -174,11 +174,11 @@ describe('round-trip: serialize→parse で値が保存される（AC2・fuzz）
 
 // ---- 4. fixture ファイル経由の parse（実 Excel 方言の書き起こし＝L5 証跡） ----------------------
 
-describe('fixture 経由 parse（doc/archived/DD/DD-020-2/fixtures/）', () => {
+describe('fixture 経由 parse（packages/core/src/__fixtures__/clipboard-tsv/）', () => {
   function readFixture(name: string): string {
-    // DD-020-2 はアーカイブ済み（fixtures は添付フォルダごと doc/archived/ へ移設）。
+    // TSV fixtures はテスト資産として本パッケージ内へ恒久化（DD-020-2 由来・アーカイブ移動で壊れない）。
     return readFileSync(
-      fileURLToPath(new URL(`../../../doc/archived/DD/DD-020-2/fixtures/${name}`, import.meta.url)),
+      fileURLToPath(new URL(`./__fixtures__/clipboard-tsv/${name}`, import.meta.url)),
       'utf8',
     );
   }
