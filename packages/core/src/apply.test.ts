@@ -461,6 +461,7 @@ function rebuildWithReversedMaps(doc: SheetDocument): SheetDocument {
     rowMeta,
     columnOrder: [...doc.columnOrder],
     cells: createCellStore(),
+    maxSlot: doc.maxSlot,
   };
   for (const rowId of [...doc.rowMeta.keys()].reverse()) {
     const entries: Array<[ColumnId, CellRecord]> = [];

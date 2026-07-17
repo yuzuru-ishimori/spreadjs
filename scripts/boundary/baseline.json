@@ -31,6 +31,20 @@
     },
     {
       "rule": "R1",
+      "file": "apps/pocd-bench/src/bench-row-insert.ts",
+      "detail": "@nanairo-sheet/core",
+      "owner": "none（PoC-D throwaway・DD-006・製品憲章 §25 対象外）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
+      "file": "apps/pocd-bench/src/bench-row-insert.ts",
+      "detail": "@nanairo-sheet/types",
+      "owner": "none（PoC-D throwaway・DD-006・製品憲章 §25 対象外）",
+      "reason": "Facade 未配線のため apps が内部 package を直接 import（抽出前の既知状態）"
+    },
+    {
+      "rule": "R1",
       "file": "apps/pocd-bench/src/op-gen.ts",
       "detail": "@nanairo-sheet/types",
       "owner": "none（PoC-D throwaway・DD-006・製品憲章 §25 対象外）",

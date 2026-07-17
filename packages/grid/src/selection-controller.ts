@@ -47,6 +47,12 @@ export interface SelectionController {
   /** 明示レンジを解除する（ドラッグ中ならドラッグも破棄）。戻り値=状態が変わったか（再描画要否）。 */
   clear(): boolean;
   /**
+   * 行構造変更後に明示レンジの行 index を再ベースする（K3・DD-021-3）。resolveRow は旧表示 index → 新表示 index
+   * （削除で生存行が無ければ null）。両端いずれかが null なら単一選択へ縮退（clear）。列は不変（列は固定）。
+   * 明示レンジが無ければ no-op。戻り値=状態が変わったか（再描画要否）。
+   */
+  rebaseRows(resolveRow: (row: number) => number | null): boolean;
+  /**
    * 状態機械の観測値と同期する（editor onChange から毎回呼ぶ）。不変条件（anchor===activeCell かつ
    * Navigation）が破れていたら解除する（AC4: 通常移動・編集開始で単一選択へ戻る）。戻り値=解除したか。
    */
@@ -149,6 +155,21 @@ export function createSelectionController(): SelectionController {
       return nextFocus;
     },
     clear: clearAll,
+    rebaseRows(resolveRow) {
+      if (anchor === null || focus === null) {
+        return false; // 明示レンジ無し（単一セルは activeCell 再ベース側が担う）
+      }
+      const na = resolveRow(anchor.row);
+      const nf = resolveRow(focus.row);
+      if (na === null || nf === null) {
+        return clearAll(); // 生存行皆無 → 単一選択へ縮退
+      }
+      if (na === anchor.row && nf === focus.row) {
+        return false; // index 不変（Insert が下・Delete が下など）→ 触らない
+      }
+      setRange({ row: na, col: anchor.col }, { row: nf, col: focus.col }); // 同一セルは単一選択へ正規化
+      return true;
+    },
     syncWithEditor(active, phase) {
       if (anchor === null && dragAnchor === null) {
         return false;

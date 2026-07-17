@@ -1,7 +1,7 @@
 // row-operations 純関数の単体テスト（DD-021-1 Phase 1・TDD）。
 import { describe, expect, it } from 'vitest';
 
-import { decideRowStructureKey, reduceActiveRowTarget, resolveDeleteTargets } from './row-operations';
+import { decideRowStructureKey, rebaseRowIndex, reduceActiveRowTarget, resolveDeleteTargets } from './row-operations';
 import type { RowStructureKeyInput } from './row-operations';
 
 function key(overrides: Partial<RowStructureKeyInput>): RowStructureKeyInput {
@@ -103,5 +103,60 @@ describe('reduceActiveRowTarget', () => {
 
   it('active index が範囲外なら unchanged（防御）', () => {
     expect(reduceActiveRowTarget(order, 99, new Set(['r0']))).toBe('unchanged');
+  });
+});
+
+describe('rebaseRowIndex（K3 選択再ベース・DD-021-3）', () => {
+  it('生存かつ順不変 → 同一 index', () => {
+    const order = ['r0', 'r1', 'r2', 'r3'];
+    expect(rebaseRowIndex(order, order, 2)).toBe(2);
+  });
+
+  it('上に挿入 → RowId 追従で新 index（下方シフト）', () => {
+    const oldOrder = ['r0', 'r1', 'r2'];
+    const newOrder = ['r0', 'n1', 'n2', 'r1', 'r2']; // r0 の下へ 2 行挿入
+    expect(rebaseRowIndex(oldOrder, newOrder, 1)).toBe(3); // r1 が index 3 へ
+    expect(rebaseRowIndex(oldOrder, newOrder, 2)).toBe(4); // r2 が index 4 へ
+    expect(rebaseRowIndex(oldOrder, newOrder, 0)).toBe(0); // r0 は不変
+  });
+
+  it('下に挿入 → 自分より下なので index 不変', () => {
+    const oldOrder = ['r0', 'r1', 'r2'];
+    const newOrder = ['r0', 'r1', 'r2', 'n3'];
+    expect(rebaseRowIndex(oldOrder, newOrder, 1)).toBe(1);
+  });
+
+  it('自身が削除 → 下優先の生存行の新 index へ', () => {
+    const oldOrder = ['r0', 'r1', 'r2', 'r3'];
+    const newOrder = ['r0', 'r2', 'r3']; // r1 削除
+    expect(rebaseRowIndex(oldOrder, newOrder, 1)).toBe(1); // 旧 r2＝新 index 1
+  });
+
+  it('自身と直下が削除 → さらに下の生存行へ', () => {
+    const oldOrder = ['r0', 'r1', 'r2', 'r3'];
+    const newOrder = ['r0', 'r3']; // r1,r2 削除
+    expect(rebaseRowIndex(oldOrder, newOrder, 1)).toBe(1); // 旧 r3＝新 index 1
+  });
+
+  it('下に生存無し → 上へフォールバック', () => {
+    const oldOrder = ['r0', 'r1', 'r2', 'r3'];
+    const newOrder = ['r0', 'r1']; // r2,r3 削除
+    expect(rebaseRowIndex(oldOrder, newOrder, 3)).toBe(1); // 旧 r1＝新 index 1
+  });
+
+  it('全行消失 → null', () => {
+    expect(rebaseRowIndex(['r0', 'r1'], [], 0)).toBeNull();
+  });
+
+  it('index 範囲外 → null', () => {
+    expect(rebaseRowIndex(['r0'], ['r0'], 5)).toBeNull();
+  });
+
+  it('削除＋挿入の複合でも RowId を正しく追う', () => {
+    const oldOrder = ['r0', 'r1', 'r2', 'r3'];
+    const newOrder = ['nA', 'r0', 'r2', 'r3']; // 先頭に nA 挿入・r1 削除
+    expect(rebaseRowIndex(oldOrder, newOrder, 0)).toBe(1); // r0 → index 1
+    expect(rebaseRowIndex(oldOrder, newOrder, 1)).toBe(2); // r1 削除 → 下の r2＝index 2
+    expect(rebaseRowIndex(oldOrder, newOrder, 3)).toBe(3); // r3 → index 3
   });
 });

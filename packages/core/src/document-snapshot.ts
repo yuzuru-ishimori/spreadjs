@@ -8,6 +8,7 @@
 
 import { createCellStore } from './cell-store';
 import {
+  computeMaxSlot,
   createDocument,
   forEachCellInRow,
 } from './document';
@@ -127,5 +128,9 @@ export function deserializeDocument(data: DocumentSnapshot): SheetDocument {
   doc.rowOrder = data.rowOrder.map((r) => createRowId(r));
   doc.rowMeta = rowMeta;
   doc.cells = cells;
+  // maxSlot は rowMeta の最大 slot から再計算する（wire には持たない導出値・DD-021-3 P2-1）。
+  // 永続化される文書（server committed・client bootstrap）は rollback 由来の ghost slot を含まないため、
+  // max(現 slot) が採番カーソルと厳密一致する（決定論を保つ）。
+  doc.maxSlot = computeMaxSlot(rowMeta);
   return doc;
 }

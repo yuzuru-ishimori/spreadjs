@@ -54,6 +54,44 @@ describe('selection-controller: ドラッグ選択（AC1）', () => {
   });
 });
 
+describe('selection-controller: rebaseRows（K3 行構造変更後の再ベース・DD-021-3）', () => {
+  it('明示レンジが無ければ no-op（false）', () => {
+    const c = createSelectionController();
+    expect(c.rebaseRows((r) => r + 1)).toBe(false);
+    expect(c.getRange()).toBeNull();
+  });
+
+  it('両端の行が下方シフト（上に挿入）→ 追従して矩形が下がる・列は不変', () => {
+    const c = createSelectionController();
+    c.extendTo({ row: 2, col: 1 }, { row: 4, col: 3 }); // rows 2..4
+    const changed = c.rebaseRows((r) => r + 2); // 上に 2 行挿入相当
+    expect(changed).toBe(true);
+    expect(c.getRange()).toEqual({ rowStart: 4, rowEnd: 7, colStart: 1, colEnd: 4 });
+  });
+
+  it('index 不変なら false（下に挿入など）', () => {
+    const c = createSelectionController();
+    c.extendTo({ row: 2, col: 1 }, { row: 4, col: 3 });
+    expect(c.rebaseRows((r) => r)).toBe(false);
+  });
+
+  it('片端が生存行なし（null）→ 単一選択へ縮退（clear）', () => {
+    const c = createSelectionController();
+    c.extendTo({ row: 2, col: 1 }, { row: 4, col: 3 });
+    const changed = c.rebaseRows((r) => (r === 4 ? null : r));
+    expect(changed).toBe(true);
+    expect(c.getRange()).toBeNull();
+  });
+
+  it('再ベース後に同一セルへ潰れたら単一選択へ正規化', () => {
+    const c = createSelectionController();
+    c.extendTo({ row: 2, col: 1 }, { row: 4, col: 1 }); // 同一列の縦レンジ
+    const changed = c.rebaseRows(() => 3); // 両端が同じ行へ
+    expect(changed).toBe(true);
+    expect(c.getRange()).toBeNull();
+  });
+});
+
 describe('selection-controller: Shift+クリック拡張（AC2）', () => {
   it('anchor〜focus の矩形へ置き換える（anchor は渡された activeCell）', () => {
     const c = createSelectionController();

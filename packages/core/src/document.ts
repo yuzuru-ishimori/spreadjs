@@ -29,6 +29,11 @@ export interface SheetDocument {
   // 安定 slot キー CellStore（DD-010・CG-2）。RowId→slot は rowMeta、ColumnId→colIndex は columnOrder で
   // 解決する（下記 slotOf / columnIndexOf・getCell / setCell 等の純ヘルパー経由でのみ読み書きする）。
   cells: CellStore;
+  // 次に採番する slot の直前値（＝これまで採番した slot の最大・空文書は -1。nextSlot=maxSlot+1）。
+  // DD-021-3 P2-1: InsertRows ごとの rowMeta 全走査（Θ(N²)）を避けるため、最大 slot をキャッシュして O(1) で採番する。
+  // **単調非減少**（rollback で行が消えても減らさない＝slot 一意性を保ち決定論を壊さない・DD-021-3 📐 決定）。
+  // hash には含めない（正準形は slot 非依存・hash.ts）。snapshot round-trip では rowMeta の最大 slot から再計算する。
+  maxSlot: number;
 }
 
 /** CellScalar を深く複製する（判別ユニオンを網羅・`as` 不使用）。 */
@@ -52,6 +57,7 @@ export function createDocument(columns: ColumnId[]): SheetDocument {
     rowMeta: new Map(),
     columnOrder: [...columns], // 呼び出し側配列の後続変更から切り離す
     cells: createCellStore(),
+    maxSlot: -1, // 空文書は次 slot=0
   };
 }
 
@@ -81,7 +87,19 @@ export function cloneDocument(doc: SheetDocument): SheetDocument {
     rowMeta,
     columnOrder: [...doc.columnOrder],
     cells: doc.cells.clone(), // CellRecord/CellScalar まで別オブジェクト（隔離は cell-store.clone が担保）
+    maxSlot: doc.maxSlot, // 採番カーソルを引き継ぐ（clone 後の InsertRows で slot が衝突しない・単調維持）
   };
+}
+
+/** rowMeta 全体の最大 slot（空なら -1）。snapshot 復元時に maxSlot キャッシュを再計算する（DD-021-3）。 */
+export function computeMaxSlot(rowMeta: Map<RowId, RowMeta>): number {
+  let max = -1;
+  for (const meta of rowMeta.values()) {
+    if (meta.slot > max) {
+      max = meta.slot;
+    }
+  }
+  return max;
 }
 
 export function getCell(

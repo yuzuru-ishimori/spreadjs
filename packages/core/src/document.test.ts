@@ -36,6 +36,7 @@ function buildDoc(): SheetDocument {
     rowMeta,
     columnOrder: [ca, cb],
     cells: createCellStore(),
+    maxSlot: 1, // 既存 slot の最大（r2=1）
   };
   setCell(doc, r1, ca, { value: str('x'), lastChangedRevision: 1 });
   return doc;

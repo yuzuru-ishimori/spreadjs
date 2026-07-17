@@ -46,7 +46,7 @@ import type { ClipboardDocumentPort } from './clipboard-controller';
 import { computeResizeSize, resizeHitTest } from './resize-interaction';
 import type { ResizeTarget } from './resize-interaction';
 import { createSelectionController, decideNavigationIntercept } from './selection-controller';
-import { decideRowStructureKey, reduceActiveRowTarget, resolveDeleteTargets } from './row-operations';
+import { decideRowStructureKey, rebaseRowIndex, resolveDeleteTargets } from './row-operations';
 import { createUndoController, decideUndoRedoKey } from './undo-stack';
 import type { UndoPatch } from './undo-stack';
 import { GridBootError, toGridConflictCode } from './error-codes';
@@ -354,10 +354,14 @@ export function createGridController(target: GridMountTarget, options: GridMount
               scrollLeft: scroller.scrollLeft,
             })
           : null;
+        // K3（DD-021-3）: 再構築の**前**に「今どの RowId を指しているか」を旧 Axis から採取する（activeCell・選択端）。
+        const rebase = captureRebaseState();
         const result = view.flush();
         if (result.structuralRebuilt) {
           metrics.mark('axisBuilt');
         }
+        // rowAxis 再構築後に activeCell/選択レンジを RowId で新 index へ引き直す（表示 index ずれの是正）。
+        applyRebaseState(rebase);
         syncSpacer();
         if (anchor !== null) {
           const corrected = correctScroll({
@@ -978,47 +982,83 @@ export function createGridController(target: GridMountTarget, options: GridMount
       return;
     }
     const op: DeleteRowsOperation = { type: 'deleteRows', rowIds: targets.map((id) => createRowId(id)) };
-    // activeCell 縮退の判定材料を submit 前に採取する（削除前の表示行順・active index）。
-    const activeBefore = editor?.session.getActiveCell();
     backend.session.submitLocalOperation(op);
     backend.view.noteOperation(op);
     emitRowStructureChange({ kind: 'delete', rowIds: targets });
-    reduceActiveCellAfterDelete(backend, oldOrder, targets, activeBefore);
+    // activeCell / 選択の縮退は masterLoop の構造 flush で一本化して行う（K3 再ベース・親④・DD-021-3）。
+    // ローカル/リモート問わず「構造変更前に指していた RowId」を新 Axis へ引き直すため、ここでは個別処理しない。
+  }
+
+  // ---- K3 選択・activeCell 再ベース（DD-021-3・案b＝grid 層 hook・状態機械無変更）----
+  /** 構造 flush 前に採取する再ベース材料（旧表示行順・再ベース対象の activeCell）。 */
+  interface RebaseState {
+    readonly oldOrder: string[];
+    /** activeCell（Navigation 位相かつ非 composition のときのみ＝編集中は editingTarget placement が追従・I-3）。 */
+    readonly active: CellPosition | undefined;
+  }
+
+  /** 現在の（再構築前の）表示行 Axis の RowId 列（文字列）。 */
+  function currentAxisRowIds(): string[] {
+    if (sync === undefined) {
+      return [];
+    }
+    const axis = sync.view.rowAxis;
+    const ids: string[] = [];
+    const count = axis.count();
+    for (let i = 0; i < count; i += 1) {
+      ids.push(String(axis.getId(i)));
+    }
+    return ids;
   }
 
   /**
-   * ローカル削除後の activeCell 縮退（親④・AC5）。active 行が消えたら最近傍生存行（下→上）へ、生存行皆無なら
-   * 選択解除。active 行が生存でも index シフトすれば同一 RowId の新 index へ再シートする（削除で index がずれるため）。
-   * composition 中は触らない（I-3）。選択レンジは pointerdownCell→onChange の syncWithEditor が単一選択へ縮退する。
+   * 構造 flush の**前**に、現在指している RowId を旧 Axis から採取する（K3）。初回 bootstrap 構築（firstDataDrawn=false）
+   * や空 Axis は再ベースしない（新規構築であり「指していた行」が無い）。編集中/変換中は activeCell を対象にしない
+   * （editingTarget ベースの placement が編集セルを追従・pointerdownCell は commit を誘発するため触らない・I-3）。
    */
-  function reduceActiveCellAfterDelete(
-    backend: GridBackend,
-    oldOrder: readonly string[],
-    deletedIds: readonly string[],
-    activeBefore: CellPosition | undefined,
-  ): void {
-    if (editor === undefined || activeBefore === undefined || editor.session.isComposing()) {
+  function captureRebaseState(): RebaseState | null {
+    if (sync === undefined || !firstDataDrawn) {
+      return null;
+    }
+    const oldOrder = currentAxisRowIds();
+    if (oldOrder.length === 0) {
+      return null;
+    }
+    const eligibleActive =
+      editor !== undefined && !editor.session.isComposing() && editor.session.getPhase() === 'Navigation';
+    return { oldOrder, active: eligibleActive ? editor!.session.getActiveCell() : undefined };
+  }
+
+  /**
+   * 構造 flush の**後**に、採取した RowId を新 Axis の index へ引き直して activeCell/選択レンジを補正する（K3）。
+   * activeCell 行が削除されていれば最近傍生存行（下優先→上・親④）へ縮退、生存行皆無なら選択解除。列は不変。
+   */
+  function applyRebaseState(state: RebaseState | null): void {
+    if (state === null || sync === undefined) {
       return;
     }
-    const target = reduceActiveRowTarget(oldOrder, activeBefore.row, new Set(deletedIds));
-    const newOrder = displayRowOrder(backend.session.viewDocument).map(String);
-    if (target === null) {
+    const newOrder = currentAxisRowIds();
+    // 選択レンジ（明示レンジがあるときだけ効く）。両端を RowId で追従し、生存行皆無なら単一選択へ縮退。
+    if (selectionCtrl.rebaseRows((row) => rebaseRowIndex(state.oldOrder, newOrder, row))) {
+      sync.view.markViewportDirty();
+    }
+    const active = state.active;
+    if (active === undefined || editor === undefined || active.row >= state.oldOrder.length) {
+      return;
+    }
+    // flush 前後で phase は不変だが防御的に再確認（editing/composing へ遷移していたら触らない・I-3）。
+    if (editor.session.isComposing() || editor.session.getPhase() !== 'Navigation') {
+      return;
+    }
+    const newRow = rebaseRowIndex(state.oldOrder, newOrder, active.row);
+    if (newRow === null) {
       editor.pointerdownCell(null); // 生存行なし → 選択解除
       return;
     }
-    const targetRowId = target === 'unchanged' ? oldOrder[activeBefore.row] : target.rowId;
-    if (targetRowId === undefined) {
-      return;
+    if (newRow === active.row) {
+      return; // index 不変（挿入が下・削除が下）→ カーソルを触らない
     }
-    const newIndex = newOrder.indexOf(targetRowId);
-    if (newIndex < 0) {
-      editor.pointerdownCell(null); // 追従先が消えた（防御）→ 選択解除
-      return;
-    }
-    if (target === 'unchanged' && newIndex === activeBefore.row) {
-      return; // 生存かつ index 不変 → activeCell は触らない（周期リフレッシュでカーソルを飛ばさない）
-    }
-    editor.pointerdownCell({ row: newIndex, col: activeBefore.col });
+    editor.pointerdownCell({ row: newRow, col: active.col });
   }
 
   /**

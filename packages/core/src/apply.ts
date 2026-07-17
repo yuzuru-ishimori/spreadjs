@@ -199,7 +199,9 @@ function applyInsertRows(
   // テストはシード一意）。既存 rowId を渡すと rowOrder に重複が入る。PoC は採番一意性を前提とし、
   // 専用エラーコードは設けない（apply の ApplyError は構造3種＝phase1-design §4 に限定）。
   const insertedRowIds: RowId[] = [];
-  let slot = nextSlot(next);
+  // P2-1（DD-021-3）: nextSlot の rowMeta 全走査（O(N)）を廃し、文書の maxSlot キャッシュから O(1) で採番する。
+  // slot は max+1 から連番で、末尾で maxSlot を一括更新する（単調非減少・rollback でも減らさない）。
+  let slot = next.maxSlot + 1;
   let insertAt = anchorIndex + 1; // アンカー直後（先頭=-1 のときは 0）
 
   for (const rowSpec of op.rows) {
@@ -213,6 +215,9 @@ function applyInsertRows(
     insertedRowIds.push(rowSpec.rowId);
     insertAt += 1;
     slot += 1;
+  }
+  if (insertedRowIds.length > 0) {
+    next.maxSlot = slot - 1; // 最後に採番した slot（採番したときのみ更新＝空 rows で単調性を壊さない）
   }
   next.revision = revision;
 
@@ -260,18 +265,6 @@ function applyDeleteRows(
 function readCellValueOrBlank(doc: SheetDocument, rowId: RowId, columnId: ColumnId): CellScalar {
   const record = getCell(doc, rowId, columnId);
   return record === undefined ? { kind: 'blank' } : record.value;
-}
-
-// 決定論的な次スロット = 既存スロットの最大 +1（空文書は 0）。rowMeta は縮まないため単調。
-// slot は hash に含めないが再現性のため決定論に採番する（phase1-design §2）。
-function nextSlot(doc: SheetDocument): number {
-  let max = -1;
-  for (const meta of doc.rowMeta.values()) {
-    if (meta.slot > max) {
-      max = meta.slot;
-    }
-  }
-  return max + 1;
 }
 
 function assertNever(value: never): never {

@@ -10,6 +10,7 @@ import v8 from 'node:v8';
 import {
   applyOperation,
   canonicalSerialize,
+  computeMaxSlot,
   createCellStore,
   createDocument,
   documentHash,
@@ -86,6 +87,7 @@ function fromPlainSnapshot(s: PlainSnapshot): SheetDocument {
     rowMeta,
     columnOrder: s.columnOrder as ColumnId[],
     cells: createCellStore(),
+    maxSlot: computeMaxSlot(rowMeta),
   };
   for (const [rid, cm] of s.cells) {
     for (const [cid, rec] of cm) setCell(doc, rid as RowId, cid as ColumnId, rec);

@@ -92,3 +92,41 @@ export function reduceActiveRowTarget(
   }
   return null;
 }
+
+/**
+ * 選択再ベース（K3・DD-021-3）の中核純関数。行構造変更（リモート/ローカルの Insert/Delete）の**前**の表示行 ID 列
+ * `oldOrder` と**後**の `newOrder`、および変更前の表示 index `oldRow` を受け、変更後に**同じ行実体（RowId）が来る
+ * 新 index** を返す。
+ * - 生存: その RowId の新 index（Insert で下方シフトしても RowId を追従）。
+ * - 削除: 最近傍生存行（下優先→上・親④）の新 index へ縮退。
+ * - 生存行皆無: `null`（呼び出し側が選択解除/単一化する）。
+ * reduceActiveRowTarget（削除限定・DD-021-1）を Insert 併合・index 再解決込みへ一般化し、activeCell と選択レンジ
+ * 両端で共有する（実装一本化）。
+ */
+export function rebaseRowIndex(
+  oldOrder: readonly string[],
+  newOrder: readonly string[],
+  oldRow: number,
+): number | null {
+  const rowId = oldOrder[oldRow];
+  if (rowId === undefined) {
+    return null;
+  }
+  const survives = new Set(newOrder);
+  if (survives.has(rowId)) {
+    return newOrder.indexOf(rowId); // 生存（挿入で index がずれても同一 RowId を追う）
+  }
+  for (let i = oldRow + 1; i < oldOrder.length; i += 1) {
+    const id = oldOrder[i]!;
+    if (survives.has(id)) {
+      return newOrder.indexOf(id); // 下方の最近傍生存行
+    }
+  }
+  for (let i = oldRow - 1; i >= 0; i -= 1) {
+    const id = oldOrder[i]!;
+    if (survives.has(id)) {
+      return newOrder.indexOf(id); // 上方の最近傍生存行
+    }
+  }
+  return null; // 生存行なし
+}
