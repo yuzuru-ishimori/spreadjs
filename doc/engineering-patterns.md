@@ -67,4 +67,11 @@
   ```
 - **元DD**: DD-025（React Facade。Codex[high] P1a/P1b で発見 → useLayoutEffect＋参照比較へ。将来の `@nanairo-sheet/element`・他フレームワークラッパーでも同型）
 
+## 7. 実 IME・実 Excel の Manual Gate は OS レベル自動化で代行できる（「実物が動いた」証明とセットで）
+
+- **症状**: 実 IME（Microsoft IME）の Manual Gate は「Playwright/CDP は OS IME を通せない」ため人手に残り続ける（synthetic composition は実 IME ではない＝台帳の区別必須）。実 Excel round-trip も同様。
+- **原因**: CDP のキー入力・`WScript SendKeys`（Unicode 直接挿入）は OS 入力キュー→IME 変換パイプラインをバイパスする。
+- **正しいやり方**: user32 `SendInput` を **`KEYEVENTF_SCANCODE`**（拡張キーは `+EXTENDEDKEY`）で送ると OS 入力キュー→**実 IME** を通る。ローマ字スキャンコードを送り、**ページ側の `isComposing`/draft/変換候補の観測で「実 IME の composition が実際に起きた」ことを証明してから**判定する（証明できなければ実機扱いにしない）。IME ON は Zenkaku/Hankaku（scan 0x29）トグル＋composition 検知のリトライで確立。観測した順序A/B が既存実機知見と一致することも実起動の裏付けになる。**実機固有挙動に注意**: MS-IME は変換中の Ctrl 押下で変換を**自己確定**する（synthetic の期待をそのまま assert すると偽陰性になる）。実 Excel は COM 自動化（`Range.Copy`/`Paste`）で「実 Excel が書く実ペイロード」を使えるが、**クリップボードの stale 内容による偽合格**（コピー元アプリのデータがそのまま貼り戻る循環）を防ぐため、被験システムの出力にしか現れない証拠（例: グリッドの正準化日付 `2026-07-17` vs Excel の `2026/7/17`）で真正性を検査する。代行した事実と方式は DD・台帳に「実IME（自動駆動・代行）」と明記し、人手目視と混同させない。
+- **元DD**: DD-020 Manual Gate M1〜M3・DD-021 M1〜M2＋ime-manual-gate-ledger 5点（2026-07-17・ユーザー指示による Claude 代行）
+
 <!-- 以降、パターンを追記していく。番号は通し番号 -->
