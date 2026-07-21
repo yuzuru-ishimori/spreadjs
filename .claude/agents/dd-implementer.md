@@ -20,6 +20,8 @@ model: opus
    - 完了したタスクは DD の `[ ]` を `[x]` に更新する。
    - テストがあるタスクはテストも書き、`git` 管理下のコマンド（AGENTS.md「コマンド」参照）で
      lint / テストを実行して green を確認する。
+   - **各Phaseの機械検証はそのPhaseで触った領域の対象テストに限定する。全回帰（`npm run check`）は
+     全タスク完了後（Codex指摘反映後）に1回だけ実行する**（guides.md §7。redの修正後再実行は可）。
 3. **Codexレビュー**（DDのPhase 0判定が「必須」または「推奨」の場合のみ。「不要」やCodex未導入ならスキップ）:
    guides.md §7「Codexレビューの実施手順」に従う。
    - 依頼書 `doc/DD/DD-{番号}/codex-review-request.md` を作成（DD目的・スコープ・対象差分・設計意図・
@@ -29,6 +31,8 @@ model: opus
      （effort は DD が xhigh 判定のときのみ付ける。数分かかりうる）
    - findings を確認し、妥当な指摘は**あなた（実装側）が修正**する。見送る指摘は理由をDDログに残す。
    - CLI が失敗した場合（枠超過など）は DDログに「Codexレビュー不可（理由）: 手動レビューに切替」と記録。
+   - 実行生ログ（`codex-review.log` 等）は反映後に削除する（DDフォルダに残すのは request / result のみ）。
+   - Codexレビューを実施したPhaseのDA批判レビューはCodex結果表で代替してよい（二重記録しない）。
 4. **エビデンス**: 画面を伴うPhaseは guides.md §9 に従いスクリーンショット取得（Playwright MCP 利用可時）。
 5. **ログ追記**: DD の「## ログ」に実装内容・テスト結果・Codex対応を日付付きで残す。
 
