@@ -6,7 +6,6 @@
 
 | DD | 件名 | ステータス | 補足 |
 |----|------|-----------|------|
-| DD-034 | DD運用軽量化第2弾 | 確認待ち | Phase 1 ルール反映済み・機械検証 green・効果測定は DD-033 へ移管。残=完了受入のみ |
 
 ## 保留・見送り
 
@@ -18,6 +17,7 @@
 
 | DD | 件名 | 主な成果 |
 |----|------|---------|
+| DD-034 | DD運用軽量化第2弾 | 記録git一本化・親統合レビュー1回・完了処理1コミット・ガバナンスDD凍結・IME台帳一本化・dd-update停止を反映。効果測定はDD-033へ移管 |
 | DD-029-1 | KPI計測契約 | 承認①②済（2026-07-16）・kpi-ledger.md 新設・Codex high 7件全反映（見送り0）。契約確定＝DD-026 起票可能 |
 | DD-028 | 継続回帰CI・API差分監視 | CI常設（Actions 2job・連続4run green）・API型snapshot=公開宣言closure・migration dry-run常設test・deprecation policy 3層（P-10/D-006）・IME実機台帳常設。835 test/E2E 25 green・Codex high P2×2 全反映 |
 | DD-027 | 列タイプ体系 | 列タイプ体系（選択式・リンク・書式・auto-fit）を提供開始。子3本＋親 Phase 4 完了（統合回帰 全 green・features/demo・P-07 材料提出・Manual Gate 代行受付・T1 非該当）。ユーザー確認済みでアーカイブ |
