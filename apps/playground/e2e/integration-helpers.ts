@@ -170,6 +170,28 @@ export async function dragRange(page: Page): Promise<CellRangeView | null> {
   return callApi<CellRangeView | null>(page, 'dragRange', []);
 }
 
+// ---- DD-027-1 選択式入力列 E2E ヘルパー ----------------------------------------------------
+/** 選択式ドロップダウンが開いているか。 */
+export async function selectOpen(page: Page): Promise<boolean> {
+  return callApi<boolean>(page, 'selectOpen', []);
+}
+/** 選択式ドロップダウンの候補一覧。 */
+export async function selectOptions(page: Page): Promise<string[]> {
+  return callApi<string[]>(page, 'selectOptions', []);
+}
+/** 選択式ドロップダウンのハイライト index（未 open は -1）。 */
+export async function selectHighlightedIndex(page: Page): Promise<number> {
+  return callApi<number>(page, 'selectHighlightedIndex', []);
+}
+/** 選択式ドロップダウンのハイライト値（未 open は null）。 */
+export async function selectHighlightedValue(page: Page): Promise<string | null> {
+  return callApi<string | null>(page, 'selectHighlightedValue', []);
+}
+/** #int-status のテキスト（rejected 通知 code=value-not-allowed の観測に使う）。 */
+export async function statusText(page: Page): Promise<string> {
+  return page.evaluate(() => document.getElementById('int-status')?.textContent ?? '');
+}
+
 /** DD-020-3: Undo スタック深さ。 */
 export async function undoDepth(page: Page): Promise<number> {
   return callApi<number>(page, 'undoDepth', []);

@@ -19,6 +19,63 @@
 
 ### Added
 
+- **grid セル書式モデル（背景色・バッジ・auto-fit・Experimental・DD-027-3）**: 利用側供給の「値→書式マッピング」による
+  **view-local** なセル書式描画を追加した（親④・列タイプ体系 DD-027 の第3子）。
+  - **公開型 `GridColumnFormatRule` / `GridCellFormatStyle`（`columnFormats` の値・export）**: ルールは
+    `{ match: string | string[], style: { cellBackground?, textColor?, badge?, badgeColor? } }`。`match` はセル
+    **表示文字列の完全一致**（v1。範囲/正規表現/callback・静的列色は対象外＝P-07 拡張点メモ）。core の値モデル
+    （CellScalar）・protocol・snapshot は無変更（文書状態は変えない＝view-local）。
+  - **新 mount オプション `columnFormats`（両モード共通・mount 時固定）**: `Record<ColumnId, GridColumnFormatRule[]>`。
+    mount 時に「列→値→style」Map へプリコンパイルし、描画ホットパス（可視非空セル×毎フレーム）は O(1) lookup にする。
+    書式は **非空セルのみ**に付く（空セル・非一致値・未指定列は現行描画と完全一致）。
+  - **描画**: 背景色はセル矩形から罫線幅ぶん inset して文字より先に塗る（罫線・選択枠を保存・1 pass 維持）。`badge:true` は
+    値を丸角チップ（badgeColor 塗り＋textColor 文字・単行 fitText クリップ）で描き、**右隣へオーバーフローしない**
+    （リンク列と同じ裁定）。`textColor` は数値既定色より優先（右寄せ等の配置は維持）。
+  - **ダブルクリック auto-fit（C級）**: 列境界のダブルクリックで列幅を内容（列内の最長表示文字列＋ヘッダーラベル幅＋
+    パディング・clamp 20〜2000px）へ合わせ、`layout` イベントを発火する（DD-012-4 D2 の利用側保存契約を維持）。
+    **wrap 列は対象外**（診断 info・無変更）。走査は **10,000 非空セルで打ち切り**（それまでの最大値を採用・診断 info）。
+  - **fail-fast 追加**: 不正 `columnFormats`（未知列・空ルール配列・空 match〔空配列/空文字〕・同一列内の match 重複）は
+    mount 時に公開 `error`（phase=`config`・`code: 'column-types-invalid'`）で通知し配線しない（`columnTypes` と同経路）。新規 reject 語彙・
+    新規イベントなし（auto-fit は既存 `layout`）。共同編集モードでの全クライアント設定一致は利用側責務（値は string のまま）。
+  - **共有化（Operation 化・snapshot 拡張）は設計文書のみ**: `doc/plan/cell-format-sharing-design.md` に FormatOperation の
+    形・snapshot/hash/OCC 拡張方針・発火条件と実装子DD採番手順を記載（実装は共同編集採用案件の確定で採番＝親④・発火条件付き）。
+- **grid ハイパーリンク列（クリック→link-open・Experimental・DD-027-2）**: 列単位でセルクリックを「詳細画面への遷移材料」として
+  利用側へ通知するハイパーリンク列を追加した（親③・列タイプ体系 DD-027 の第2子）。
+  - **公開型 `GridLinkColumnType { type: 'link'; defaultOpen?: boolean }`（`columnTypes` の値・`GridColumnType` union へ追加・export）**:
+    値は string 1本（表示テキスト＝URL または任意テキスト）。core の値モデル（CellScalar）・protocol・snapshot は無変更。
+  - **新イベント `link-open`（両モード共通）**: `{ type: 'link-open'; rowId: string; columnId: string; value: string }`。リンク列の
+    非空セルをクリック（押下→同一セルで離す・単クリック）すると発火する。**SDK は navigate しない**（利用側が rowId/columnId/value を
+    受けて SPA 内遷移や詳細表示を実装する＝責務境界）。クリック時の activeCell 移動は従来どおり並行して起こる（選択を奪わない）。
+  - **発火しないクリック（既存 UX を保存）**: セルをまたぐドラッグ（レンジ選択）・Shift+クリック（レンジ拡張）・空セル・
+    編集/変換（IME）中のクリック・キーボード/タッチ（対象外）では発火しない。dblclick 編集の 1 打目でのみ 1 回発火する
+    （2 打目では発火しない）。既存の pointerdown/選択/編集/IME 裁定は無改変（候補追跡方式の上乗せ＝T1 非該当）。
+  - **`defaultOpen:true`（opt-in・既定 false）**: `link-open` に加えて SDK が **絶対 http/https URL のみ**
+    `window.open(value, '_blank', 'noopener,noreferrer')` で開く。`javascript:`/`data:`/相対/非 URL は open せず診断 warn
+    （`link-open` イベント自体は defaultOpen の成否に関わらず常に発火）。
+  - **描画**: リンク列の非空セルはリンク色（#1a73e8 系）＋下線・**自セル内 fitText クリップ**で描く（右隣へオーバーフローしない
+    ＝クリック領域と描画を一致）。数値に解釈される値もリンク列ではリンク描画を優先する（表示文字列は不変）。hover で cursor:pointer。
+  - **fail-fast 追加**: リンク列と `wrapColumns`（折り返し）の併用は描画契約が両立しないため mount 時に公開 `error`
+    （phase=`config`・`code: 'column-types-invalid'`）で通知し配線しない（`column-types-invalid` の対象事由に「リンク×wrap 併用」を追加）。
+  - 新規 reject 語彙なし（defaultOpen の不正 URL は診断 warn のみ）。共同編集モードでの全クライアント設定一致は利用側責務（値は string のまま）。
+- **grid 選択式入力列（列タイプメタ・Experimental・DD-027-1）**: 列単位で「決められた値だけ選択入力できる」選択式列を追加した。
+  - **公開 mount オプション `columnTypes`（両モード共通・mount 時固定・`wrapColumns` と同運用）**:
+    `Readonly<Record<string, GridColumnType>>`（ColumnId 文字列→列タイプ）。現状は選択式のみ＝
+    `GridSelectColumnType { type: 'select'; options: readonly string[]; allowFreeText?: boolean }`。`GridColumnType`/`GridSelectColumnType`
+    を公開型として export した。列タイプは **grid 層のメタ**で、core の値モデル（CellScalar）・protocol・snapshot は無変更（値は string のまま）。
+  - **編集 UX**: 選択式列（`allowFreeText:false`・既定）のセルで dblclick / F2 / Enter / Alt+↓ / 印字文字 → 常駐 textarea 編集ではなく
+    候補ドロップダウン（listbox・現値ハイライト）が開く。↑↓ + Enter または候補クリックで確定し、既存 chokepoint 経由で SetCells 1 件を
+    確定する（共同編集=他クライアント反映・単独モード=`cell-commit` 発火・Undo で戻せる）。Esc / 外クリックで取消（文書無変更・focus は
+    常駐 textarea のまま）。アクティブセルが選択式列のとき ▼ インジケーターを表示する。IME 経路（editor-state-machine・常駐 textarea・
+    composition）は**無改変**（横取りは mount-controller の既設 hook のみ・composition 中は必ず非消費）。
+  - **検証は editor 経路（IME/textarea 確定・ドロップダウン）の commit 直前だけ**: `allowFreeText:false` の選択式列へ候補外の値を editor 経路で
+    確定すると **未 submit**（文書無変更）＋公開 `rejected`（`code: 'value-not-allowed'`・`operationId` 空文字）＋診断（拒否値を含む・単独モードは
+    診断のみ）で通知する（サイレント失敗なし）。`allowFreeText:true` の列は候補外も従来どおり確定できる。
+  - **paste / setData / リモート由来の非候補値は検証されず保持・表示される**（拒否しない＝データ非破壊・収束優先）。
+  - **fail-fast**: 不正な `columnTypes`（未知列・候補 0 件・重複候補・未対応 type）は mount 時に公開 `error`（phase=`config`・
+    `code: 'column-types-invalid'`）で通知し配線しない。
+  - registry（ColumnTypeRegistry）は **Internal**（consumer 向けの登録 API は公開しない）。共同編集モードでの全クライアント設定一致は
+    利用側責務（値は string のままゆえ文書 hash・収束は乖離しない）。動的候補供給（callback/Promise）は拡張点メモのみ（P-07 材料・未実装）。
+  - **公開語彙追加**: `GRID_ERROR_CODES` に `column-types-invalid`、`GRID_CONFLICT_CODES` に `value-not-allowed`（一覧は error-codes.md）。
 - **grid 行操作の収束・UI 状態整合・性能（Experimental・DD-021-2/DD-021-3）**: 行 Insert/Delete を共同編集で安全にする層を追加した。
   - **収束保証（DD-021-2）**: 同一アンカーへの同時 Insert はサーバー受付順で**両方の行を保持**して全クライアント収束（意図順は非保証・reject しない）。
     削除済み行への SetCells は既存 `rejected`（`row-unavailable`/`cell-conflict` 系）経路で通知（サイレント上書きなし）。再 Delete は冪等。

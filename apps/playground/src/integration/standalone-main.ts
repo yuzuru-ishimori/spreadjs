@@ -6,7 +6,7 @@
 // 内部パッケージ（core/collab/...）は一切 import しない（R1・Facade 経由に一本化）。
 
 import { mount, GRID_API_VERSION } from '@nanairo-sheet/grid';
-import type { GridEvent, GridInstance, GridStandaloneData } from '@nanairo-sheet/grid';
+import type { GridColumnFormatRule, GridColumnType, GridEvent, GridInstance, GridStandaloneData } from '@nanairo-sheet/grid';
 import { getDebugApi } from '@nanairo-sheet/grid/test-support';
 import type { GridDebugApi } from '@nanairo-sheet/grid/test-support';
 
@@ -18,6 +18,103 @@ if (!(stage instanceof HTMLElement)) {
 
 const COLUMN_ORDER = ['col-a', 'col-b', 'col-c', 'col-d'];
 const SEED_ROW_COUNT = 20;
+
+// DD-027-1: 選択式入力列を URL で指定できる（E2E 用・main.ts と同形式）。
+// 形式: `?select=col-b:進行中|受注|失注`（複数列は `,`・列末尾 `!free` で allowFreeText:true）。
+function parseColumnTypes(raw: string | null): Record<string, GridColumnType> | undefined {
+  if (raw === null || raw === '') {
+    return undefined;
+  }
+  const columnTypes: Record<string, GridColumnType> = {};
+  for (const spec of raw.split(',')) {
+    const colonAt = spec.indexOf(':');
+    if (colonAt < 0) {
+      continue;
+    }
+    const columnId = spec.slice(0, colonAt);
+    let optionsPart = spec.slice(colonAt + 1);
+    const allowFreeText = optionsPart.endsWith('!free');
+    if (allowFreeText) {
+      optionsPart = optionsPart.slice(0, -'!free'.length);
+    }
+    const options = optionsPart.split('|').filter((o) => o !== '');
+    if (columnId !== '' && options.length > 0) {
+      columnTypes[columnId] = allowFreeText ? { type: 'select', options, allowFreeText: true } : { type: 'select', options };
+    }
+  }
+  return Object.keys(columnTypes).length > 0 ? columnTypes : undefined;
+}
+// DD-027-2: ハイパーリンク列を URL で指定できる（E2E 用・main.ts と同形式）。
+// 形式: `?link=col-b`（複数列は `,`・列末尾 `!open` で defaultOpen:true）。select と併用時は同一 columnTypes へマージ。
+function parseLinkColumns(
+  raw: string | null,
+  base: Record<string, GridColumnType> | undefined,
+): Record<string, GridColumnType> | undefined {
+  const columnTypes: Record<string, GridColumnType> = { ...(base ?? {}) };
+  if (raw !== null && raw !== '') {
+    for (const spec of raw.split(',')) {
+      let columnId = spec;
+      const defaultOpen = columnId.endsWith('!open');
+      if (defaultOpen) {
+        columnId = columnId.slice(0, -'!open'.length);
+      }
+      if (columnId !== '') {
+        columnTypes[columnId] = defaultOpen ? { type: 'link', defaultOpen: true } : { type: 'link' };
+      }
+    }
+  }
+  return Object.keys(columnTypes).length > 0 ? columnTypes : undefined;
+}
+// DD-027-3: セル書式ルールを URL で指定できる（E2E 用・main.ts と同形式）。Fable P3: standalone も配線し駆動可能にする
+// （書式描画は mount-controller の buildColumnTypeRegistry→getCellStyle 経路が両モード共通＝経路は既に共有）。
+// 形式: `?format=col-b:進行中=badge+bc#34a853+fg#ffffff;受注=bg#fde293`（列は `,`・ルールは `;`・match は `|`）。
+function parseColumnFormats(raw: string | null): Record<string, GridColumnFormatRule[]> | undefined {
+  if (raw === null || raw === '') {
+    return undefined;
+  }
+  const columnFormats: Record<string, GridColumnFormatRule[]> = {};
+  for (const columnSpec of raw.split(',')) {
+    const colonAt = columnSpec.indexOf(':');
+    if (colonAt < 0) {
+      continue;
+    }
+    const columnId = columnSpec.slice(0, colonAt);
+    const rulesPart = columnSpec.slice(colonAt + 1);
+    if (columnId === '' || rulesPart === '') {
+      continue;
+    }
+    const rules: GridColumnFormatRule[] = [];
+    for (const ruleSpec of rulesPart.split(';')) {
+      const eqAt = ruleSpec.indexOf('=');
+      if (eqAt < 0) {
+        continue;
+      }
+      const match = ruleSpec.slice(0, eqAt).split('|').filter((m) => m !== '');
+      const style: { cellBackground?: string; textColor?: string; badge?: boolean; badgeColor?: string } = {};
+      for (const token of ruleSpec.slice(eqAt + 1).split('+')) {
+        if (token === 'badge') {
+          style.badge = true;
+        } else if (token.startsWith('bg')) {
+          style.cellBackground = token.slice(2);
+        } else if (token.startsWith('fg')) {
+          style.textColor = token.slice(2);
+        } else if (token.startsWith('bc')) {
+          style.badgeColor = token.slice(2);
+        }
+      }
+      if (match.length > 0) {
+        rules.push({ match: match.length === 1 ? match[0]! : match, style });
+      }
+    }
+    if (rules.length > 0) {
+      columnFormats[columnId] = rules;
+    }
+  }
+  return Object.keys(columnFormats).length > 0 ? columnFormats : undefined;
+}
+const searchParams = new URLSearchParams(location.search);
+const columnTypes = parseLinkColumns(searchParams.get('link'), parseColumnTypes(searchParams.get('select')));
+const columnFormats = parseColumnFormats(searchParams.get('format'));
 
 // 利用側の保存モック（localStorage）。cell-commit を rowId|columnId→value で蓄積し、次回 initialData に混ぜる。
 const SAVE_KEY = 'nsheet:standalone:cells';
@@ -102,7 +199,14 @@ const handle: StandaloneHandle = {
     }
     const instance = mount(
       { container: stage },
-      { mode: 'standalone', columnOrder: COLUMN_ORDER, initialData: buildInitialData(), onEvent },
+      {
+        mode: 'standalone',
+        columnOrder: COLUMN_ORDER,
+        initialData: buildInitialData(),
+        ...(columnTypes !== undefined ? { columnTypes } : {}),
+        ...(columnFormats !== undefined ? { columnFormats } : {}),
+        onEvent,
+      },
     );
     this.instance = instance;
     connLabel = instance.connectionState();

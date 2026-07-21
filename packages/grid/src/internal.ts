@@ -65,6 +65,14 @@ export interface GridDebugApi {
   selectionRange(): GridDebugCellRange | null;
   /** ドラッグ中のライブ矩形（DD-020-1。null=非ドラッグ）。 */
   dragRange(): GridDebugCellRange | null;
+  /** DD-027-1: 選択式ドロップダウンが開いているか。 */
+  selectOpen(): boolean;
+  /** DD-027-1: 選択式ドロップダウンの候補一覧（未 open は空）。 */
+  selectOptions(): string[];
+  /** DD-027-1: 選択式ドロップダウンのハイライト index（未 open は -1）。 */
+  selectHighlightedIndex(): number;
+  /** DD-027-1: 選択式ドロップダウンのハイライト値（未 open は null）。 */
+  selectHighlightedValue(): string | null;
   /** DD-020-3: 現在 Undo 可能か（スタック非空・pending 0・非 in-flight）。 */
   canUndo(): boolean;
   /** DD-020-3: 現在 Redo 可能か。 */

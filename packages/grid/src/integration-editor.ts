@@ -72,6 +72,11 @@ export interface IntegrationEditorConfig {
   readonly onClipboardPaste?: (text: string) => boolean;
   /** K4（DD-021-2）: commit 時に対象行が削除済みで draft を退避したときの通知（公開 rejected への写像用）。 */
   readonly onDivert?: (draft: DivertedDraft) => void;
+  /**
+   * 常駐 textarea が blur したときの通知（DD-027-1・Fable 5 P3-9）。grid コンテナ外クリック等で focus が外れたら
+   * mount-controller が選択式ドロップダウンを閉じる。IME 状態機械への blur dispatch は従来どおり（本 hook は追加通知）。
+   */
+  readonly onBlur?: () => void;
 }
 
 export interface IntegrationEditor {
@@ -306,7 +311,8 @@ export function createIntegrationEditor(config: IntegrationEditorConfig): Integr
     dispatch({ type: 'focus' });
   });
   on('blur', () => {
-    dispatch({ type: 'blur' });
+    dispatch({ type: 'blur' }); // IME 状態機械への通知（従来どおり・無改変）
+    config.onBlur?.(); // DD-027-1: focus 外れでドロップダウンを閉じる（追加通知のみ）
   });
   // 常駐 textarea 自身のダブルクリック（active セルの既存値編集）。
   on('dblclick', () => {
