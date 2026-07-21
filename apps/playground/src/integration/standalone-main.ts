@@ -6,7 +6,14 @@
 // 内部パッケージ（core/collab/...）は一切 import しない（R1・Facade 経由に一本化）。
 
 import { mount, GRID_API_VERSION } from '@nanairo-sheet/grid';
-import type { GridColumnFormatRule, GridColumnType, GridEvent, GridInstance, GridStandaloneData } from '@nanairo-sheet/grid';
+import type {
+  GridColumnFormatRule,
+  GridColumnType,
+  GridDiagnostic,
+  GridEvent,
+  GridInstance,
+  GridStandaloneData,
+} from '@nanairo-sheet/grid';
 import { getDebugApi } from '@nanairo-sheet/grid/test-support';
 import type { GridDebugApi } from '@nanairo-sheet/grid/test-support';
 
@@ -115,6 +122,8 @@ function parseColumnFormats(raw: string | null): Record<string, GridColumnFormat
 const searchParams = new URLSearchParams(location.search);
 const columnTypes = parseLinkColumns(searchParams.get('link'), parseColumnTypes(searchParams.get('select')));
 const columnFormats = parseColumnFormats(searchParams.get('format'));
+// DD-033-1: 表示専用モードを URL で指定できる（E2E 用・?select= 等と同流儀）。例: `?readonly=1`。
+const readOnly = searchParams.get('readonly') === '1';
 
 // 利用側の保存モック（localStorage）。cell-commit を rowId|columnId→value で蓄積し、次回 initialData に混ぜる。
 const SAVE_KEY = 'nsheet:standalone:cells';
@@ -150,6 +159,8 @@ function buildInitialData(): GridStandaloneData {
 }
 
 const events: GridEvent[] = [];
+// DD-033-1: 診断エントリ（readonly-mode/readonly-blocked/readonly-invalid 等）を記録して E2E から検証する（notice 検証用）。
+const diagnostics: GridDiagnostic[] = [];
 let connLabel = '未接続';
 
 function renderBar(): void {
@@ -178,6 +189,8 @@ function onEvent(event: GridEvent): void {
 interface StandaloneHandle {
   instance: GridInstance | null;
   readonly events: GridEvent[];
+  /** DD-033-1: 診断エントリ列（readOnly 抑止 notice 等の観測用）。 */
+  readonly diagnostics: GridDiagnostic[];
   connectionState(): string;
   mount(): void;
   destroy(): void;
@@ -190,6 +203,7 @@ interface StandaloneHandle {
 const handle: StandaloneHandle = {
   instance: null,
   events,
+  diagnostics,
   connectionState(): string {
     return this.instance?.connectionState() ?? 'none';
   },
@@ -205,7 +219,11 @@ const handle: StandaloneHandle = {
         initialData: buildInitialData(),
         ...(columnTypes !== undefined ? { columnTypes } : {}),
         ...(columnFormats !== undefined ? { columnFormats } : {}),
+        ...(readOnly ? { readOnly: true } : {}),
         onEvent,
+        onDiagnostic: (entry) => {
+          diagnostics.push(entry);
+        },
       },
     );
     this.instance = instance;

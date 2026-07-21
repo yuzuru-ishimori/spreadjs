@@ -58,6 +58,7 @@ import type { ClipboardDocumentPort } from './clipboard-controller';
 import { autoFitColumnWidth, computeAutoFitContentWidth, computeResizeSize, resizeHitTest } from './resize-interaction';
 import type { ResizeTarget } from './resize-interaction';
 import { createSelectionController, decideNavigationIntercept } from './selection-controller';
+import { shouldSuppressReadonlyKey } from './readonly-policy';
 import { decideRowStructureKey, rebaseRowIndex, resolveDeleteTargets } from './row-operations';
 import { createUndoController, decideUndoRedoKey } from './undo-stack';
 import type { UndoPatch } from './undo-stack';
@@ -181,6 +182,19 @@ export function createGridController(target: GridMountTarget, options: GridMount
 
   // 診断ログ hook（opt-in・既定無出力）。GridEvent（consumer 契約）とは別系統の障害切り分け用。
   const diag = createDiagnosticSink(options.onDiagnostic);
+
+  // DD-033-1: 表示専用モード（readOnly）。mount 時固定・両モード共通。boolean 単値ゆえ構成不整合が無く fail-fast なし。
+  // TS 型（boolean|undefined）が正規経路を強制するが、JS 経路の非 boolean は `=== true` の厳密判定で編集可能側へ倒し、
+  // undefined 以外の非 boolean は mount 時に診断 warn（readonly-invalid・公開 error code へは追加しない・決定事項）。
+  const rawReadOnly: unknown = options.readOnly;
+  const readOnly = rawReadOnly === true;
+  if (rawReadOnly !== undefined && typeof rawReadOnly !== 'boolean') {
+    diag.emit('warn', 'readonly-invalid', `readOnly は boolean が必要（受領: ${typeof rawReadOnly}）→ 編集可能として扱う`);
+  }
+  if (readOnly) {
+    // mount 時に1件（E2E/障害切り分けの確認点・決定事項）。抑止発動ごとの readonly-blocked とは別。
+    diag.emit('info', 'readonly-mode', '表示専用モード（readOnly=true）でマウント: 文書変更を抑止し閲覧系のみ許可');
+  }
 
   function emit(event: GridEvent): void {
     for (const listener of [...listeners]) {
@@ -936,6 +950,12 @@ export function createGridController(target: GridMountTarget, options: GridMount
       }
       const hit = transform.hitTest(localX, localY);
       if (hit.area === 'cell') {
+        // DD-033-1: readOnly はセル編集（doubleClickCell）・選択式ドロップダウンを開かない（入口抑止）。
+        // 列境界 dblclick の auto-fit（上の分岐）は閲覧系ゆえ維持する（要確認4・view-local layout）。
+        if (readOnly) {
+          diag.emit('info', 'readonly-blocked', 'readOnly: ダブルクリック編集を抑止（閲覧専用）');
+          return;
+        }
         // DD-027-1: 選択式列（allowFreeText:false）は textarea 編集ではなくドロップダウンを開く（AC1）。
         // 先に activeCell を対象セルへ合わせてから開く（openSelectForActive は activeCell を読む）。
         if (isSelectColumnIndex?.(hit.colIndex) === true) {
@@ -1229,6 +1249,11 @@ export function createGridController(target: GridMountTarget, options: GridMount
    * count≦0/非整数・未知アンカーは submit せず実行前拒否（AC8）。楽観適用直後に row-structure-change を発火する。
    */
   function performInsertRows(afterRowId: string | null, count: number): void {
+    // DD-033-1: readOnly は行挿入を抑止（公開 API・ショートカット共有＝1箇所で両方止まる・入口＝chokepoint 兼用）。
+    if (readOnly) {
+      diag.emit('info', 'readonly-blocked', 'readOnly: insertRows を抑止（文書無変更）');
+      return;
+    }
     const backend = sync;
     if (backend === undefined) {
       return; // boot 未完了 → 黙って無視（既存 API 流儀）
@@ -1273,6 +1298,11 @@ export function createGridController(target: GridMountTarget, options: GridMount
    * 対象皆無は実行前拒否（AC8）。削除後、アクティブ行が消えていれば最近傍生存行（下優先→上）へ縮退する（親④・AC5）。
    */
   function performDeleteRows(requested: readonly string[]): void {
+    // DD-033-1: readOnly は行削除を抑止（公開 API・ショートカット共有＝入口＝chokepoint 兼用）。
+    if (readOnly) {
+      diag.emit('info', 'readonly-blocked', 'readOnly: deleteRows を抑止（文書無変更）');
+      return;
+    }
     const backend = sync;
     if (backend === undefined) {
       return;
@@ -1453,6 +1483,10 @@ export function createGridController(target: GridMountTarget, options: GridMount
      * （arrow 式: 上の backend undefined ガード後の narrowing を閉包へ効かせる＝hoist される function 宣言にしない）
      */
     const performRangeClear = (): void => {
+      if (readOnly) {
+        diag.emit('info', 'readonly-blocked', 'readOnly: 範囲クリアを抑止（文書無変更）');
+        return;
+      }
       const range = selectionCtrl.getRange();
       if (range === null) {
         return; // 裁定（delete-range）と実行の間に状態が変わった場合の防御（何もしない）
@@ -1496,6 +1530,11 @@ export function createGridController(target: GridMountTarget, options: GridMount
      * （copy もしない＝クリップボード不変）通知する。クリア対象が全空でも copy は成立させる（TSV を返す）。
      */
     const performCut = (): string | null => {
+      if (readOnly) {
+        // cut は copy＋クリア＝文書変更系ゆえ全抑止（clipboard も変更しない・null=ブラウザ既定は readOnly textarea で no-op）。
+        diag.emit('info', 'readonly-blocked', 'readOnly: cut を抑止（文書無変更・クリップボード不変）');
+        return null;
+      }
       if (editor === undefined || !clipboardActive()) {
         return null;
       }
@@ -1523,6 +1562,11 @@ export function createGridController(target: GridMountTarget, options: GridMount
      * ペーストテキストを流し込み Navigation の input が編集を開始してしまう（グリッド paste 意図と乖離）。
      */
     const performPaste = (text: string): boolean => {
+      if (readOnly) {
+        // 消費（true=preventDefault）して readOnly textarea への流し込みも止める（文書無変更）。
+        diag.emit('info', 'readonly-blocked', 'readOnly: paste を抑止（文書無変更）');
+        return true;
+      }
       if (editor === undefined || !clipboardActive()) {
         return false; // 編集/変換中は textarea へテキスト挿入（ブラウザ既定）
       }
@@ -1593,6 +1637,10 @@ export function createGridController(target: GridMountTarget, options: GridMount
 
     /** Ctrl/Cmd+Z: 直前の確定操作を補償 SetCells で戻す（空/pending/in-flight/stopped は no-op）。 */
     const performUndo = (): void => {
+      if (readOnly) {
+        diag.emit('info', 'readonly-blocked', 'readOnly: Undo を抑止（文書無変更）');
+        return;
+      }
       if (backend.session.isStopped) {
         return;
       }
@@ -1604,6 +1652,10 @@ export function createGridController(target: GridMountTarget, options: GridMount
 
     /** Ctrl+Y / Ctrl+Shift+Z: Undo の逆（元値の再適用）。 */
     const performRedo = (): void => {
+      if (readOnly) {
+        diag.emit('info', 'readonly-blocked', 'readOnly: Redo を抑止（文書無変更）');
+        return;
+      }
       if (backend.session.isStopped) {
         return;
       }
@@ -1657,6 +1709,11 @@ export function createGridController(target: GridMountTarget, options: GridMount
       | null = null;
 
     const openSelect = (): void => {
+      if (readOnly) {
+        // 選択式列のドロップダウンは開かない（要確認2・文書変更経路の入口）。
+        diag.emit('info', 'readonly-blocked', 'readOnly: 選択式ドロップダウンを抑止');
+        return;
+      }
       if (editor === undefined || selectDropdown === undefined || columnTypeRegistry === undefined) {
         return;
       }
@@ -1799,6 +1856,8 @@ export function createGridController(target: GridMountTarget, options: GridMount
       host: stage,
       document: docPort,
       submit: editorSubmit,
+      // DD-033-1: 表示専用モードは常駐 textarea へ readOnly 属性＋編集 DOM イベントの dispatch 抑止（分岐追加のみ）。
+      readOnly,
       // DD-027-1（Fable 5 P3-9）: grid 外クリック等で常駐 textarea が blur したら選択式ドロップダウンを閉じる。
       // 候補クリックは listbox の pointerdown preventDefault で focus を保持するため blur せず、確定を妨げない。
       onBlur: () => cancelSelect(),
@@ -1840,6 +1899,24 @@ export function createGridController(target: GridMountTarget, options: GridMount
         const backendNow = sync;
         if (current === undefined || backendNow === undefined) {
           return false;
+        }
+        // DD-033-1: readOnly の入口抑止（最優先）。編集開始/セルクリアを起こすキー（F2/Delete/Backspace）を消費する。
+        // 閲覧系（矢印・Shift+矢印・Ctrl+C・Escape・PageUp/Down）と composition/非 Navigation は素通し（純関数裁定・AC7）。
+        if (
+          readOnly &&
+          shouldSuppressReadonlyKey({
+            key: input.key,
+            ctrlKey: input.ctrlKey,
+            metaKey: input.metaKey,
+            altKey: input.altKey,
+            shiftKey: input.shiftKey,
+            eventComposing: input.isComposing,
+            sessionComposing: current.session.isComposing(),
+            phase: current.session.getPhase(),
+          })
+        ) {
+          diag.emit('info', 'readonly-blocked', `readOnly: 編集キー「${input.key}」を抑止（閲覧専用）`);
+          return true;
         }
         // DD-027-1: 選択式ドロップダウンの前段裁定（最優先）。open 中は ↑↓/Enter/Esc/Tab を消費し他キーを握り潰す。
         // 閉じている選択式セル（allowFreeText:false）では編集開始キー（F2/Enter/Alt+↓/印字文字）でドロップダウンを開く。
