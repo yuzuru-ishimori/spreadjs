@@ -7,10 +7,6 @@
 | DD | 件名 | ステータス | 補足 |
 |----|------|-----------|------|
 | DD-034 | DD運用軽量化第2弾 | 確認待ち | Phase 1 ルール反映済み・機械検証 green・効果測定は DD-033 へ移管。残=完了受入のみ |
-| DD-027 | 列タイプ体系 | 確認待ち | 子3本＋親 Phase 4 完了（統合回帰 全 green・features/demo・P-07 材料・Manual Gate 代行受付・T1 非該当）。コミット/アーカイブはユーザー確認後 |
-| DD-027-1 | 選択式入力列 | 進行中 | 親=DD-027（子3本の第1子）。実装・テスト・Fable 5 レビュー反映（P2×5＋P3×5）完了・全 green → 親 Phase 4 統合検証待ち |
-| DD-027-2 | ハイパーリンク列 | 確認待ち | 親=DD-027（子3本の第2子）。実装＋Fable 5 レビュー反映済み（P1×1/P2×3/P3×4 全反映）・全機械検証 green。親 Phase 4 統合検証待ち |
-| DD-027-3 | セル書式モデル | 確認待ち | 親=DD-027（子3本の第3子）。実装＋Fable 5 レビュー反映済み（P2×2/P3×4）・機械検証 green・headed 計測（回帰なし）。親 Phase 4 統合検証待ち |
 
 ## 保留・見送り
 
@@ -24,6 +20,10 @@
 |----|------|---------|
 | DD-029-1 | KPI計測契約 | 承認①②済（2026-07-16）・kpi-ledger.md 新設・Codex high 7件全反映（見送り0）。契約確定＝DD-026 起票可能 |
 | DD-028 | 継続回帰CI・API差分監視 | CI常設（Actions 2job・連続4run green）・API型snapshot=公開宣言closure・migration dry-run常設test・deprecation policy 3層（P-10/D-006）・IME実機台帳常設。835 test/E2E 25 green・Codex high P2×2 全反映 |
+| DD-027 | 列タイプ体系 | 列タイプ体系（選択式・リンク・書式・auto-fit）を提供開始。子3本＋親 Phase 4 完了（統合回帰 全 green・features/demo・P-07 材料提出・Manual Gate 代行受付・T1 非該当）。ユーザー確認済みでアーカイブ |
+| DD-027-1 | 選択式入力列 | 親=DD-027（子3本の第1子）。選択式入力列（候補ドロップダウン・commit 前検証・allowFreeText）を実装。Fable 5 レビュー反映（P2×5＋P3×5）・親 Phase 4 統合検証 全 green。親と共にアーカイブ |
+| DD-027-2 | ハイパーリンク列 | 親=DD-027（子3本の第2子）。ハイパーリンク列（link-open イベント・候補追跡方式・defaultOpen）を実装。Fable 5 レビュー反映（P1×1/P2×3/P3×4）・親 Phase 4 統合検証 全 green。親と共にアーカイブ |
+| DD-027-3 | セル書式モデル | 親=DD-027（子3本の第3子）。セル書式モデル（背景色・バッジ・auto-fit・共有化設計文書）を実装。Fable 5 レビュー反映（P2×2/P3×4）・親 Phase 4 統合検証 全 green・headed 計測（書式起因の回帰なし）。親と共にアーカイブ |
 | DD-025 | ReactFacade | 全Phase完了・Manual Gate実機OK（IME確定→onCellCommit・再注入・再mount正常・console clean） |
 | DD-024 | 単独グリッドモード | 単独グリッドモード成立（判別union・cell-commit通知のみ・mount時＋setData再注入・案B backend）。814 test/E2E 18 green・Codex high 3件全反映・見送り0・**実機確認OK（ユーザー 2026-07-16）＝AC1〜8 充足** |
 | DD-023 | Stage2ロードマップ策定 | phase2-dd-roadmap 正式版昇格（S2-1〜6 ゲート・DD-024〜032 採番・命名/P-07 ゲート）＋stage3-outlook 新設。突合3点全OK・Codex high 10件全反映・見送り0・ユーザー承認2回 |

@@ -74,4 +74,11 @@
 - **正しいやり方**: user32 `SendInput` を **`KEYEVENTF_SCANCODE`**（拡張キーは `+EXTENDEDKEY`）で送ると OS 入力キュー→**実 IME** を通る。ローマ字スキャンコードを送り、**ページ側の `isComposing`/draft/変換候補の観測で「実 IME の composition が実際に起きた」ことを証明してから**判定する（証明できなければ実機扱いにしない）。IME ON は Zenkaku/Hankaku（scan 0x29）トグル＋composition 検知のリトライで確立。観測した順序A/B が既存実機知見と一致することも実起動の裏付けになる。**実機固有挙動に注意**: MS-IME は変換中の Ctrl 押下で変換を**自己確定**する（synthetic の期待をそのまま assert すると偽陰性になる）。実 Excel は COM 自動化（`Range.Copy`/`Paste`）で「実 Excel が書く実ペイロード」を使えるが、**クリップボードの stale 内容による偽合格**（コピー元アプリのデータがそのまま貼り戻る循環）を防ぐため、被験システムの出力にしか現れない証拠（例: グリッドの正準化日付 `2026-07-17` vs Excel の `2026/7/17`）で真正性を検査する。代行した事実と方式は DD・台帳に「実IME（自動駆動・代行）」と明記し、人手目視と混同させない。
 - **元DD**: DD-020 Manual Gate M1〜M3・DD-021 M1〜M2＋ime-manual-gate-ledger 5点（2026-07-17・ユーザー指示による Claude 代行）
 
+## 8. 共有 collab 文書を変更する E2E は「使ったら元に戻す（net-zero）」— さもないと後続 spec を決定的に汚染する
+
+- **症状**: 個別 spec は単独 green なのに、`npm run test:e2e`（全スイート連結）だと後続の多数 spec が `openClient` の行数ゲート（`rowCount >= 50000`）で `Received: 49999` で落ちる／リンク列 spec の「クリック→link-open」が発火しないなど、**先行 spec に依存した決定的失敗**が出る（単独再実行では passing なので「flake」と誤認しやすい）。
+- **原因**: playground/showcase の E2E は 1 つの **server-hono の共有 collab 文書**（50,000 行シード）へ全 spec がぶら下がる。ある spec が `deleteRows`（行数が 50000→49999 に減ったまま）や `seed（cell 値を残置）` して**元に戻さない**と、その変更が文書に残り、後続 spec の前提（初期状態）を崩す。行数ゲートだけでなく「あるセルが空である前提」も崩れる（例: 先行 spec が (8,4) に値を残す → 後続のリンク列 spec が (8,4) を選択した瞬間に link-open が誘発され、synthetic 環境の二度押しガードで本命クリックが抑止される）。webServer は reuse されるため、汚染は同一 run 内の後続へ波及する。
+- **正しいやり方**: 共有文書を構造変更（insert/delete 行）または特定セルを seed する spec は、**その spec 内で net-zero に戻す**。行削除したら `insertRows` で本数を戻し、seed したセルは `finally` で `clearCell` する（`expect.poll` で復元を確認してから context.close）。構造を大量に変える spec はさらに `zz-` prefix でスイート最後に隔離する（DD-021 教訓#3）。**「単独 green・連結で赤」を見たら flake と決めつけず、先行 spec の共有文書残置を疑う**（最初に落ちる spec ではなく、汚染した spec を特定する）。
+- **元DD**: DD-027（親 Phase 4 統合検証で発覚。DD-027-1 の行削除テストを `insertRows` 復元・DD-027-3 の書式 seed セルを `clearCell` 後始末して 98/98 green 化。DD-021 教訓#3 の再確認）
+
 <!-- 以降、パターンを追記していく。番号は通し番号 -->
