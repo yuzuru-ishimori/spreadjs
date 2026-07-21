@@ -10,6 +10,7 @@ import { expect, test } from '@playwright/test';
 import type { Browser, BrowserContext, Page } from '@playwright/test';
 
 import * as sa from './standalone-helpers';
+import * as ih from './integration-helpers';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -274,5 +275,49 @@ test('AC4: readOnly でも setData で表示データが差し替わる', async 
     expect(await sa.displayCell(page, 'z2', 'col-a')).toBe('WWW');
   } finally {
     await context.close();
+  }
+});
+
+test('AC5: 共同編集モードの readOnly は受信専用（remote 反映・pendingCount 恒常0・committedRevision 不変）', async ({
+  browser,
+}) => {
+  // A=readOnly 閲覧者・B=通常編集者。同一ドキュメントに接続する（?readonly=1 は main.ts が受ける）。
+  const a = await ih.openClient(browser, 'A-readonly', { readonly: '1' });
+  const b = await ih.openClient(browser, 'B-editor');
+  try {
+    const rowId = (await ih.rowIdAt(a.page, 10))!;
+    const colId = (await ih.colIdAt(a.page, 1))!;
+    const rev0 = (await ih.snapshot(a.page)).committedRevision;
+    expect((await ih.snapshot(a.page)).pendingCount).toBe(0);
+
+    // A が編集を試みる（印字・paste・行挿入 API・Undo）→ 全て抑止＝文書 Operation 送信ゼロ。
+    await ih.selectCell(a.page, 10, 1);
+    await a.page.keyboard.press('a');
+    await ih.dispatchSyntheticPaste(a.page, 'X');
+    await a.page.evaluate(() => {
+      (window as unknown as { __gridInstance?: { insertRows: (o: unknown) => void } }).__gridInstance?.insertRows({
+        afterRowId: null,
+        count: 1,
+      });
+    });
+    await a.page.keyboard.press('Control+z');
+    await a.page.waitForTimeout(200);
+
+    const snapA = await ih.snapshot(a.page);
+    expect(snapA.pendingCount, 'A の pending は恒常 0（送信ゼロ）').toBe(0);
+    expect(snapA.committedRevision, 'A 自身の操作では committedRevision 不変').toBe(rev0);
+
+    // B が同セルへ commit → A へ受信反映される（受信専用＝閲覧は生きている）。
+    await ih.selectCell(b.page, 10, 1);
+    await ih.plainTypeAndCommit(b.page, 'fromB');
+    await expect
+      .poll(async () => ih.committedCell(a.page, rowId, colId), { message: 'remote 更新が A の画面へ反映' })
+      .toBe('fromB');
+
+    // 受信後も A は送信していない（pending 0 のまま）。
+    expect((await ih.snapshot(a.page)).pendingCount).toBe(0);
+  } finally {
+    await a.context.close();
+    await b.context.close();
   }
 });

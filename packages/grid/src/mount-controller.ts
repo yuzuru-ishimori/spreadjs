@@ -1180,6 +1180,14 @@ export function createGridController(target: GridMountTarget, options: GridMount
 
   /** SetCells を backend へ submit し wrap 行高を再計算する低レベル経路（元操作・補償操作の両方が使う）。 */
   function submitToBackend(backend: GridBackend, op: SetCellsOperation): OperationId | void {
+    // DD-033-1: 絶対防衛線（chokepoint）。readOnly では SetCells 系（IME 確定・paste・cut・範囲クリア・Undo/Redo
+    // 補償）の唯一の submit 点である本関数で op を破棄する＝入口抑止をすり抜けた synthetic 経路や将来の編集入口でも
+    // 文書 Operation 送信ゼロを構造的に保証する（共同編集の受信専用化・AC5）。入口ガード（perform*・interceptKeydown）で
+    // 通常はここへ到達しないため diag は warn（到達自体が想定外＝障害切り分けの手掛かり）。
+    if (readOnly) {
+      diag.emit('warn', 'readonly-blocked', 'readOnly: submitToBackend で SetCells を破棄（絶対防衛線・送信ゼロ）');
+      return;
+    }
     const id = backend.session.submitLocalOperation(op);
     if (wrapEnabled) {
       backend.view.recomputeAutoRowHeightsForRows(op.changes.map((c) => c.rowId));

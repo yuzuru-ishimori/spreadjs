@@ -212,6 +212,21 @@ export interface GridCommonMountOptions {
      *   code=\`column-types-invalid\`）で fail-fast する（columnTypes と同経路）。
      */
     readonly columnFormats?: Readonly<Record<string, readonly GridColumnFormatRule[]>>;
+    /**
+     * 表示専用モード（Experimental 0.x・DD-033-1）。\`true\` で「文書を一切変更できない閲覧専用グリッド」になる。
+     * 両モード共通・mount 時固定（columnTypes/columnFormats と同運用・実行時切替は対象外）。
+     * - **抑止（文書変更系）**: 編集開始（印字キー・F2・ダブルクリック・IME）／paste・cut／Delete・Backspace クリア／
+     *   行挿入削除（ショートカット・公開 API \`insertRows\`/\`deleteRows\`）／Undo・Redo／選択式列のドロップダウン。
+     *   抑止した経路では \`onDiagnostic\` に info（code=\`readonly-blocked\`）を出す（既定＝hook 未指定なら無コスト）。
+     * - **維持（閲覧系）**: 範囲選択・コピー（TSV は従来と同一）・スクロール・列幅/行高リサイズ・列境界 dblclick の
+     *   auto-fit・link-open。\`setData\`（プログラム的な表示データ差し替え）も許可する。
+     * - **共同編集モード**: リモート更新は画面へ反映し、自クライアントからの文書 Operation 送信はゼロ（受信専用）。
+     *   presence（閲覧位置）は従来どおり送信する（文書 Operation ではない）。全クライアントの設定一致は利用側責務。
+     * - **注意**: readOnly は表示制御であって**権限制御ではない**（サーバー側強制なし＝改ざん防止は利用側責務）。
+     * - 値は boolean 単値。\`true\` の厳密一致でのみ表示専用になり、\`undefined\` 以外の非 boolean は診断 warn
+     *   （code=\`readonly-invalid\`）を出して編集可能側へ倒す（構成不整合が無いため mount fail-fast はしない）。
+     */
+    readonly readOnly?: boolean;
     /** 初期イベント購読（mount 直後の connection/error/cell-commit を取りこぼさない）。 */
     readonly onEvent?: GridEventListener;
     /**

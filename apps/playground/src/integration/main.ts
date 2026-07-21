@@ -91,6 +91,8 @@ function parseLinkColumns(
   }
   return Object.keys(columnTypes).length > 0 ? columnTypes : undefined;
 }
+// DD-033-1: 表示専用モードを URL で指定できる（E2E 用・?select= 等と同流儀）。例: `?readonly=1`。
+const readOnly = params.get('readonly') === '1';
 const columnTypes = parseLinkColumns(linkParam, parseColumnTypes(selectParam));
 
 // DD-027-3: セル書式ルールを URL で指定できる（E2E/計測用・?select= と同方式）。
@@ -238,6 +240,7 @@ const instance = mount(
     ...(wrapColumns !== undefined ? { wrapColumns } : {}),
     ...(columnTypes !== undefined ? { columnTypes } : {}),
     ...(columnFormats !== undefined ? { columnFormats } : {}),
+    ...(readOnly ? { readOnly: true } : {}),
     onEvent: renderStatus,
   },
 );
