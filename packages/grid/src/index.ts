@@ -28,6 +28,15 @@ import type { GridColumnType } from './column-types';
 export type { GridColumnFormatRule, GridCellFormatStyle } from './format-rules';
 import type { GridColumnFormatRule } from './format-rules';
 
+// 列見出しキャプション＋数値/日付の表示書式（DD-033-2・Experimental 0.x）。Canvas 描画テキストのみを整形する
+// view-local 書式（raw 契約不変）。公開型は grid 自身（display-format.ts）で定義する（R7 に反さない）。
+export type {
+  GridColumnDisplayFormat,
+  GridNumberDisplayFormat,
+  GridDateDisplayFormat,
+} from './display-format';
+import type { GridColumnDisplayFormat } from './display-format';
+
 /**
  * 接続状態（consumer 表示用）。内部 collab の ConnectionState を写像した公開型（型は再exportしない）。
  * `'standalone'` は単独グリッドモード（DD-024・共同編集サーバー非接続）で常に返る値。`'offline'` は
@@ -190,6 +199,34 @@ export interface GridCommonMountOptions {
    *   code=`column-types-invalid`）で fail-fast する（columnTypes と同経路）。
    */
   readonly columnFormats?: Readonly<Record<string, readonly GridColumnFormatRule[]>>;
+  /**
+   * 列見出しキャプション（ColumnId 文字列→表示名・Experimental 0.x・DD-033-2）。両モード共通・mount 時固定
+   * （columnTypes/columnFormats と同運用）。指定列はヘッダーの A/B/C… を業務名で置換描画し、自ヘッダーセル幅を
+   * 超える長い名は省略記号でクリップされる（隣接ヘッダーへ重ならない）。未指定列・行番号ヘッダーは従来どおり。
+   * - **view-local**（描画のみ）: 文書状態・列 ID・cell-commit・コピー TSV は一切変更しない。全クライアントの設定一致は
+   *   利用側責務（設定不一致クライアントは異なる見出しを見る）。2段ヘッダーは v1 対象外。
+   * - 不正設定（未知列・空/空白キャプション）は mount 時に `error`（phase=`config`・code=`column-display-invalid`）で
+   *   fail-fast する（columnDisplayFormats と同経路）。
+   */
+  readonly columnCaptions?: Readonly<Record<string, string>>;
+  /**
+   * 数値/日付の表示書式（ColumnId 文字列→書式・Experimental 0.x・DD-033-2）。両モード共通・mount 時固定
+   * （columnTypes/columnFormats と同運用）。**Canvas 描画テキストのみ**を整形する自前ミニ書式。
+   * - **契約不変（raw 維持）**: cell-commit/setData round-trip・コピー TSV・columnFormats（DD-027-3）の完全一致・
+   *   編集ドラフトは従来の表示文字列（raw）のまま。数値の右寄せ判定・columnFormats の match はすべて raw で行う
+   *   （判定は raw・描画は display）。全クライアントの設定一致は利用側責務。
+   * - **number** `{ type:'number', grouping?, decimals?, percent?, prefix?, suffix? }`: raw が数値形のときだけ整形し
+   *   非数値 raw は素通し。文字列十進・half-up 丸め（decimals 未指定=丸めなし）・grouping=カンマ固定・percent は丸め前に
+   *   2桁右シフト・出力順 `prefix + 本体 + ('%') + suffix`。
+   * - **date** `{ type:'date', pattern }`: 受理形 `YYYY-MM-DD` と `YYYY-MM-DD[T|空白]HH:mm(:ss)` のみ整形
+   *   （フィールド直取り・タイムゾーン非経由）。トークン `YYYY/MM/DD/HH/mm/ss` を置換しトークン以外はリテラル素通し。
+   *   非受理形・時刻欠落 raw への時刻トークンは raw 素通し（00 を埋めない）。
+   * - **併用制約**: wrapColumns 同一列・link 列との併用は mount 時 fail-fast（構造不整合/クリック乖離）。select 列は許可
+   *   （候補・検証・ドロップダウン表示は raw のまま）。Excel 書式文字列互換・Intl ロケール書式は v1 対象外（拡張点メモ）。
+   * - 不正設定（未知列・不正 type・decimals 非整数/0〜20外・pattern 空/既知トークン皆無・wrap/link 併用）は mount 時に
+   *   `error`（phase=`config`・code=`column-display-invalid`）で fail-fast する。
+   */
+  readonly columnDisplayFormats?: Readonly<Record<string, GridColumnDisplayFormat>>;
   /**
    * 表示専用モード（Experimental 0.x・DD-033-1）。`true` で「文書を一切変更できない閲覧専用グリッド」になる。
    * 両モード共通・mount 時固定（columnTypes/columnFormats と同運用・実行時切替は対象外）。

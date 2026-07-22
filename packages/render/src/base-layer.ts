@@ -85,6 +85,19 @@ export interface BaseLayerDeps {
    * grid 側がプリコンパイル済み Map の O(1) lookup を束縛する。未指定なら全セル書式なし（現行描画・AC3）。
    */
   readonly getCellStyle?: (colIndex: number, value: string) => ResolvedCellStyle | undefined;
+  /**
+   * 列ヘッダーの表示ラベル解決フック（DD-033-2・列見出しキャプション）。列 index → ヘッダーに描く文字列を返す
+   * （未指定なら A/B/C… の列記号＝現行挙動）。長いキャプションは `columnHeaderRect` 幅で fitText クリップされ
+   * 隣接ヘッダーへ重ならない。DOM/grid 型非依存の構造フック（R7）。
+   */
+  readonly columnHeaderLabel?: (colIndex: number) => string;
+  /**
+   * セル描画テキストの整形フック（DD-033-2・数値/日付の表示書式）。可視非空セルの描画時に「列 index・raw 値」から
+   * 描画テキスト（display）を返す（未指定なら恒等＝raw をそのまま描く・現行挙動）。**判定（数値右寄せ・getCellStyle の
+   * match・isLinkColumn/isWrapColumn）は raw のまま**行い、描画テキストだけを display に差し替える（判定は raw・描画は
+   * display）。grid 側がプリコンパイル済みの raw→display 写像を束縛する。DOM/grid 型非依存の構造フック（R7）。
+   */
+  readonly formatCellText?: (colIndex: number, rawValue: string) => string;
   /** 固定列数（DD-012-5 D2・オーバーフロー左外流入が pane 境界＝固定/本体境界を越えないための下限）。 */
   readonly frozenColCount?: number;
   /** wrap 折り返し行の行高（px・DD-012-5 D4/D5・自動行高計算と一致させる）。 */
@@ -153,6 +166,9 @@ export function createBaseLayer(deps: BaseLayerDeps): BaseLayer {
   const isWrapColumn = deps.isWrapColumn ?? (() => false);
   const isLinkColumn = deps.isLinkColumn ?? (() => false);
   const getCellStyle = deps.getCellStyle ?? (() => undefined);
+  // DD-033-2: 表示書式フック（未指定なら恒等＝raw 素通し）。判定は raw・描画は display（下の visitor 参照）。
+  const formatCellText = deps.formatCellText ?? ((_col: number, raw: string) => raw);
+  const columnHeaderLabelFn = deps.columnHeaderLabel;
   const frozenColCount = deps.frozenColCount ?? 0;
   const cellFontSizePx = parseFontSizePx(cellFont);
   const lineHeight = deps.lineHeight ?? CELL_TEXT_LINE_HEIGHT;
@@ -364,37 +380,44 @@ export function createBaseLayer(deps: BaseLayerDeps): BaseLayer {
 
     // Pass 1: pane 内の非空セルを描く（書式背景 → バッジ/リンク/数値/wrap/オーバーフロー）。
     store.queryRange(pane.rows.start, pane.rows.end, pane.cols.start, pane.cols.end, (row, col, value) => {
-      // DD-027-3: セル書式（値ベース・非空セルのみ）。背景色は罫線 inset で文字より先に塗る（罫線保存・1 pass）。
+      // DD-033-2: 描画テキストを display に確定する（判定は raw・描画は display）。書式のない列・非該当 raw は raw 恒等。
+      const display = formatCellText(col, value);
+      // DD-027-3: セル書式（値ベース・非空セルのみ）。**match は raw 完全一致のまま**（display で match しない・DD-033-2）。
+      // 背景色は罫線 inset で文字より先に塗る（罫線保存・1 pass）。
       const style = getCellStyle(col, value);
       if (style?.cellBackground !== undefined) {
         drawCellBackground(transform, frame.dpr, row, col, style.cellBackground);
       }
       // バッジは最優先（オーバーフロー/wrap/リンク/数値より前・単行チップ・右隣へはみ出さない＝DD-027-3）。
+      // チップ文字は display で描く（match は raw・描画は display・DD-033-2）。
       if (style?.badge === true) {
-        drawBadgeCell(transform, row, col, value, style);
+        drawBadgeCell(transform, row, col, display, style);
         return;
       }
       // リンク列は数値/wrap より優先（列タイプが勝つ・自セル内クリップ＝クリック領域と一致・DD-027-2）。
       // 書式 textColor はリンク色（linkText）で上書きされる（リンクの視認性を優先・背景色は既に塗り済み）。
+      // リンク列は表示書式と併用不可（mount fail-fast）ゆえ display===raw だが、契約上 display を渡す。
       if (isLinkColumn(col)) {
-        drawLinkCell(transform, frame.dpr, row, col, value);
+        drawLinkCell(transform, frame.dpr, row, col, display);
         return;
       }
+      // 数値右寄せ判定は **raw** で行う（書式済み "1,234.5" は NUMERIC_RE 不一致＝display で判定すると右寄せが壊れる・DD-033-2）。
       const isNumber = isNumericCell(value);
       // DD-027-3: textColor があれば数値/文字の既定色より優先する（右寄せ等の配置は維持）。
       ctx.fillStyle = style?.textColor ?? (isNumber ? colors.numberText : colors.cellText);
+      // wrap 列は表示書式と併用不可（mount fail-fast）ゆえ display===raw だが、契約上 display を描く。
       if (!isNumber && isWrapColumn(col)) {
-        drawWrapCell(transform, row, col, value, clipTop, clipBottom);
+        drawWrapCell(transform, row, col, display, clipTop, clipBottom);
         return;
       }
       if (isNumber) {
         const rect = transform.cellRect(row, col);
         ctx.textAlign = 'right';
-        const text = textCache.fitText(value, cellFont, rect.width - CELL_PADDING * 2);
+        const text = textCache.fitText(display, cellFont, rect.width - CELL_PADDING * 2);
         ctx.fillText(text, rect.x + rect.width - CELL_PADDING, rect.y + rect.height / 2);
         return;
       }
-      drawOverflowCell(transform, row, col, value, maxCol, isEmptyAt(row));
+      drawOverflowCell(transform, row, col, display, maxCol, isEmptyAt(row));
     });
 
     // Pass 2: 可視範囲の左外にあるはみ出し元からの流入を描く（D3・最大 20 列遡り・pane 境界で停止）。
@@ -412,6 +435,7 @@ export function createBaseLayer(deps: BaseLayerDeps): BaseLayer {
         }
         const value = store.get(row, originCol);
         // 数値・wrap・リンク列はオーバーフローしない（左寄せ文字列のみ流入・リンクは自セル内クリップ＝DD-027-2）。
+        // 判定は **raw**（DD-033-2・date 書式列は非数値ゆえ左外流入し得る＝display で描く必要がある）。
         if (isNumericCell(value) || isWrapColumn(originCol) || isLinkColumn(originCol)) {
           continue;
         }
@@ -422,7 +446,8 @@ export function createBaseLayer(deps: BaseLayerDeps): BaseLayer {
           continue;
         }
         ctx.fillStyle = originStyle?.textColor ?? colors.cellText;
-        drawOverflowCell(transform, row, originCol, value, maxCol, isEmpty);
+        // DD-033-2: 流入も origin 列の書式で display を描く（判定は raw・描画は display）。
+        drawOverflowCell(transform, row, originCol, formatCellText(originCol, value), maxCol, isEmpty);
       }
     }
   };
@@ -461,7 +486,16 @@ export function createBaseLayer(deps: BaseLayerDeps): BaseLayer {
     ctx.textBaseline = 'middle';
     const drawColHeader = (col: number): void => {
       const rect = transform.columnHeaderRect(col);
-      ctx.fillText(columnLabel(col), rect.x + rect.width / 2, headerHeight / 2);
+      // DD-033-2: キャプションフック未指定なら現行どおり列記号を素描画する（既存 consumer と完全一致・AC9）。
+      if (columnHeaderLabelFn === undefined) {
+        ctx.fillText(columnLabel(col), rect.x + rect.width / 2, headerHeight / 2);
+        return;
+      }
+      // キャプションは自ヘッダーセル幅で fitText クリップ（長い業務名が隣接ヘッダーへ重ならない・AC2）。中央寄せは維持。
+      const label = columnHeaderLabelFn(col);
+      const text = textCache.fitText(label, headerFont, Math.max(0, rect.width - CELL_PADDING * 2));
+      ctx.font = headerFont; // fitText の measure コールバックが ctx.font を触るため描画前に復帰させる。
+      ctx.fillText(text, rect.x + rect.width / 2, headerHeight / 2);
     };
     for (let col = corner.cols.start; col < corner.cols.end; col += 1) {
       drawColHeader(col);

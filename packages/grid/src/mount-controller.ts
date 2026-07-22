@@ -38,6 +38,8 @@ import { ColumnTypeConfigError, createColumnTypeRegistry, isAbsoluteHttpUrl } fr
 import type { ColumnTypeRegistry } from './column-types';
 import { FormatRuleConfigError, compileFormatRules } from './format-rules';
 import type { CompiledColumnFormats } from './format-rules';
+import { DisplayConfigError, compileDisplayFormats } from './display-format';
+import type { CompiledColumnDisplay } from './display-format';
 import { shouldArmLinkCandidate } from './link-column';
 import { createSelectDropdown, decideSelectKey } from './select-editor';
 import type { SelectDropdown } from './select-editor';
@@ -148,6 +150,9 @@ export function createGridController(target: GridMountTarget, options: GridMount
   // DD-027-3: セル書式のプリコンパイル済み解決器（columnOrder 解決後に生成・fail-fast）。書式なしなら hasAny()=false で
   // base-layer への束縛を省き描画コスト増をゼロにする。
   let compiledFormats: CompiledColumnFormats | undefined;
+  // DD-033-2: 列見出しキャプション＋表示書式のプリコンパイル済み解決器（columnOrder 解決後に生成・fail-fast）。
+  // hasAny()=false（両オプション未指定）なら base-layer への columnHeaderLabel/formatCellText フック束縛を省く。
+  let compiledDisplay: CompiledColumnDisplay | undefined;
   // 選択式ドロップダウンの制御は attachBackendRendering 内で backend/editor を閉じ込めた関数として定義し、
   // createGridController 直下の handler（dblclick・pointerdown・redraw）からは以下の ref 経由で呼ぶ。
   let openSelectForActive: (() => void) | undefined;
@@ -684,15 +689,20 @@ export function createGridController(target: GridMountTarget, options: GridMount
     });
     const scan = computeAutoFitContentWidth(
       values,
-      (value) => cellTextCache.measureWidth(value, CELL_FONT),
-      // バッジ指定値は丸角チップ幅（テキスト＋左右パディング）で見積もる（描画の drawBadgeCell と整合）。
+      // DD-033-2: 内容幅は **display**（描画テキスト）で測る（描画と測定の一致・DD-027-3 Fable P3 の教訓踏襲）。
+      // 判定（バッジ match）は raw のまま。書式のない列は formatText が raw を返すため現行と一致（AC9）。
+      (value) => cellTextCache.measureWidth(compiledDisplay?.formatText(String(columnId), value) ?? value, CELL_FONT),
+      // バッジ指定値は丸角チップ幅（テキスト＋左右パディング）で見積もる（描画の drawBadgeCell と整合）。match は raw。
       (value) => (compiledFormats?.getStyle(String(columnId), value)?.badge === true ? BADGE_TEXT_PADDING * 2 : 0),
       AUTO_FIT_MAX_SCAN,
     );
     const width = autoFitColumnWidth({
       maxContentWidth: scan.maxContentWidth,
-      // 列ヘッダーラベル（A, B, ...）幅も含める（Excel 準拠）。base-layer と同じ headerFont で測る。
-      headerLabelWidth: cellTextCache.measureWidth(columnLabel(colIndex), HEADER_FONT),
+      // DD-033-2: ヘッダー幅はキャプション（指定時）で測る（未指定は列記号 A/B/…）。base-layer と同じ headerFont・描画と一致。
+      headerLabelWidth: cellTextCache.measureWidth(
+        compiledDisplay?.captionFor(String(columnId)) ?? columnLabel(colIndex),
+        HEADER_FONT,
+      ),
       padding: CELL_TEXT_PADDING * 2,
     });
     backend.view.setColumnWidth(columnId, width);
@@ -1033,12 +1043,24 @@ export function createGridController(target: GridMountTarget, options: GridMount
       columnTypeRegistry = createColumnTypeRegistry(options.columnTypes, columnOrder, wrapColumnStrings);
       // DD-027-3: セル書式ルールをプリコンパイル（fail-fast）。不正は columnTypes と同じ column-types-invalid へ写像する。
       compiledFormats = compileFormatRules(options.columnFormats, columnOrder);
+      // DD-033-2: 列見出しキャプション＋表示書式をプリコンパイル（fail-fast）。wrap/link 併用検査は wrapColumnStrings と
+      // 直前に生成した columnTypeRegistry を渡して同所で実施する。不正は column-display-invalid へ写像する（別 code）。
+      compiledDisplay = compileDisplayFormats(options.columnDisplayFormats, options.columnCaptions, columnOrder, {
+        isWrapColumn: (columnId) => wrapColumnStrings.has(columnId),
+        isLinkColumn: (columnId) => columnTypeRegistry?.isLinkColumn(columnId) === true,
+      });
       return true;
     } catch (error) {
-      // DD-027-1/2: columnTypes 不正 ／ DD-027-3: columnFormats 不正 のどちらも公開 column-types-invalid へ集約する。
+      // DD-027-1/2: columnTypes 不正 ／ DD-027-3: columnFormats 不正 は column-types-invalid へ、
+      // DD-033-2: columnCaptions/columnDisplayFormats 不正 は column-display-invalid へ（意味を分けて障害切り分けを濁さない）。
       if (error instanceof ColumnTypeConfigError || error instanceof FormatRuleConfigError) {
         diag.emit('error', 'config-error', `column-types-invalid: ${error.message}`);
         emit({ type: 'error', phase: 'config', code: 'column-types-invalid', message: error.message });
+        return false;
+      }
+      if (error instanceof DisplayConfigError) {
+        diag.emit('error', 'config-error', `column-display-invalid: ${error.message}`);
+        emit({ type: 'error', phase: 'config', code: 'column-display-invalid', message: error.message });
         return false;
       }
       throw error;
@@ -1440,6 +1462,21 @@ export function createGridController(target: GridMountTarget, options: GridMount
             getCellStyle: (colIndex: number, value: string) => {
               const id = backend.view.columnIdAt(colIndex);
               return id === undefined ? undefined : compiledFormats?.getStyle(String(id), value);
+            },
+          }
+        : {}),
+      // DD-033-2: 列見出しキャプション＋表示書式のフック。両オプション未指定（hasAny()=false）なら束縛せず現行描画と
+      // 完全一致（AC9）。判定は raw・描画は display（columnHeaderLabel=ヘッダー・formatCellText=セル）。
+      ...(compiledDisplay?.hasAny() === true
+        ? {
+            columnHeaderLabel: (colIndex: number) => {
+              const id = backend.view.columnIdAt(colIndex);
+              const caption = id === undefined ? undefined : compiledDisplay?.captionFor(String(id));
+              return caption ?? columnLabel(colIndex);
+            },
+            formatCellText: (colIndex: number, rawValue: string) => {
+              const id = backend.view.columnIdAt(colIndex);
+              return id === undefined ? rawValue : (compiledDisplay?.formatText(String(id), rawValue) ?? rawValue);
             },
           }
         : {}),
@@ -2291,6 +2328,21 @@ export function createGridController(target: GridMountTarget, options: GridMount
     },
     displayCell: (rowId, columnId) =>
       sync === undefined ? '' : sync.view.cellDisplay(createRowId(rowId), createColumnId(columnId)),
+    // DD-033-2: base-layer が実際に描く display テキスト（raw→表示書式適用後）。canvas 文字は DOM から読めないため、
+    // 描画経路と同じ compiledDisplay.formatText を通した結果を E2E に露出する（判定は raw・描画は display の検証用）。
+    cellRenderText: (rowId, columnId) => {
+      if (sync === undefined) {
+        return '';
+      }
+      const raw = sync.view.cellDisplay(createRowId(rowId), createColumnId(columnId));
+      return compiledDisplay?.formatText(columnId, raw) ?? raw;
+    },
+    // DD-033-2: 列ヘッダーに描く見出し（キャプション指定列はキャプション・未指定列は列記号 A/B/…）。
+    columnHeaderText: (col) => {
+      const id = sync?.view.columnIdAt(col);
+      const caption = id === undefined ? undefined : compiledDisplay?.captionFor(String(id));
+      return caption ?? columnLabel(col);
+    },
     submitInsertRowsAfter: (afterRowId, newRowId) => {
       if (sync === undefined) {
         return;

@@ -98,6 +98,10 @@ export interface GridDebugApi {
   /** committed セルの CellScalar kind（'blank'|'string'|'number'|'date'）。DD-020-2 paste の型保持検証用。 */
   committedCellKind(rowId: string, columnId: string): string;
   displayCell(rowId: string, columnId: string): string;
+  /** DD-033-2: base-layer が描く display テキスト（表示書式適用後）。canvas 文字を読めないための E2E 観測用。 */
+  cellRenderText(rowId: string, columnId: string): string;
+  /** DD-033-2: 列ヘッダーに描く見出し（キャプション or 列記号）。canvas ヘッダー文字の E2E 観測用。 */
+  columnHeaderText(col: number): string;
   submitInsertRowsAfter(afterRowId: string | null, newRowId: string): void;
   submitDeleteRow(rowId: string): void;
   simulateDrop(): void;

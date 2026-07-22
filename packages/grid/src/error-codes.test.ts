@@ -9,7 +9,7 @@ import {
 import type { GridConflictCode } from './error-codes';
 
 describe('error-codes: 公開エラー語彙', () => {
-  it('error コード語彙が phase 対応で固定されている（共同編集4種＋単独モード2種＋列タイプ1種・DD-024/DD-027-1）', () => {
+  it('error コード語彙が phase 対応で固定されている（共同編集4種＋単独モード2種＋列タイプ1種＋表示書式1種・DD-024/DD-027-1/DD-033-2）', () => {
     expect([...GRID_ERROR_CODES]).toEqual([
       'config-unavailable',
       'config-invalid',
@@ -18,6 +18,7 @@ describe('error-codes: 公開エラー語彙', () => {
       'standalone-options-conflict',
       'standalone-options-invalid',
       'column-types-invalid',
+      'column-display-invalid',
     ]);
   });
 
