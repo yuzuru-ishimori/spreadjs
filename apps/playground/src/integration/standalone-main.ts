@@ -7,6 +7,7 @@
 
 import { mount, GRID_API_VERSION } from '@nanairo-sheet/grid';
 import type {
+  GridColumnDisplayFormat,
   GridColumnFormatRule,
   GridColumnType,
   GridDiagnostic,
@@ -119,9 +120,75 @@ function parseColumnFormats(raw: string | null): Record<string, GridColumnFormat
   }
   return Object.keys(columnFormats).length > 0 ? columnFormats : undefined;
 }
+// DD-033-2: 列見出しキャプションを URL で指定できる（E2E 用・main.ts と同形式）。形式: `?caption=col-a:受注日,col-b:金額`。
+function parseColumnCaptions(raw: string | null): Record<string, string> | undefined {
+  if (raw === null || raw === '') {
+    return undefined;
+  }
+  const captions: Record<string, string> = {};
+  for (const spec of raw.split(',')) {
+    const colonAt = spec.indexOf(':');
+    if (colonAt < 0) {
+      continue;
+    }
+    const columnId = spec.slice(0, colonAt);
+    if (columnId !== '') {
+      captions[columnId] = spec.slice(colonAt + 1);
+    }
+  }
+  return Object.keys(captions).length > 0 ? captions : undefined;
+}
+// DD-033-2: 数値/日付の表示書式を URL で指定できる（E2E 用・main.ts と同形式）。
+// 形式: `?display=<列>:number;group;dec0;pre¥,<列>:date;YYYY/MM/DD`（spec は `;` 区切りトークン）。
+function parseColumnDisplayFormats(raw: string | null): Record<string, GridColumnDisplayFormat> | undefined {
+  if (raw === null || raw === '') {
+    return undefined;
+  }
+  const displays: Record<string, GridColumnDisplayFormat> = {};
+  for (const spec of raw.split(',')) {
+    const colonAt = spec.indexOf(':');
+    if (colonAt < 0) {
+      continue;
+    }
+    const columnId = spec.slice(0, colonAt);
+    const tokens = spec.slice(colonAt + 1).split(';');
+    if (columnId === '') {
+      continue;
+    }
+    if (tokens[0] === 'number') {
+      const fmt: {
+        type: 'number';
+        grouping?: boolean;
+        decimals?: number;
+        percent?: boolean;
+        prefix?: string;
+        suffix?: string;
+      } = { type: 'number' };
+      for (const token of tokens.slice(1)) {
+        if (token === 'group') {
+          fmt.grouping = true;
+        } else if (token === 'pct') {
+          fmt.percent = true;
+        } else if (token.startsWith('dec')) {
+          fmt.decimals = Number(token.slice(3));
+        } else if (token.startsWith('pre')) {
+          fmt.prefix = token.slice(3);
+        } else if (token.startsWith('suf')) {
+          fmt.suffix = token.slice(3);
+        }
+      }
+      displays[columnId] = fmt;
+    } else if (tokens[0] === 'date') {
+      displays[columnId] = { type: 'date', pattern: tokens[1] ?? '' };
+    }
+  }
+  return Object.keys(displays).length > 0 ? displays : undefined;
+}
 const searchParams = new URLSearchParams(location.search);
 const columnTypes = parseLinkColumns(searchParams.get('link'), parseColumnTypes(searchParams.get('select')));
 const columnFormats = parseColumnFormats(searchParams.get('format'));
+const columnCaptions = parseColumnCaptions(searchParams.get('caption'));
+const columnDisplayFormats = parseColumnDisplayFormats(searchParams.get('display'));
 // DD-033-1: 表示専用モードを URL で指定できる（E2E 用・?select= 等と同流儀）。例: `?readonly=1`。
 const readOnly = searchParams.get('readonly') === '1';
 
@@ -219,6 +286,8 @@ const handle: StandaloneHandle = {
         initialData: buildInitialData(),
         ...(columnTypes !== undefined ? { columnTypes } : {}),
         ...(columnFormats !== undefined ? { columnFormats } : {}),
+        ...(columnCaptions !== undefined ? { columnCaptions } : {}),
+        ...(columnDisplayFormats !== undefined ? { columnDisplayFormats } : {}),
         ...(readOnly ? { readOnly: true } : {}),
         onEvent,
         onDiagnostic: (entry) => {

@@ -8,7 +8,13 @@
 // のみを行う。内部パッケージ（core/collab/render/...）は一切 import しない（R1・Facade 経由に一本化）。
 
 import { mount } from '@nanairo-sheet/grid';
-import type { GridColumnFormatRule, GridColumnType, GridEvent, GridInstance } from '@nanairo-sheet/grid';
+import type {
+  GridColumnDisplayFormat,
+  GridColumnFormatRule,
+  GridColumnType,
+  GridEvent,
+  GridInstance,
+} from '@nanairo-sheet/grid';
 import { getDebugApi } from '@nanairo-sheet/grid/test-support';
 import type { GridDebugApi } from '@nanairo-sheet/grid/test-support';
 
@@ -154,6 +160,82 @@ function parseColumnFormats(
 }
 const columnFormats = parseColumnFormats(formatParam);
 
+// DD-033-2: 列見出しキャプションを URL で指定できる（E2E 用・?format= と同流儀）。
+// 形式: `?caption=col-3:状態,col-4:受注金額`（列は `,`・columnId と表示名は最初の `:` で区切る）。
+const captionParam = params.get('caption');
+function parseColumnCaptions(raw: string | null): Record<string, string> | undefined {
+  if (raw === null || raw === '') {
+    return undefined;
+  }
+  const captions: Record<string, string> = {};
+  for (const spec of raw.split(',')) {
+    const colonAt = spec.indexOf(':');
+    if (colonAt < 0) {
+      continue;
+    }
+    const columnId = spec.slice(0, colonAt);
+    const caption = spec.slice(colonAt + 1);
+    if (columnId !== '') {
+      captions[columnId] = caption;
+    }
+  }
+  return Object.keys(captions).length > 0 ? captions : undefined;
+}
+// DD-033-2: 数値/日付の表示書式を URL で指定できる（E2E 用・?format= と同流儀）。
+// 形式: `?display=<列>:<spec>,<列>:<spec>`。spec は `;` 区切りトークン。
+//   number: `number` に続けて `group`（カンマ）・`dec<N>`（小数桁）・`pct`（%）・`pre<文字列>`（prefix）・`suf<文字列>`（suffix）。
+//   date:   `date` に続けて 1 つ目のトークンをパターンとして扱う（例 `date;YYYY/MM/DD`）。
+//   例: `?display=col-4:number;group;dec0;pre¥,col-5:date;YYYY-MM-DD HH:mm,col-6:number;pct;dec1`
+const displayParam = params.get('display');
+function parseColumnDisplayFormats(raw: string | null): Record<string, GridColumnDisplayFormat> | undefined {
+  if (raw === null || raw === '') {
+    return undefined;
+  }
+  const displays: Record<string, GridColumnDisplayFormat> = {};
+  for (const spec of raw.split(',')) {
+    const colonAt = spec.indexOf(':');
+    if (colonAt < 0) {
+      continue;
+    }
+    const columnId = spec.slice(0, colonAt);
+    const tokens = spec.slice(colonAt + 1).split(';');
+    const kind = tokens[0];
+    if (columnId === '') {
+      continue;
+    }
+    if (kind === 'number') {
+      const fmt: {
+        type: 'number';
+        grouping?: boolean;
+        decimals?: number;
+        percent?: boolean;
+        prefix?: string;
+        suffix?: string;
+      } = { type: 'number' };
+      for (const token of tokens.slice(1)) {
+        if (token === 'group') {
+          fmt.grouping = true;
+        } else if (token === 'pct') {
+          fmt.percent = true;
+        } else if (token.startsWith('dec')) {
+          fmt.decimals = Number(token.slice(3));
+        } else if (token.startsWith('pre')) {
+          fmt.prefix = token.slice(3);
+        } else if (token.startsWith('suf')) {
+          fmt.suffix = token.slice(3);
+        }
+      }
+      displays[columnId] = fmt;
+    } else if (kind === 'date') {
+      const pattern = tokens[1] ?? '';
+      displays[columnId] = { type: 'date', pattern };
+    }
+  }
+  return Object.keys(displays).length > 0 ? displays : undefined;
+}
+const columnCaptions = parseColumnCaptions(captionParam);
+const columnDisplayFormats = parseColumnDisplayFormats(displayParam);
+
 // DD-012-4: 列幅・行高は view-local。利用側（このページ）が localStorage へ保存し、次回 mount の初期値へ渡す
 // ＝F5 リロードで復元される（保存・復元は利用側アプリの責務という D1/D2 契約の実演）。
 const LAYOUT_KEY = 'nsheet:playground:layout';
@@ -240,6 +322,8 @@ const instance = mount(
     ...(wrapColumns !== undefined ? { wrapColumns } : {}),
     ...(columnTypes !== undefined ? { columnTypes } : {}),
     ...(columnFormats !== undefined ? { columnFormats } : {}),
+    ...(columnCaptions !== undefined ? { columnCaptions } : {}),
+    ...(columnDisplayFormats !== undefined ? { columnDisplayFormats } : {}),
     ...(readOnly ? { readOnly: true } : {}),
     onEvent: renderStatus,
   },

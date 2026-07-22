@@ -370,6 +370,18 @@ export async function committedCell(page: Page, rowId: string, columnId: string)
 export async function committedCellKind(page: Page, rowId: string, columnId: string): Promise<string> {
   return callApi<string>(page, 'committedCellKind', [rowId, columnId]);
 }
+/** view.cellDisplay（raw 表示文字列＝契約面）。表示書式を通さない生の表示値。 */
+export async function displayCell(page: Page, rowId: string, columnId: string): Promise<string> {
+  return callApi<string>(page, 'displayCell', [rowId, columnId]);
+}
+/** DD-033-2: base-layer が描く display テキスト（表示書式適用後）。canvas 文字を読めないための観測用。 */
+export async function cellRenderText(page: Page, rowId: string, columnId: string): Promise<string> {
+  return callApi<string>(page, 'cellRenderText', [rowId, columnId]);
+}
+/** DD-033-2: 列ヘッダーに描く見出し（キャプション or 列記号）。 */
+export async function columnHeaderText(page: Page, col: number): Promise<string> {
+  return callApi<string>(page, 'columnHeaderText', [col]);
+}
 
 // ---- DD-020-2 clipboard E2E ヘルパー ----------------------------------------------------------
 
