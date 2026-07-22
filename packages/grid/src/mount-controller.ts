@@ -1192,6 +1192,12 @@ export function createGridController(target: GridMountTarget, options: GridMount
     if (backend === undefined) {
       return;
     }
+    // DD-033-1（統合レビュー P2-2）: readOnly は undo 捕捉より前に破棄する。submitToBackend（絶対防衛線）だけだと
+    // op は破棄されるのに undo エントリが積まれ canUndo=false（AC2）が破れる（standalone は submit 結果を見ず記録するため）。
+    if (readOnly) {
+      diag.emit('warn', 'readonly-blocked', 'readOnly: submitSetCells で SetCells を破棄（undo 記録前）');
+      return;
+    }
     // DD-020-3: submit 直前に **view（committed＋own pending）** から逆値（前値）を捕捉する（単一記録点＝両モード同一経路）。
     // committed ではなく view を使うのは、直前の未 ACK 楽観編集を飛ばさないため（Codex P1: 連続編集の逆値正しさ）。
     const patches = captureUndoPatches(backend.session.viewDocument, op);
@@ -2343,8 +2349,15 @@ export function createGridController(target: GridMountTarget, options: GridMount
       const caption = id === undefined ? undefined : compiledDisplay?.captionFor(String(id));
       return caption ?? columnLabel(col);
     },
+    // DD-033-1（統合レビュー P3-1）: debug API（test-support）も readOnly では文書 Operation を送信しない。
+    // 行操作は submitToBackend を通らず session.submitLocalOperation 直呼びのため、素通しだと
+    // 「送信ゼロの構造的保証」の唯一の例外になる（perform* 先頭ガードの設計規約に合わせる）。
     submitInsertRowsAfter: (afterRowId, newRowId) => {
       if (sync === undefined) {
+        return;
+      }
+      if (readOnly) {
+        diag.emit('warn', 'readonly-blocked', 'readOnly: debug submitInsertRowsAfter を破棄');
         return;
       }
       const op: InsertRowsOperation = {
@@ -2356,6 +2369,10 @@ export function createGridController(target: GridMountTarget, options: GridMount
     },
     submitDeleteRow: (rowId) => {
       if (sync === undefined) {
+        return;
+      }
+      if (readOnly) {
+        diag.emit('warn', 'readonly-blocked', 'readOnly: debug submitDeleteRow を破棄');
         return;
       }
       const op: DeleteRowsOperation = { type: 'deleteRows', rowIds: [createRowId(rowId)] };

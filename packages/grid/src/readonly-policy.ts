@@ -25,19 +25,18 @@ export interface ReadonlyPolicyInput {
   readonly phase: EditPhase;
 }
 
-/** readOnly で編集開始/セルクリアを起こす単独キー（Navigation 位相・修飾なしのときだけ抑止する）。 */
+/** readOnly で編集開始/セルクリアを起こすキー（Navigation 位相で修飾の有無によらず抑止する）。 */
 const EDIT_ENTRY_KEYS: ReadonlySet<string> = new Set(['F2', 'Delete', 'Backspace']);
 
 /**
  * readOnly 時の keydown 前段裁定。true=抑止（消費し状態機械の編集開始/クリアを起こさない）。false=素通し。
- * composition 中・非 Navigation・修飾キー付きは常に false（閲覧系・IME 経路は変えない）。
+ * composition 中・非 Navigation は常に false（閲覧系・IME 経路は変えない）。
+ * F2/Delete/Backspace は**修飾キーの有無によらず抑止**する: 状態機械の Navigation 判定は修飾を見ないため、
+ * Ctrl+Backspace（単語削除）等が素の編集開始として届き編集 UI が開いてしまう（統合レビュー P2-1）。
+ * これらのキーは修飾付きでも閲覧系操作にならない（Ctrl+C 等の閲覧系はキー自体が別＝影響なし）。
  */
 export function shouldSuppressReadonlyKey(input: ReadonlyPolicyInput): boolean {
   if (input.eventComposing || input.sessionComposing || input.phase !== 'Navigation') {
-    return false;
-  }
-  // 修飾キー付き（Ctrl+C コピー・Ctrl+Z 等）は編集開始キーではない＝pass（保証層は chokepoint が担う）。
-  if (input.ctrlKey || input.metaKey || input.altKey) {
     return false;
   }
   return EDIT_ENTRY_KEYS.has(input.key);

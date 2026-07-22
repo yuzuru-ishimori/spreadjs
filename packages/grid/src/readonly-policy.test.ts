@@ -54,9 +54,12 @@ describe('readonly-policy: 閲覧系入力の pass（AC7）', () => {
     }
   });
 
-  it('修飾キー付きの Delete/Backspace は pass する（編集系の単独キーのみ抑止対象）', () => {
-    expect(shouldSuppressReadonlyKey(nav({ key: 'Delete', ctrlKey: true }))).toBe(false);
-    expect(shouldSuppressReadonlyKey(nav({ key: 'Backspace', altKey: true }))).toBe(false);
+  it('修飾キー付きの F2/Delete/Backspace も suppress する（状態機械は修飾を見ないため Ctrl+Backspace 等が素の編集開始として届く・統合レビュー P2-1）', () => {
+    expect(shouldSuppressReadonlyKey(nav({ key: 'Delete', ctrlKey: true }))).toBe(true);
+    expect(shouldSuppressReadonlyKey(nav({ key: 'Backspace', altKey: true }))).toBe(true);
+    expect(shouldSuppressReadonlyKey(nav({ key: 'Backspace', metaKey: true }))).toBe(true);
+    expect(shouldSuppressReadonlyKey(nav({ key: 'F2', ctrlKey: true }))).toBe(true);
+    expect(shouldSuppressReadonlyKey(nav({ key: 'Backspace', shiftKey: true }))).toBe(true);
   });
 });
 
