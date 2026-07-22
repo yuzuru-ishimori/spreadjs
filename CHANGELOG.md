@@ -19,6 +19,29 @@
 
 ### Added
 
+- **grid 表示専用モード `readOnly`（Experimental・DD-033-1）**: mount オプション1点（両モード共通・mount 時固定）で
+  文書を一切変更できない閲覧専用グリッドを提供する（明細閲覧ビュー DD-033 の第1子）。
+  - **2層抑止**: 入口（編集開始〔キー入力・F2・ダブルクリック・IME〕・paste/cut・Delete/Backspace クリア・
+    行挿入削除〔ショートカット・公開 API `insertRows`/`deleteRows`〕・Undo/Redo・選択式ドロップダウン）＋
+    chokepoint（SetCells 系 submit の単一防衛線）で文書 Operation 送信ゼロを保証する。
+  - **閲覧系は維持**: 範囲選択・コピー（TSV は従来と同一）・スクロール・列幅行高リサイズ・auto-fit・link-open・
+    presence 送信。`setData` は許可（閲覧データの差し替え手段）。
+  - 共同編集モードでは**受信反映のみ**。**権限制御ではない**（サーバー側強制なし・アクセス制御は利用側責務）。
+  - 診断: 抑止時 `readonly-blocked` info・mount 時 `readonly-mode` info・非 boolean 指定は `readonly-invalid` warn
+    （新規公開 error code・新規イベントなし）。
+- **grid 列見出しキャプション・数値/日付表示書式（Experimental・DD-033-2）**: `columnCaptions`
+  （ヘッダー A/B/C を業務名へ置換描画・自ヘッダーセル幅で fitText クリップ）と `columnDisplayFormats`
+  （number=`{ grouping?, decimals?, percent?, prefix?, suffix? }`・date=`YYYY`/`MM`/`DD`/`HH`/`mm`/`ss` トークンの
+  パターン文字列）を追加した（明細閲覧ビュー DD-033 の第2子。両モード共通・mount 時固定）。
+  - **Canvas 描画テキストのみ**を整形する view-local 機能: コピー TSV・cell-commit・setData round-trip・編集ドラフト・
+    `columnFormats` の match はすべて raw のまま＝**表示文字列契約は不変**。
+  - number は数値形 raw のみに適用し**文字列ベース十進整形**（half-up・2進誤差なし）。date は ISO 2形
+    （`YYYY-MM-DD`／`YYYY-MM-DD[T|空白]HH:mm(:ss)`）のみ受理（タイムゾーン非経由）。非該当 raw は素通し。
+  - 併用: `wrapColumns` 同一列・リンク列は fail-fast。選択式列は許可（候補・検証は raw のまま）。auto-fit は
+    書式済みテキスト幅＋キャプション幅で列幅を決める（描画と測定の一致）。
+  - **fail-fast 追加**: 新公開 error code **`column-display-invalid`**（phase=`config`。未知列・空キャプション・
+    `decimals` 範囲外・不正 pattern・wrap/link 併用）。共同編集モードでの全クライアント設定一致は利用側責務。
+  - Excel 書式文字列互換・Intl ロケール書式・数値シリアル日付・2段ヘッダーは v1 対象外（拡張点メモ）。
 - **grid セル書式モデル（背景色・バッジ・auto-fit・Experimental・DD-027-3）**: 利用側供給の「値→書式マッピング」による
   **view-local** なセル書式描画を追加した（親④・列タイプ体系 DD-027 の第3子）。
   - **公開型 `GridColumnFormatRule` / `GridCellFormatStyle`（`columnFormats` の値・export）**: ルールは

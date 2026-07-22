@@ -18,6 +18,7 @@
 | `standalone-options-conflict` | `config` | 単独グリッドモード（DD-024）に server 系 options（serverUrl/displayName/clientId）を混在指定 | 単独モードでは server 系 options を渡さない（認証・保存は利用側の責務） |
 | `standalone-options-invalid` | `config` | 単独グリッドモード（DD-024）で columnOrder が未指定/空 | `mode:'standalone'` では columnOrder を必須で渡す |
 | `column-types-invalid` | `config` | `columnTypes`/`columnFormats` mount オプションが不正（未知列・候補0件・重複候補・候補が非 round-trip・未対応 type〔DD-027-1〕／リンク列と `wrapColumns` の同一列併用〔wrap-link-conflict・DD-027-2〕／`columnFormats` の空ルール配列・空 match〔空配列/空文字〕・同一列内の match 重複〔DD-027-3〕）→ fail-fast | `columnTypes` のキーを columnOrder 内の列に限定し、選択式の options を 1 件以上・重複なし・parseCellInput で自己 round-trip する値にする。リンク列は `wrapColumns` と併用しない。`columnFormats` のキーを columnOrder 内に限定し、各列のルール配列を 1 件以上・各 match を非空・同一列内で match 値を重複させない |
+| `column-display-invalid` | `config` | `columnCaptions`/`columnDisplayFormats` mount オプションが不正（未知列・空/空白キャプション・未対応 type・`decimals` 非整数/0〜20 外・date pattern 空/既知トークン皆無／`wrapColumns`・リンク列との同一列併用〔DD-033-2〕）→ fail-fast | キャプション/表示書式のキーを columnOrder 内の列に限定し、キャプションを非空に、number の `decimals` を 0〜20 の整数に、date pattern に `YYYY`/`MM`/`DD`/`HH`/`mm`/`ss` のいずれかを含める。表示書式列は `wrapColumns`・リンク列と併用しない |
 
 > 接続確立**後**の一時切断は `error` ではなく `connection`（state=`offline`）で表現する（reconnect の一部）。
 > 単独グリッドモード（DD-024）では `connection`/`pending`/`rejected`/`divergence` は発火せず、`connectionState()` は `'standalone'` を返す。
