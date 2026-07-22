@@ -1,7 +1,12 @@
 // 動作デモページ（DD-017-2）。@nanairo-sheet/grid Facade（公開API）だけでグリッドを組み込む＝
 // このファイル自体が「consumer は Facade のみで統合できる」ことの実演でもある（R1・S1-3 と同じ経路）。
 import { mount } from '@nanairo-sheet/grid';
-import type { GridColumnFormatRule, GridColumnType, GridEvent } from '@nanairo-sheet/grid';
+import type {
+  GridColumnDisplayFormat,
+  GridColumnFormatRule,
+  GridColumnType,
+  GridEvent,
+} from '@nanairo-sheet/grid';
 
 import { SCENARIOS, findScenario } from './scenarios';
 
@@ -39,6 +44,28 @@ const columnTypes: Record<string, GridColumnType> | undefined = isColumnTypesSce
       'col-4': { type: 'link' },
     }
   : undefined;
+// DD-033: 「明細閲覧ビュー」シナリオだけ 表示専用（readOnly）＋業務名の列見出し（columnCaptions）＋
+// 数値/日付の表示書式（columnDisplayFormats）＋値の装飾（columnFormats）を併用する BI 明細閲覧構成。
+// いずれも mount 時固定の宣言的オプション（consumer は Facade のみ）・view-local（文書の raw 値は不変）。
+const isDetailViewScenario = scenario.id === 'detail-view';
+const readOnly = isDetailViewScenario ? true : undefined;
+const columnCaptions: Record<string, string> | undefined = isDetailViewScenario
+  ? {
+      'col-0': '取引先コード',
+      'col-1': '担当者',
+      'col-2': 'ステータス',
+      'col-3': '契約金額',
+      'col-4': '登録日',
+    }
+  : undefined;
+const columnDisplayFormats: Record<string, GridColumnDisplayFormat> | undefined = isDetailViewScenario
+  ? {
+      // 数値形の raw だけを 3 桁区切り＋通貨記号で整形（非数値 raw は素通し・raw 契約不変）。
+      'col-3': { type: 'number', grouping: true, prefix: '¥' },
+      // ISO 日付形の raw だけを YYYY/MM/DD で整形（非受理 raw は素通し）。
+      'col-4': { type: 'date', pattern: 'YYYY/MM/DD' },
+    }
+  : undefined;
 const columnFormats: Record<string, readonly GridColumnFormatRule[]> | undefined = isColumnTypesScenario
   ? {
       'col-3': [
@@ -46,7 +73,18 @@ const columnFormats: Record<string, readonly GridColumnFormatRule[]> | undefined
         { match: '受注', style: { cellBackground: '#fde293' } },
       ],
     }
-  : undefined;
+  : isDetailViewScenario
+    ? {
+        // ステータス列（col-2）を値で色分け・バッジ表示（シード JP_WORDS に一致する値へ適用・match は raw 完全一致）。
+        'col-2': [
+          { match: '完了', style: { badge: true, badgeColor: '#34a853', textColor: '#ffffff' } },
+          { match: '承認済み', style: { badge: true, badgeColor: '#1a73e8', textColor: '#ffffff' } },
+          { match: '対応中', style: { cellBackground: '#d2e3fc' } },
+          { match: '保留中', style: { cellBackground: '#fde293' } },
+          { match: '要確認', style: { cellBackground: '#fad2cf' } },
+        ],
+      }
+    : undefined;
 
 // --- シナリオパネル ---------------------------------------------------------
 
@@ -173,6 +211,9 @@ const instance = mount(
     ...(wrapColumns !== undefined ? { wrapColumns } : {}),
     ...(columnTypes !== undefined ? { columnTypes } : {}),
     ...(columnFormats !== undefined ? { columnFormats } : {}),
+    ...(columnCaptions !== undefined ? { columnCaptions } : {}),
+    ...(columnDisplayFormats !== undefined ? { columnDisplayFormats } : {}),
+    ...(readOnly !== undefined ? { readOnly } : {}),
     onEvent,
   },
 );
