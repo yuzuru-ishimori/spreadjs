@@ -213,12 +213,18 @@ test('AC3: 範囲選択・コピー・スクロール・列幅リサイズ・lin
       .toBe(expected);
 
     // スクロール: scroller が縦スクロールできる（閲覧系・view-local）。
-    await page.evaluate(() => {
-      const sc = document.querySelector('.nsheet-scroller');
-      if (sc instanceof HTMLElement) sc.scrollTop = 600;
-    });
+    // setData 直後はコンテンツ高さ反映前で scrollTop 設定がクランプされうるため、poll 内で毎回設定し直す。
     await expect
-      .poll(async () => page.evaluate(() => (document.querySelector('.nsheet-scroller') as HTMLElement).scrollTop))
+      .poll(
+        async () =>
+          page.evaluate(() => {
+            const sc = document.querySelector('.nsheet-scroller');
+            if (!(sc instanceof HTMLElement)) return 0;
+            sc.scrollTop = 600;
+            return sc.scrollTop;
+          }),
+        { message: '縦スクロールが成立する（コンテンツ高さ反映後）' },
+      )
       .toBeGreaterThan(0);
 
     // 列幅リサイズ（列境界 dblclick の auto-fit・要確認4 維持）→ columnWidthOverrides が付く。
