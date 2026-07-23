@@ -6,9 +6,6 @@
 
 | DD | 件名 | ステータス | 補足 |
 |----|------|-----------|------|
-| DD-033 | 明細閲覧ビュー | 進行中 | DD-027 完了により再開。要確認①〜⑥最終確定済み（既定案）・レビューは親統合時1回（DD-034 整合） |
-| DD-033-1 | 表示専用モード | 完了 | readOnly mount オプション＝2層抑止（入口＋chokepoint）。AC1〜7充足・全回帰green(1077件)・IME系3ファイル無改変。レビュー/M1/T1は親Phase 3集約 |
-| DD-033-2 | 列見出し表示書式 | 完了 | 親=DD-033（子2本の第2子）。ヘッダーの業務名置換＋数値/日付の Canvas 描画整形（契約不変=raw 維持）。機械検証 green まで完了（AC1〜10 充足・全回帰 green）。親 Phase 3 で統合レビュー・M2・headed 計測 |
 
 ## 保留・見送り
 
@@ -20,6 +17,9 @@
 | DD | 件名 | 主な成果 |
 |----|------|---------|
 | DD-034 | DD運用軽量化第2弾 | 記録git一本化・親統合レビュー1回・完了処理1コミット・ガバナンスDD凍結・IME台帳一本化・dd-update停止を反映。効果測定はDD-033へ移管 |
+| DD-033 | 明細閲覧ビュー | readOnly・columnCaptions・columnDisplayFormats を提供。AC1〜10充足・統合レビューP2×2修正・計測回帰なし・M1/M2/T1全PASS（実IME証明） |
+| DD-033-1 | 表示専用モード | readOnly mount オプション＝2層抑止（入口＋chokepoint）。AC1〜7充足・全回帰green(1077件)・IME系3ファイル無改変。レビュー/M1/T1は親Phase 3集約 |
+| DD-033-2 | 列見出し表示書式 | 親=DD-033（子2本の第2子）。ヘッダーの業務名置換＋数値/日付の Canvas 描画整形（契約不変=raw 維持）。機械検証 green まで完了（AC1〜10 充足・全回帰 green）。親 Phase 3 で統合レビュー・M2・headed 計測 |
 | DD-029-1 | KPI計測契約 | 承認①②済（2026-07-16）・kpi-ledger.md 新設・Codex high 7件全反映（見送り0）。契約確定＝DD-026 起票可能 |
 | DD-028 | 継続回帰CI・API差分監視 | CI常設（Actions 2job・連続4run green）・API型snapshot=公開宣言closure・migration dry-run常設test・deprecation policy 3層（P-10/D-006）・IME実機台帳常設。835 test/E2E 25 green・Codex high P2×2 全反映 |
 | DD-027 | 列タイプ体系 | 列タイプ体系（選択式・リンク・書式・auto-fit）を提供開始。子3本＋親 Phase 4 完了（統合回帰 全 green・features/demo・P-07 材料提出・Manual Gate 代行受付・T1 非該当）。ユーザー確認済みでアーカイブ |
